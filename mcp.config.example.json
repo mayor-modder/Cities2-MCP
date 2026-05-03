@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "cities2-mcp": {
+      "command": "PYTHON_PATH",
+      "args": [
+        "REPO_ROOT/server/mcp_server.py",
+        "--data-dir",
+        "REPO_ROOT/data",
+        "--workspace",
+        "REPO_ROOT"
+      ],
+      "env": {
+        "CITIES2_MODS_DIR": "/absolute/path/to/Cities Skylines II/Mods"
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+tmp-smoke-ws/
+.worktrees/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+.venv/
+.venv-skill/
+venv/
+env/
+node_modules/
+.codex/
+docs/
+mcp.config.json

@@ -1,0 +1,13 @@
+{
+  "name": "{{PROJECT_SLUG}}-ui",
+  "version": "{{VERSION}}",
+  "private": true,
+  "scripts": {
+    "build": "esbuild src/index.tsx --bundle --format=esm --outfile=dist/ui.js",
+    "dev": "esbuild src/index.tsx --bundle --format=esm --outfile=dist/ui.js --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.0"
+  }
+}

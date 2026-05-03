@@ -1,0 +1,14 @@
+{
+  "dataset": "cities2-docs",
+  "source": "Cities: Skylines II Wiki text corpus transformed for Cities2-MCP retrieval",
+  "generated_at": "2026-05-02T21:55:51.288229+00:00",
+  "page_count": 126,
+  "chunk_count": 1090,
+  "paths": {
+    "pages_jsonl": "index/pages.jsonl",
+    "chunks_jsonl": "index/chunks.jsonl"
+  },
+  "name": "cities2-docs",
+  "license": "CC-BY-SA-3.0",
+  "attribution": "ATTRIBUTION.md"
+}
