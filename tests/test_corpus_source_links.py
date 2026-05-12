@@ -85,11 +85,11 @@ class CorpusSourceLinkTests(unittest.TestCase):
             "used referentially to identify the game and source wiki",
             "not affiliated with, sponsored by, endorsed by, or approved by",
             "Colossal Order",
+            "Paradox-owned source material notice",
             "## Changes",
         ]
         missing = [value for value in required if value not in attribution and value not in attribution_words]
         self.assertEqual(missing, [])
-        self.assertNotIn("Paradox-owned source material", attribution)
         self.assertNotIn("Copyright (c) 2014 Paradox Interactive AB", attribution)
 
     def test_public_corpus_loads_without_private_markdown_paths(self) -> None:
