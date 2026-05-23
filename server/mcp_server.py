@@ -374,6 +374,110 @@ def extra_tools_catalog() -> List[JSON]:
     return domain_tools_catalog() + encyclopedia_tools_catalog()
 
 
+PROMPT_ARGUMENTS = [
+    {
+        "name": "question",
+        "description": "The Cities: Skylines II question or task to answer.",
+        "required": True,
+    }
+]
+
+
+PROMPT_DEFINITIONS: Dict[str, JSON] = {
+    "cities2": {
+        "description": "Answer Cities: Skylines II questions using both the bundled wiki corpus and the local game Encyclopedia when available.",
+        "tool_guidance": (
+            "Use source_status() first. Search both sources when they are available: use search/query_reference/get_page "
+            "for the bundled Cities: Skylines II Wiki corpus, and search_encyclopedia/get_encyclopedia_entry for the "
+            "local in-game Encyclopedia. Prefer the local game Encyclopedia for current in-game terminology and exact "
+            "mechanics, and use the wiki for broader explanations, guide context, tables, and modding background. "
+            "If the sources disagree, say so plainly and identify which source says what."
+        ),
+    },
+    "cities2-wiki": {
+        "description": "Answer using only the bundled Cities: Skylines II Wiki corpus.",
+        "tool_guidance": (
+            "Use only the bundled wiki corpus tools: search, query_reference, get_page, and get_snippets when relevant. "
+            "Do not use search_encyclopedia or get_encyclopedia_entry. Search first, fetch the most relevant full page "
+            "with get_page when a snippet is not enough, then answer from the wiki material with page/source labels."
+        ),
+    },
+    "cities2-encyclopedia": {
+        "description": "Answer using only the local in-game Encyclopedia read from the user's installed game files.",
+        "tool_guidance": (
+            "Use source_status() first and check game_encyclopedia.available. If it is unavailable, explain that the "
+            "local game Encyclopedia was not found and mention CITIES2_GAME_DIR or CITIES2_LOCALE_COK. If available, "
+            "use search_encyclopedia, then get_encyclopedia_entry for the best entries before answering. Do not use "
+            "the wiki tools unless the user explicitly asks for fallback."
+        ),
+    },
+    "cities2-modding": {
+        "description": "Answer Cities: Skylines II modding questions using docs and local mod project workflow tools.",
+        "tool_guidance": (
+            "Use wiki retrieval tools for modding concepts, APIs, localization, UI, project structure, and toolchain "
+            "references. Use workflow tools only for explicit local project actions inside configured workspaces: "
+            "scaffold_project, write_project_file, list_project_tree, build_project, analyze_project, package_project, "
+            "and launch_cities2. Before writing files or running builds, make the intended local action clear."
+        ),
+    },
+}
+
+
+def prompts_catalog() -> List[JSON]:
+    return [
+        {
+            "name": name,
+            "description": str(definition["description"]),
+            "arguments": PROMPT_ARGUMENTS,
+        }
+        for name, definition in PROMPT_DEFINITIONS.items()
+    ]
+
+
+def prompt_text(name: str, question: str) -> str:
+    definition = PROMPT_DEFINITIONS[name]
+    return (
+        f"You are answering a Cities: Skylines II request through Cities2-MCP.\n\n"
+        f"Mode: /{name}\n"
+        f"User question: {question}\n\n"
+        f"Source workflow:\n{definition['tool_guidance']}\n\n"
+        "Answer normally and synthesize the retrieved material instead of showing raw search results. "
+        "Use concise source labels such as Wiki, Game Encyclopedia, or Mod project tools when they matter. "
+        "If there is not enough retrieved evidence, say what is missing rather than guessing."
+    )
+
+
+def handle_prompts_get(req_id: object, params: JSON) -> JSON:
+    name = str(params.get("name", "")).strip()
+    if name not in PROMPT_DEFINITIONS:
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "error": {"code": -32602, "message": f"Unknown prompt: {name}"},
+        }
+
+    arguments = params.get("arguments") or {}
+    if not isinstance(arguments, dict):
+        arguments = {}
+    question = str(arguments.get("question", "")).strip()
+    if not question:
+        question = "Answer the user's Cities: Skylines II question using this source workflow."
+
+    return {
+        "jsonrpc": "2.0",
+        "id": req_id,
+        "result": {
+            "description": str(PROMPT_DEFINITIONS[name]["description"]),
+            "messages": [
+                {
+                    "role": "user",
+                    "content": {"type": "text", "text": prompt_text(name, question)},
+                }
+            ],
+        },
+    }
+
+
 def encyclopedia_resource_catalog(encyclopedia: Optional[GameEncyclopediaSource]) -> List[JSON]:
     if encyclopedia is None or not encyclopedia.available:
         return []
@@ -705,6 +809,12 @@ def handle_request(
             resources.extend(retrieval_resource_catalog(corpus))
         resources.extend(encyclopedia_resource_catalog(encyclopedia))
         return {"jsonrpc": "2.0", "id": req_id, "result": {"resources": resources}}
+
+    if method == "prompts/list":
+        return {"jsonrpc": "2.0", "id": req_id, "result": {"prompts": prompts_catalog()}}
+
+    if method == "prompts/get":
+        return handle_prompts_get(req_id, params)
 
     if method == "resources/read":
         uri = str(params.get("uri", "")).strip()

@@ -56,6 +56,17 @@ Advanced: if `CITIES2_GAME_DIR` is not enough, set `CITIES2_LOCALE_COK` to the f
 
 `--workspace` is a safety allowlist for workflow tools that write, build, or package projects. Repeat it once for each entry in `WORKSPACE_ROOTS`. Absolute project paths outside the configured workspaces are rejected with `Path must stay inside configured workspaces`.
 
+### Slash-command style prompts
+
+Cities2-MCP exposes MCP prompts that compatible clients may show as slash commands, prompt templates, or command-palette entries:
+
+- `/cities2` - answer using both the bundled wiki corpus and the local game Encyclopedia when available.
+- `/cities2-wiki` - answer using only the bundled wiki corpus.
+- `/cities2-encyclopedia` - answer using only the local in-game Encyclopedia.
+- `/cities2-modding` - answer modding questions with docs and local project workflow tools.
+
+Client support varies. If a client does not show MCP prompts as slash commands, the same workflows may still be available through that client's MCP prompt picker.
+
 ## 3. Detect installed clients
 
 A client can be installed even if its config file does not exist yet — many clients only create config files on demand.

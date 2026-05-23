@@ -68,6 +68,70 @@ class McpGameEncyclopediaTests(unittest.TestCase):
         self.assertIn("get_encyclopedia_entry", names)
         self.assertIn("source_status", names)
 
+    def test_prompts_list_includes_cities2_slash_command_workflows(self) -> None:
+        response = self.module.handle_request(
+            {"jsonrpc": "2.0", "id": 9, "method": "prompts/list", "params": {}},
+            corpus=None,
+            wm=None,
+            encyclopedia=None,
+            corpus_error=None,
+            workflow_error=None,
+            docs_paths={},
+        )
+
+        prompts = {prompt["name"]: prompt for prompt in response["result"]["prompts"]}
+        self.assertIn("cities2", prompts)
+        self.assertIn("cities2-wiki", prompts)
+        self.assertIn("cities2-encyclopedia", prompts)
+        self.assertIn("cities2-modding", prompts)
+        self.assertTrue(prompts["cities2"]["arguments"][0]["required"])
+
+    def test_prompts_get_returns_portable_source_workflow_prompt(self) -> None:
+        response = self.module.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 10,
+                "method": "prompts/get",
+                "params": {
+                    "name": "cities2-encyclopedia",
+                    "arguments": {"question": "Why are my citizens not using buses?"},
+                },
+            },
+            corpus=None,
+            wm=None,
+            encyclopedia=None,
+            corpus_error=None,
+            workflow_error=None,
+            docs_paths={},
+        )
+
+        text = response["result"]["messages"][0]["content"]["text"]
+        self.assertIn("/cities2-encyclopedia", text)
+        self.assertIn("Why are my citizens not using buses?", text)
+        self.assertIn("source_status()", text)
+        self.assertIn("search_encyclopedia", text)
+        self.assertIn("CITIES2_GAME_DIR", text)
+        self.assertNotIn("get_page", text)
+
+    def test_prompts_get_rejects_unknown_prompt(self) -> None:
+        response = self.module.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 11,
+                "method": "prompts/get",
+                "params": {"name": "cities2-forgotten-city", "arguments": {}},
+            },
+            corpus=None,
+            wm=None,
+            encyclopedia=None,
+            corpus_error=None,
+            workflow_error=None,
+            docs_paths={},
+        )
+
+        self.assertEqual(-32602, response["error"]["code"])
+        self.assertIn("Unknown prompt", response["error"]["message"])
+
     def test_source_status_reports_unavailable_encyclopedia(self) -> None:
         response = self.module.handle_tools_call(
             2,

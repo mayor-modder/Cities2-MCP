@@ -38,6 +38,17 @@ The server also includes local workflow tools for CS2 mod projects. An AI assist
 
 These tools are meant for local development workflows. They can write files and run commands, so configure workspaces deliberately.
 
+### Use Slash-Command Style Prompts
+
+Cities2-MCP exposes MCP prompts that clients can present as slash commands, prompt templates, or picker entries depending on client support:
+
+- `/cities2` answers with both the bundled wiki corpus and the local game Encyclopedia when available.
+- `/cities2-wiki` answers using only the bundled wiki corpus.
+- `/cities2-encyclopedia` answers using only the local in-game Encyclopedia read from the user's installed game files.
+- `/cities2-modding` answers modding questions with docs and, when explicitly requested, local mod project workflow tools.
+
+These prompts do not load the entire corpus into the model context. They guide the host assistant to check source availability, retrieve the relevant pages or entries, and synthesize an answer with clear source labels.
+
 ## Licensing
 
 The MCP server code is licensed under the MIT License. The internal retrieval layer includes code originally split out as `wiki-mcp`; its MIT notice is preserved in `THIRD_PARTY_NOTICES.md`. The included `data` corpus is licensed under Creative Commons Attribution-ShareAlike 3.0; source attribution and transformation notes are in `data/ATTRIBUTION.md`.
@@ -120,6 +131,15 @@ Mod project workflow:
 - `analyze_project(project_dir, profile=auto|cities2-csharp|cities2-ui|cities2-hybrid, strict=true)`
 - `package_project(project_dir, output_dir?, package_name?, exclude_globs?)`
 - `launch_cities2(executable?, flags?, platform=auto|mac|windows|linux, dry_run=true)`
+
+## MCP Prompts
+
+Clients that support MCP prompts can expose these as slash commands or prompt templates:
+
+- `cities2(question)` - use both wiki and local Encyclopedia sources.
+- `cities2-wiki(question)` - use only the bundled wiki corpus.
+- `cities2-encyclopedia(question)` - use only the local game Encyclopedia.
+- `cities2-modding(question)` - use docs and local mod project workflow tools for modding tasks.
 
 Project templates are stored at:
 

@@ -121,6 +121,16 @@ def main() -> None:
         tools = rpc(proc, 2, "tools/list", {})
         resources = rpc(proc, 15, "resources/list", {})
         templates = rpc(proc, 16, "resources/templates/list", {})
+        prompts = rpc(proc, 20, "prompts/list", {})
+        prompt = rpc(
+            proc,
+            21,
+            "prompts/get",
+            {
+                "name": "cities2",
+                "arguments": {"question": "Why is my bus line underused?"},
+            },
+        )
         expected_tools = {
             "search_encyclopedia",
             "get_encyclopedia_entry",
@@ -166,6 +176,8 @@ def main() -> None:
         print("tools count:", len(tools["result"]["tools"]))
         print("resources count:", len(resources["result"]["resources"]))
         print("resource templates count:", len(templates["result"]["resourceTemplates"]))
+        print("prompts count:", len(prompts["result"]["prompts"]))
+        print("prompt mode:", prompt["result"]["messages"][0]["content"]["text"].splitlines()[2])
         print("read resource uri:", page_read["result"]["contents"][0]["uri"])
         print("search count:", s1["count"])
         print("get_page title:", p1["title"])
