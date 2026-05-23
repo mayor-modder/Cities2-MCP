@@ -13,12 +13,18 @@ import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from urllib.parse import quote, unquote
 
 _server_dir = str(Path(__file__).resolve().parent)
 if _server_dir not in sys.path:
     sys.path.insert(0, _server_dir)
 
 from build_runner import BuildRunner
+from game_encyclopedia import (
+    GAME_ENCYCLOPEDIA_WARNING,
+    EncyclopediaConfig,
+    GameEncyclopediaSource,
+)
 from project_analyzer import ProjectAnalyzer
 from project_scaffold import ProjectScaffolder
 from retrieval import (
@@ -333,9 +339,185 @@ def domain_tools_catalog() -> List[JSON]:
     ]
 
 
+def encyclopedia_tools_catalog() -> List[JSON]:
+    return [
+        {
+            "name": "search_encyclopedia",
+            "description": "Search the local Cities: Skylines II in-game Encyclopedia read from the user's installed game files.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "limit": {"type": "integer", "minimum": 1, "maximum": 20, "default": 5},
+                },
+                "required": ["query"],
+            },
+        },
+        {
+            "name": "get_encyclopedia_entry",
+            "description": "Return one local Cities: Skylines II in-game Encyclopedia entry by entry_id.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {"entry_id": {"type": "string"}},
+                "required": ["entry_id"],
+            },
+        },
+        {
+            "name": "source_status",
+            "description": "Report Cities2-MCP source availability for the wiki corpus and local game Encyclopedia.",
+            "inputSchema": {"type": "object", "properties": {}},
+        },
+    ]
+
+
+def extra_tools_catalog() -> List[JSON]:
+    return domain_tools_catalog() + encyclopedia_tools_catalog()
+
+
+def encyclopedia_resource_catalog(encyclopedia: Optional[GameEncyclopediaSource]) -> List[JSON]:
+    if encyclopedia is None or not encyclopedia.available:
+        return []
+    resources: List[JSON] = []
+    for entry in encyclopedia.entries:
+        entry_id = str(entry.get("entry_id", "")).strip()
+        if not entry_id:
+            continue
+        resources.append(
+            {
+                "uri": f"cities2encyclopedia://entry/{quote(entry_id, safe='')}",
+                "name": str(entry.get("title") or entry_id),
+                "description": f"game encyclopedia entry: {entry_id}",
+                "mimeType": "application/json",
+            }
+        )
+    return resources
+
+
+def handle_encyclopedia_resource_read(
+    req_id: object,
+    uri: str,
+    encyclopedia: Optional[GameEncyclopediaSource],
+) -> Optional[JSON]:
+    prefix = "cities2encyclopedia://entry/"
+    if not uri.startswith(prefix):
+        return None
+    if encyclopedia is None or not encyclopedia.available:
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "error": {"code": -32001, "message": GAME_ENCYCLOPEDIA_WARNING},
+        }
+    entry_id = unquote(uri[len(prefix) :])
+    entry = encyclopedia.get_entry(entry_id)
+    if entry is None:
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "error": {"code": -32002, "message": f"Entry not found: {entry_id}"},
+        }
+    return {
+        "jsonrpc": "2.0",
+        "id": req_id,
+        "result": {
+            "contents": [
+                {
+                    "uri": uri,
+                    "mimeType": "application/json",
+                    "text": json.dumps(entry, ensure_ascii=False, indent=2),
+                }
+            ]
+        },
+    }
+
+
 # ---------------------------------------------------------------------------
 # Domain tools handler
 # ---------------------------------------------------------------------------
+
+
+def encyclopedia_unavailable_result() -> JSON:
+    return text_result({"ok": False, "message": GAME_ENCYCLOPEDIA_WARNING}, is_error=True)
+
+
+def handle_encyclopedia_tools(
+    req_id: object,
+    params: JSON,
+    *,
+    corpus: Optional[Corpus],
+    encyclopedia: Optional[GameEncyclopediaSource],
+    corpus_error: Optional[str],
+    docs_paths: Optional[Dict[str, str]],
+) -> Optional[JSON]:
+    try:
+        name = str(params.get("name", ""))
+        args = params.get("arguments") or {}
+        if not isinstance(args, dict):
+            args = {}
+
+        if name == "source_status":
+            wiki_status = {
+                "source": "wiki",
+                "available": corpus is not None,
+                "error": corpus_error or "",
+                "configured_paths": docs_paths or {},
+            }
+            game_status = (
+                encyclopedia.status()
+                if encyclopedia is not None
+                else {
+                    "source": "game_encyclopedia",
+                    "available": False,
+                    "warning": GAME_ENCYCLOPEDIA_WARNING,
+                    "cache_status": "unavailable",
+                    "entry_count": 0,
+                }
+            )
+            return {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "result": text_result({"wiki": wiki_status, "game_encyclopedia": game_status}),
+            }
+
+        if name == "search_encyclopedia":
+            if encyclopedia is None or not encyclopedia.available:
+                return {"jsonrpc": "2.0", "id": req_id, "result": encyclopedia_unavailable_result()}
+            query = str(args.get("query", "")).strip()
+            limit = max(1, min(20, int(args.get("limit", 5) or 5)))
+            if not query:
+                return {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "result": text_result({"ok": False, "message": "Missing query"}, is_error=True),
+                }
+            results = encyclopedia.search(query, limit=limit)
+            return {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "result": text_result({"ok": True, "query": query, "count": len(results), "results": results}),
+            }
+
+        if name == "get_encyclopedia_entry":
+            if encyclopedia is None or not encyclopedia.available:
+                return {"jsonrpc": "2.0", "id": req_id, "result": encyclopedia_unavailable_result()}
+            entry_id = str(args.get("entry_id", "")).strip()
+            entry = encyclopedia.get_entry(entry_id)
+            if entry is None:
+                return {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "result": text_result({"ok": False, "message": f"Entry not found: {entry_id}"}, is_error=True),
+                }
+            payload = dict(entry)
+            payload["ok"] = True
+            return {"jsonrpc": "2.0", "id": req_id, "result": text_result(payload)}
+
+        return None
+    except Exception as exc:
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": text_result({"ok": False, "error": str(exc)}, is_error=True),
+        }
 
 
 def handle_domain_tools(
@@ -446,7 +628,8 @@ def handle_tools_call(
     req_id: object,
     params: JSON,
     corpus: Optional[Corpus],
-    wm: Optional[WorkflowManager],
+    wm: Optional[WorkflowManager] = None,
+    encyclopedia: Optional[GameEncyclopediaSource] = None,
     corpus_error: Optional[str] = None,
     workflow_error: Optional[str] = None,
     docs_paths: Optional[Dict[str, str]] = None,
@@ -459,6 +642,17 @@ def handle_tools_call(
             "result": docs_guard_tool_result(corpus_error, docs_paths),
         }
 
+    encyclopedia_result = handle_encyclopedia_tools(
+        req_id,
+        params,
+        corpus=corpus,
+        encyclopedia=encyclopedia,
+        corpus_error=corpus_error,
+        docs_paths=docs_paths,
+    )
+    if encyclopedia_result is not None:
+        return encyclopedia_result
+
     result = retrieval_handle_request(
         {
             "jsonrpc": "2.0",
@@ -468,7 +662,7 @@ def handle_tools_call(
         },
         corpus,
         corpus_error=corpus_error,
-        extra_tools_catalog=domain_tools_catalog(),
+        extra_tools_catalog=extra_tools_catalog(),
         extra_tools_handler=lambda inner_req_id, inner_params: handle_domain_tools(
             inner_req_id,
             inner_params,
@@ -491,6 +685,7 @@ def handle_request(
     message: JSON,
     corpus: Optional[Corpus],
     wm: Optional[WorkflowManager],
+    encyclopedia: Optional[GameEncyclopediaSource] = None,
     corpus_error: Optional[str] = None,
     workflow_error: Optional[str] = None,
     docs_paths: Optional[Dict[str, str]] = None,
@@ -508,10 +703,14 @@ def handle_request(
         resources: List[JSON] = []
         if corpus is not None:
             resources.extend(retrieval_resource_catalog(corpus))
+        resources.extend(encyclopedia_resource_catalog(encyclopedia))
         return {"jsonrpc": "2.0", "id": req_id, "result": {"resources": resources}}
 
     if method == "resources/read":
         uri = str(params.get("uri", "")).strip()
+        encyclopedia_result = handle_encyclopedia_resource_read(req_id, uri, encyclopedia)
+        if encyclopedia_result is not None:
+            return encyclopedia_result
         if corpus is None:
             return docs_guard_rpc_error(req_id, corpus_error, docs_paths)
         return retrieval_handle_resources_read(req_id, params, corpus)
@@ -522,6 +721,7 @@ def handle_request(
             params,
             corpus,
             wm,
+            encyclopedia=encyclopedia,
             corpus_error=corpus_error,
             workflow_error=workflow_error,
             docs_paths=docs_paths,
@@ -531,7 +731,7 @@ def handle_request(
         message,
         corpus,
         corpus_error=corpus_error,
-        extra_tools_catalog=domain_tools_catalog(),
+        extra_tools_catalog=extra_tools_catalog(),
         extra_tools_handler=lambda inner_req_id, inner_params: handle_domain_tools(
             inner_req_id,
             inner_params,
@@ -554,6 +754,9 @@ def main() -> None:
     parser.add_argument("--data-dir", default=str(root / "data"))
     parser.add_argument("--workspace", action="append", dest="workspaces")
     parser.add_argument("--mods-dir", default=str(default_mods_dir()))
+    parser.add_argument("--game-dir")
+    parser.add_argument("--locale-cok")
+    parser.add_argument("--encyclopedia-cache-dir")
     args, extras = parser.parse_known_args()
 
     if extras:
@@ -565,6 +768,7 @@ def main() -> None:
 
     corpus: Optional[Corpus] = None
     wm: Optional[WorkflowManager] = None
+    encyclopedia: Optional[GameEncyclopediaSource] = None
     corpus_error: Optional[str] = None
     workflow_error: Optional[str] = None
     docs_paths = {
@@ -586,6 +790,18 @@ def main() -> None:
         workflow_error = str(exc)
         debug_log(f"WorkflowManager init failed: {workflow_error}")
 
+    try:
+        encyclopedia = GameEncyclopediaSource.load(
+            EncyclopediaConfig(
+                game_dir=Path(args.game_dir) if args.game_dir else None,
+                locale_cok=Path(args.locale_cok) if args.locale_cok else None,
+                cache_dir=Path(args.encyclopedia_cache_dir) if args.encyclopedia_cache_dir else None,
+            )
+        )
+    except Exception as exc:
+        debug_log(f"Game encyclopedia init failed: {exc}")
+        encyclopedia = None
+
     if debug_enabled():
         if corpus is not None:
             debug_log(f"Corpus loaded from {args.data_dir}")
@@ -597,6 +813,17 @@ def main() -> None:
             debug_log(f"Mods dir={wm.mods_dir}")
         else:
             debug_log(f"Workflow manager unavailable: {workflow_error}")
+        if encyclopedia is not None:
+            try:
+                encyclopedia_status = encyclopedia.status()
+            except Exception as exc:
+                encyclopedia_status = {"source": "game_encyclopedia", "available": False, "error": str(exc)}
+            debug_log(
+                "Game encyclopedia status: "
+                + json.dumps(encyclopedia_status, ensure_ascii=False, sort_keys=True)
+            )
+        else:
+            debug_log("Game encyclopedia status: unavailable (init returned None)")
 
     try:
         while True:
@@ -613,6 +840,7 @@ def main() -> None:
                         item,
                         corpus,
                         wm,
+                        encyclopedia=encyclopedia,
                         corpus_error=corpus_error,
                         workflow_error=workflow_error,
                         docs_paths=docs_paths,
@@ -631,6 +859,7 @@ def main() -> None:
                 msg,
                 corpus,
                 wm,
+                encyclopedia=encyclopedia,
                 corpus_error=corpus_error,
                 workflow_error=workflow_error,
                 docs_paths=docs_paths,

@@ -42,14 +42,17 @@ The CS2 toolchain's `ModPostProcessor` and `ModPublisher` target `Microsoft.NETC
 
 ## 2. Resolve local values
 
-You need four values. Determine them now before writing any config.
+You need four required values. There is also one optional game-directory override for non-standard installs. Determine them now before writing any config.
 
 | Value | How to resolve |
 |---|---|
 | `PYTHON_PATH` | The full absolute path from step 1. |
 | `REPO_ROOT` | The absolute path to this repository's root directory (the directory containing this `INSTALL.md` file). |
 | `CITIES2_MODS_DIR` | **Windows:** Expand `%LOCALAPPDATA%Low\Colossal Order\Cities Skylines II\Mods` (typically `C:\Users\<username>\AppData\LocalLow\Colossal Order\Cities Skylines II\Mods`). **macOS:** `~/Library/Application Support/Colossal Order/Cities Skylines II/Mods`. **Linux:** `~/.local/share/Colossal Order/Cities Skylines II/Mods`. |
+| `CITIES2_GAME_DIR` | Optional. Usually auto-detected for Steam installs. Set this only when `source_status()` reports that the Game Encyclopedia was not found. Point it at the Cities: Skylines II install directory, not the `Cities2_Data` directory. |
 | `WORKSPACE_ROOTS` | Trusted folders where MCP workflow tools may read/write/build projects. Always include `REPO_ROOT`. If the user wants to analyze, build, package, or edit existing mod repos, also include those repo paths or a trusted parent folder containing them, such as the user's mod-projects folder. |
+
+Advanced: if `CITIES2_GAME_DIR` is not enough, set `CITIES2_LOCALE_COK` to the full path of the specific `Locale.cok` file.
 
 `--workspace` is a safety allowlist for workflow tools that write, build, or package projects. Repeat it once for each entry in `WORKSPACE_ROOTS`. Absolute project paths outside the configured workspaces are rejected with `Path must stay inside configured workspaces`.
 
@@ -155,6 +158,8 @@ mod repos the user wants the MCP workflow tools to operate on.
 }
 ```
 
+Do not add `CITIES2_GAME_DIR` unless automatic discovery fails or the user has a non-standard install location. If needed, add it to the MCP server environment with the game install directory as its value.
+
 This block goes **inside** the `mcpServers` key, not at the top level. For example, if the file already has:
 
 ```json
@@ -188,6 +193,8 @@ It should become:
 }
 ```
 
+Do not add `CITIES2_GAME_DIR` unless automatic discovery fails or the user has a non-standard install location. If needed, add it to the MCP server environment with the game install directory as its value.
+
 ### Claude Code
 
 Prefer the Claude Code MCP command instead of hand-editing `~/.claude.json`:
@@ -204,6 +211,8 @@ $json = @'
 '@
 claude mcp add-json cities2-mcp $json --scope user
 ```
+
+Do not add `CITIES2_GAME_DIR` unless automatic discovery fails or the user has a non-standard install location. If needed, add it to the MCP server environment with the game install directory as its value.
 
 Use `--scope project` only if the user explicitly wants a shared project-level `.mcp.json` file.
 If the user wants workflow tools to operate on existing mod repos, add more
@@ -231,6 +240,8 @@ args = [
 CITIES2_MODS_DIR = "<CITIES2_MODS_DIR>"
 ```
 
+Do not add `CITIES2_GAME_DIR` unless automatic discovery fails or the user has a non-standard install location. If needed, add it to the MCP server environment with the game install directory as its value.
+
 ### Other / generic MCP client
 
 For any MCP client not listed above, use the JSON shape from the "JSON clients" section. Consult that client's documentation for where to place MCP server configuration.
@@ -247,6 +258,8 @@ After writing the config, test that the server starts and responds. Run this fro
 The smoke test validates MCP initialize/list, wiki retrieval tools, resource
 listing, and mod workflow tools using a temporary workspace. It does not require
 the optional CS2/.NET build prerequisites.
+
+`source_status()` may report that the Game Encyclopedia is unavailable on machines without Cities: Skylines II installed. That is a warning, not an install failure.
 
 You can also do a quick local tool-list check:
 
