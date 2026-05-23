@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import time
+from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -17,6 +18,14 @@ GAME_ENCYCLOPEDIA_WARNING = (
     "Set CITIES2_GAME_DIR or CITIES2_LOCALE_COK to enable local game Encyclopedia search."
 )
 RELATIVE_LOCALE_COK = Path("Cities2_Data") / "Content" / "Game" / "Locale.cok"
+_GLOSSARY_PREFIX = "Glossary."
+_IMAGE_RE = re.compile(r"<image:([^>]+)>")
+_ICON_RE = re.compile(r"<icon:([^>]+)>")
+_INPUT_ACTION_RE = re.compile(r"<inputAction:([^>]+)>")
+_BOLD_RE = re.compile(r"\*\*([^*]+)\*\*")
+_SECTION_RE = re.compile(r"^Glossary\.SECTION_(?P<kind>TITLE|CONTENT)\[(?P<id>[^\]]+)\]$")
+_TAB_RE = re.compile(r"^Glossary\.TAB\[(?P<id>[^\]]+)\]$")
+_CATEGORY_RE = re.compile(r"^Glossary\.CATEGORY\[(?P<id>[^\]]+)\]$")
 
 
 @dataclass(frozen=True)
@@ -177,6 +186,132 @@ def discover_steam_locale(steam_root: Path) -> LocaleDiscovery:
             steam_build_id=read_steam_build_id(library),
         )
     return LocaleDiscovery(available=False)
+
+
+def _read_varint(data: bytes, offset: int) -> Optional[tuple[int, int]]:
+    value = 0
+    shift = 0
+    pos = offset
+    while pos < len(data) and shift <= 28:
+        byte = data[pos]
+        pos += 1
+        value |= (byte & 0x7F) << shift
+        if not byte & 0x80:
+            return value, pos
+        shift += 7
+    return None
+
+
+def _read_utf8_field(data: bytes, offset: int) -> Optional[tuple[str, int]]:
+    parsed = _read_varint(data, offset)
+    if parsed is None:
+        return None
+    length, pos = parsed
+    if length < 0 or length > 500_000:
+        return None
+    end = pos + length
+    if end > len(data):
+        return None
+    try:
+        return data[pos:end].decode("utf-8"), end
+    except UnicodeDecodeError:
+        return None
+
+
+def extract_glossary_records(data: bytes) -> "OrderedDict[str, str]":
+    records: "OrderedDict[str, str]" = OrderedDict()
+    offset = 0
+    while offset < len(data):
+        key_field = _read_utf8_field(data, offset)
+        if key_field is None:
+            offset += 1
+            continue
+        key, after_key = key_field
+        if not key.startswith(_GLOSSARY_PREFIX):
+            offset += 1
+            continue
+        value_field = _read_utf8_field(data, after_key)
+        if value_field is None:
+            offset += 1
+            continue
+        value, after_value = value_field
+        records[key] = value
+        offset = after_value
+    return records
+
+
+def _display_token(value: str) -> str:
+    token = value.rsplit("/", 1)[-1]
+    if "/" in value:
+        token = token.rsplit(".", 1)[0]
+    return token.strip()
+
+
+def clean_markup_text(text: str) -> str:
+    cleaned = text.replace("\r\n", "\n").replace("\r", "\n")
+    cleaned = _BOLD_RE.sub(r"\1", cleaned)
+    cleaned = _IMAGE_RE.sub("", cleaned)
+    cleaned = _INPUT_ACTION_RE.sub(lambda m: _display_token(m.group(1)), cleaned)
+    cleaned = _ICON_RE.sub(lambda m: _display_token(m.group(1)), cleaned)
+    lines = [re.sub(r"[ \t]+", " ", line).strip() for line in cleaned.split("\n")]
+    lines = [line for line in lines if line]
+    return "\n".join(lines)
+
+
+def _entry_id(raw_id: str) -> str:
+    return raw_id.strip().lower()
+
+
+def _split_section_id(raw_id: str) -> tuple[str, str]:
+    parts = raw_id.split(".")
+    tab_key = parts[0] if parts else ""
+    category_key = parts[1] if len(parts) > 1 else ""
+    return tab_key, category_key
+
+
+def records_to_entries(records: "OrderedDict[str, str]", *, locale: str, source_metadata: JSON) -> List[JSON]:
+    tabs: Dict[str, str] = {}
+    categories: Dict[str, str] = {}
+    titles: Dict[str, str] = {}
+    contents: Dict[str, str] = {}
+
+    for key, value in records.items():
+        tab_match = _TAB_RE.match(key)
+        if tab_match:
+            tabs[tab_match.group("id")] = value.strip()
+            continue
+        category_match = _CATEGORY_RE.match(key)
+        if category_match:
+            categories[category_match.group("id")] = value.strip()
+            continue
+        section_match = _SECTION_RE.match(key)
+        if section_match:
+            section_id = section_match.group("id")
+            if section_match.group("kind") == "TITLE":
+                titles[section_id] = value.strip()
+            else:
+                contents[section_id] = value
+
+    entries: List[JSON] = []
+    for section_id, raw_content in contents.items():
+        title = titles.get(section_id, section_id.rsplit(".", 1)[-1]).strip()
+        tab_key, category_key = _split_section_id(section_id)
+        text = clean_markup_text(raw_content)
+        entry = {
+            "entry_id": _entry_id(section_id),
+            "source": "game_encyclopedia",
+            "source_key": f"Glossary.SECTION_CONTENT[{section_id}]",
+            "title": title,
+            "tab": tabs.get(tab_key, tab_key),
+            "category": categories.get(category_key, category_key),
+            "raw_content": raw_content,
+            "text": text,
+            "locale": locale,
+            "metadata": dict(source_metadata),
+        }
+        entries.append(entry)
+    entries.sort(key=lambda item: (str(item["tab"]), str(item["category"]), str(item["title"])))
+    return entries
 
 
 def cache_dir_default() -> Path:

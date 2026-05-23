@@ -171,5 +171,90 @@ class GameEncyclopediaCacheTests(unittest.TestCase):
             self.assertFalse(cache_is_fresh(cache_dir, fingerprint))
 
 
+from game_encyclopedia import (  # noqa: E402
+    clean_markup_text,
+    extract_glossary_records,
+    records_to_entries,
+)
+
+
+def encode_varint(value: int) -> bytes:
+    parts = bytearray()
+    while True:
+        byte = value & 0x7F
+        value >>= 7
+        if value:
+            parts.append(byte | 0x80)
+        else:
+            parts.append(byte)
+            break
+    return bytes(parts)
+
+
+def synthetic_locale_blob(records: dict[str, str]) -> bytes:
+    blob = bytearray(b"synthetic-header")
+    for key, value in records.items():
+        key_bytes = key.encode("utf-8")
+        value_bytes = value.encode("utf-8")
+        blob.extend(encode_varint(len(key_bytes)))
+        blob.extend(key_bytes)
+        blob.extend(encode_varint(len(value_bytes)))
+        blob.extend(value_bytes)
+    return bytes(blob)
+
+
+class GameEncyclopediaParserTests(unittest.TestCase):
+    def test_extracts_glossary_records_from_synthetic_locale_blob(self) -> None:
+        blob = synthetic_locale_blob(
+            {
+                "Glossary.TAB[Roads]": "Roads",
+                "Glossary.CATEGORY[RoadBasics]": "Road Basics",
+                "Glossary.SECTION_TITLE[Roads.RoadBasics.Roads]": "Roads",
+                "Glossary.SECTION_CONTENT[Roads.RoadBasics.Roads]": "**Roads** connect zones.\r\n<image:Media/Game/Glossary/Roads.png>",
+            }
+        )
+
+        records = extract_glossary_records(blob)
+        entries = records_to_entries(records, locale="en-US", source_metadata={"steam_build_id": "23061229"})
+
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]["entry_id"], "roads.roadbasics.roads")
+        self.assertEqual(entries[0]["tab"], "Roads")
+        self.assertEqual(entries[0]["category"], "Road Basics")
+        self.assertEqual(entries[0]["title"], "Roads")
+        self.assertIn("Roads connect zones.", entries[0]["text"])
+        self.assertIn("<image:", entries[0]["raw_content"])
+        self.assertEqual(entries[0]["source"], "game_encyclopedia")
+
+    def test_content_section_id_can_contain_title(self) -> None:
+        records = synthetic_locale_blob(
+            {
+                "Glossary.TAB[Roads]": "Roads",
+                "Glossary.CATEGORY[RoadBasics]": "Road Basics",
+                "Glossary.SECTION_TITLE[Roads.RoadBasics.TITLECase]": "Title Case",
+                "Glossary.SECTION_CONTENT[Roads.RoadBasics.TITLECase]": "Content survives.",
+            }
+        )
+
+        entries = records_to_entries(
+            extract_glossary_records(records),
+            locale="en-US",
+            source_metadata={},
+        )
+
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]["entry_id"], "roads.roadbasics.titlecase")
+        self.assertEqual(entries[0]["title"], "Title Case")
+        self.assertEqual(entries[0]["text"], "Content survives.")
+
+    def test_clean_markup_text_removes_retrieval_noise(self) -> None:
+        cleaned = clean_markup_text(
+            "**Roads**\r\n<image:Media/Game/Glossary/Roads.png>\r\n"
+            "Press <inputAction:Tool.Select> near <icon:Roads>."
+        )
+
+        self.assertEqual(cleaned, "Roads\nPress Tool.Select near Roads.")
+
+
 if __name__ == "__main__":
     unittest.main()
