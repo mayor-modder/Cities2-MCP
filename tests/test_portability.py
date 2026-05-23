@@ -229,6 +229,24 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("6.", text)
             self.assertIn("dotnet --list-runtimes", text)
 
+    def test_agent_skills_are_packaged_and_documented(self) -> None:
+        readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+        install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
+        skill_names = ["cities2-knowledge", "cities2-modding"]
+
+        for skill_name in skill_names:
+            skill_dir = ROOT / "skills" / skill_name
+            skill_text = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
+            metadata_text = (skill_dir / "agents" / "openai.yaml").read_text(encoding="utf-8")
+
+            self.assertIn(f"name: {skill_name}", skill_text)
+            self.assertIn("description:", skill_text)
+            self.assertNotIn("TODO", skill_text)
+            self.assertIn("cities2-mcp", metadata_text)
+            self.assertIn(f"${skill_name}", metadata_text)
+            self.assertIn(skill_name, readme_text)
+            self.assertIn(skill_name, install_text)
+
     def test_docs_do_not_advertise_unimplemented_workspace_escape_flag(self) -> None:
         for path in (ROOT / "README.md", ROOT / "INSTALL.md"):
             self.assertNotIn("--allow-any-workspace", path.read_text(encoding="utf-8"))

@@ -38,16 +38,25 @@ The server also includes local workflow tools for CS2 mod projects. An AI assist
 
 These tools are meant for local development workflows. They can write files and run commands, so configure workspaces deliberately.
 
+### Use Agent Skills
+
+Cities2-MCP ships Agent Skills that teach compatible agents how to query and interpret the MCP sources effectively:
+
+- `cities2-knowledge` answers gameplay and city-system questions from both the bundled wiki corpus and the local game Encyclopedia.
+- `cities2-modding` answers modding questions and guides local mod project workflows.
+
+These skills are stored in `skills/`. Install or copy them into your agent's skill directory if your client supports Agent Skills. They are the recommended way to get natural answers to questions like "how do I grow office demand?" because they tell the agent to use keyword queries, fetch full pages or entries, compare source authority, and synthesize an answer.
+
 ### Use Slash-Command Style Prompts
 
-Cities2-MCP exposes MCP prompts that clients can present as slash commands, prompt templates, or picker entries depending on client support:
+Cities2-MCP also exposes MCP prompts that clients can present as slash commands, prompt templates, or picker entries depending on client support:
 
 - `/cities2` answers with both the bundled wiki corpus and the local game Encyclopedia when available.
 - `/cities2-wiki` answers using only the bundled wiki corpus.
 - `/cities2-encyclopedia` answers using only the local in-game Encyclopedia read from the user's installed game files.
 - `/cities2-modding` answers modding questions with docs and, when explicitly requested, local mod project workflow tools.
 
-These prompts do not load the entire corpus into the model context. They guide the host assistant to check source availability, retrieve the relevant pages or entries, and synthesize an answer with clear source labels.
+These prompts do not load the entire corpus into the model context. They guide the host assistant to check source availability, retrieve the relevant pages or entries, and synthesize an answer with clear source labels. Client support for MCP prompts varies, so use the Agent Skills when available.
 
 ## Licensing
 
@@ -140,6 +149,15 @@ Clients that support MCP prompts can expose these as slash commands or prompt te
 - `cities2-wiki(question)` - use only the bundled wiki corpus.
 - `cities2-encyclopedia(question)` - use only the local game Encyclopedia.
 - `cities2-modding(question)` - use docs and local mod project workflow tools for modding tasks.
+
+## Agent Skills
+
+Skills live under `skills/`:
+
+- `skills/cities2-knowledge/SKILL.md`
+- `skills/cities2-modding/SKILL.md`
+
+Install them into a compatible client's skill folder, or keep them in the repo as project-level guidance where supported. The skills depend on the `cities2-mcp` MCP server being configured.
 
 Project templates are stored at:
 

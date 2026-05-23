@@ -67,6 +67,15 @@ Cities2-MCP exposes MCP prompts that compatible clients may show as slash comman
 
 Client support varies. If a client does not show MCP prompts as slash commands, the same workflows may still be available through that client's MCP prompt picker.
 
+### Agent Skills
+
+Cities2-MCP also ships Agent Skills in the `skills/` directory. These are recommended for clients that support skills because they teach the agent how to query the wiki and local Encyclopedia with keywords, fetch full source records, compare source authority, and synthesize answers.
+
+- `skills/cities2-knowledge` - gameplay and city-system questions using wiki plus local Encyclopedia.
+- `skills/cities2-modding` - modding questions and local mod project workflows.
+
+Install these skills into the client's supported skill directory if the client does not load project-level skills automatically. The skills depend on the `cities2-mcp` MCP server being configured first.
+
 ## 3. Detect installed clients
 
 A client can be installed even if its config file does not exist yet — many clients only create config files on demand.
