@@ -10,9 +10,31 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class FakeAvailableEncyclopedia:
     available = True
+    entries = [{"entry_id": "roads/basic", "title": "Basic Roads"}]
 
     def search(self, query: str, *, limit: int = 5):
         return []
+
+    def get_entry(self, entry_id: str):
+        if entry_id == "roads/basic":
+            return {"entry_id": entry_id, "title": "Basic Roads", "text": "Road text"}
+        return None
+
+    def status(self):
+        return {"source": "game_encyclopedia", "available": True, "entry_count": 0}
+
+
+class FakeUnavailableEncyclopedia:
+    available = False
+    entries = []
+
+    def status(self):
+        return {
+            "source": "game_encyclopedia",
+            "available": False,
+            "cache_status": "missing",
+            "warning": "Game Encyclopedia not found",
+        }
 
 
 def load_module(name: str, path: Path):
@@ -93,3 +115,172 @@ class McpGameEncyclopediaTests(unittest.TestCase):
 
         self.assertFalse(payload["ok"])
         self.assertIn("error", payload)
+
+    def test_resources_list_includes_encyclopedia_entries_when_available(self) -> None:
+        encyclopedia = type(
+            "FakeEncyclopedia",
+            (),
+            {
+                "available": True,
+                "entries": [{"entry_id": "roads", "title": "Roads"}],
+                "get_entry": lambda self, entry_id: {"entry_id": entry_id, "title": "Roads", "text": "Road text"},
+                "status": lambda self: {"source": "game_encyclopedia", "available": True, "entry_count": 1},
+            },
+        )()
+
+        response = self.module.handle_request(
+            {"jsonrpc": "2.0", "id": 4, "method": "resources/list", "params": {}},
+            corpus=None,
+            wm=None,
+            encyclopedia=encyclopedia,
+            corpus_error=None,
+            workflow_error=None,
+            docs_paths={},
+        )
+
+        uris = {item["uri"] for item in response["result"]["resources"]}
+        self.assertIn("cities2encyclopedia://entry/roads", uris)
+
+    def test_resources_list_uri_encodes_encyclopedia_entry_ids(self) -> None:
+        response = self.module.handle_request(
+            {"jsonrpc": "2.0", "id": 6, "method": "resources/list", "params": {}},
+            corpus=None,
+            wm=None,
+            encyclopedia=FakeAvailableEncyclopedia(),
+            corpus_error=None,
+            workflow_error=None,
+            docs_paths={},
+        )
+
+        uris = {item["uri"] for item in response["result"]["resources"]}
+        self.assertIn("cities2encyclopedia://entry/roads%2Fbasic", uris)
+
+    def test_resources_read_returns_encyclopedia_entry_json(self) -> None:
+        response = self.module.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 7,
+                "method": "resources/read",
+                "params": {"uri": "cities2encyclopedia://entry/roads%2Fbasic"},
+            },
+            corpus=None,
+            wm=None,
+            encyclopedia=FakeAvailableEncyclopedia(),
+            corpus_error=None,
+            workflow_error=None,
+            docs_paths={},
+        )
+
+        content = response["result"]["contents"][0]
+        payload = json.loads(content["text"])
+        self.assertEqual("application/json", content["mimeType"])
+        self.assertEqual("cities2encyclopedia://entry/roads%2Fbasic", content["uri"])
+        self.assertEqual("roads/basic", payload["entry_id"])
+        self.assertEqual("Road text", payload["text"])
+
+    def test_resources_read_unavailable_encyclopedia_returns_warning_error(self) -> None:
+        response = self.module.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 8,
+                "method": "resources/read",
+                "params": {"uri": "cities2encyclopedia://entry/roads"},
+            },
+            corpus=None,
+            wm=None,
+            encyclopedia=FakeUnavailableEncyclopedia(),
+            corpus_error=None,
+            workflow_error=None,
+            docs_paths={},
+        )
+
+        self.assertEqual(-32001, response["error"]["code"])
+        self.assertIn("Game Encyclopedia not found", response["error"]["message"])
+
+    def test_main_debug_logs_unavailable_encyclopedia_status(self) -> None:
+        loaded_encyclopedia = FakeUnavailableEncyclopedia()
+        logs = []
+        messages = iter([None])
+
+        original_argv = self.module.sys.argv
+        original_corpus = self.module.Corpus
+        original_wm = self.module.WorkflowManager
+        original_load = self.module.GameEncyclopediaSource.load
+        original_read = self.module.read_message
+        original_debug_enabled = self.module.debug_enabled
+        original_debug_log = self.module.debug_log
+
+        try:
+            self.module.sys.argv = ["mcp_server.py"]
+            self.module.Corpus = lambda paths: None
+            self.module.WorkflowManager = lambda workspaces, mods_dir: None
+            self.module.GameEncyclopediaSource.load = lambda config: loaded_encyclopedia
+            self.module.read_message = lambda: next(messages)
+            self.module.debug_enabled = lambda: True
+            self.module.debug_log = logs.append
+
+            self.module.main()
+        finally:
+            self.module.sys.argv = original_argv
+            self.module.Corpus = original_corpus
+            self.module.WorkflowManager = original_wm
+            self.module.GameEncyclopediaSource.load = original_load
+            self.module.read_message = original_read
+            self.module.debug_enabled = original_debug_enabled
+            self.module.debug_log = original_debug_log
+
+        encyclopedia_logs = [line for line in logs if "Game encyclopedia status:" in line]
+        self.assertEqual(1, len(encyclopedia_logs))
+        self.assertIn("missing", encyclopedia_logs[0])
+        self.assertIn("Game Encyclopedia not found", encyclopedia_logs[0])
+
+    def test_main_passes_loaded_encyclopedia_to_request_handler(self) -> None:
+        loaded_encyclopedia = FakeAvailableEncyclopedia()
+        seen_encyclopedias = []
+        sent_messages = []
+        messages = iter(
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "id": 5,
+                    "method": "tools/call",
+                    "params": {"name": "source_status", "arguments": {}},
+                },
+                None,
+            ]
+        )
+
+        original_argv = self.module.sys.argv
+        original_corpus = self.module.Corpus
+        original_wm = self.module.WorkflowManager
+        original_load = self.module.GameEncyclopediaSource.load
+        original_read = self.module.read_message
+        original_send = self.module.send_message
+        original_handle_request = self.module.handle_request
+
+        def tracking_handle_request(message, corpus, wm, **kwargs):
+            seen_encyclopedias.append(kwargs.get("encyclopedia"))
+            return original_handle_request(message, corpus, wm, **kwargs)
+
+        try:
+            self.module.sys.argv = ["mcp_server.py"]
+            self.module.Corpus = lambda paths: None
+            self.module.WorkflowManager = lambda workspaces, mods_dir: None
+            self.module.GameEncyclopediaSource.load = lambda config: loaded_encyclopedia
+            self.module.read_message = lambda: next(messages)
+            self.module.send_message = sent_messages.append
+            self.module.handle_request = tracking_handle_request
+
+            self.module.main()
+        finally:
+            self.module.sys.argv = original_argv
+            self.module.Corpus = original_corpus
+            self.module.WorkflowManager = original_wm
+            self.module.GameEncyclopediaSource.load = original_load
+            self.module.read_message = original_read
+            self.module.send_message = original_send
+            self.module.handle_request = original_handle_request
+
+        self.assertEqual([loaded_encyclopedia], seen_encyclopedias)
+        payload = json.loads(sent_messages[0]["result"]["content"][0]["text"])
+        self.assertTrue(payload["game_encyclopedia"]["available"])

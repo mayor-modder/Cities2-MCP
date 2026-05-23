@@ -13,6 +13,7 @@ import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from urllib.parse import quote, unquote
 
 _server_dir = str(Path(__file__).resolve().parent)
 if _server_dir not in sys.path:
@@ -21,6 +22,7 @@ if _server_dir not in sys.path:
 from build_runner import BuildRunner
 from game_encyclopedia import (
     GAME_ENCYCLOPEDIA_WARNING,
+    EncyclopediaConfig,
     GameEncyclopediaSource,
 )
 from project_analyzer import ProjectAnalyzer
@@ -372,6 +374,62 @@ def extra_tools_catalog() -> List[JSON]:
     return domain_tools_catalog() + encyclopedia_tools_catalog()
 
 
+def encyclopedia_resource_catalog(encyclopedia: Optional[GameEncyclopediaSource]) -> List[JSON]:
+    if encyclopedia is None or not encyclopedia.available:
+        return []
+    resources: List[JSON] = []
+    for entry in encyclopedia.entries:
+        entry_id = str(entry.get("entry_id", "")).strip()
+        if not entry_id:
+            continue
+        resources.append(
+            {
+                "uri": f"cities2encyclopedia://entry/{quote(entry_id, safe='')}",
+                "name": str(entry.get("title") or entry_id),
+                "description": f"game encyclopedia entry: {entry_id}",
+                "mimeType": "application/json",
+            }
+        )
+    return resources
+
+
+def handle_encyclopedia_resource_read(
+    req_id: object,
+    uri: str,
+    encyclopedia: Optional[GameEncyclopediaSource],
+) -> Optional[JSON]:
+    prefix = "cities2encyclopedia://entry/"
+    if not uri.startswith(prefix):
+        return None
+    if encyclopedia is None or not encyclopedia.available:
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "error": {"code": -32001, "message": GAME_ENCYCLOPEDIA_WARNING},
+        }
+    entry_id = unquote(uri[len(prefix) :])
+    entry = encyclopedia.get_entry(entry_id)
+    if entry is None:
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "error": {"code": -32002, "message": f"Entry not found: {entry_id}"},
+        }
+    return {
+        "jsonrpc": "2.0",
+        "id": req_id,
+        "result": {
+            "contents": [
+                {
+                    "uri": uri,
+                    "mimeType": "application/json",
+                    "text": json.dumps(entry, ensure_ascii=False, indent=2),
+                }
+            ]
+        },
+    }
+
+
 # ---------------------------------------------------------------------------
 # Domain tools handler
 # ---------------------------------------------------------------------------
@@ -645,10 +703,14 @@ def handle_request(
         resources: List[JSON] = []
         if corpus is not None:
             resources.extend(retrieval_resource_catalog(corpus))
+        resources.extend(encyclopedia_resource_catalog(encyclopedia))
         return {"jsonrpc": "2.0", "id": req_id, "result": {"resources": resources}}
 
     if method == "resources/read":
         uri = str(params.get("uri", "")).strip()
+        encyclopedia_result = handle_encyclopedia_resource_read(req_id, uri, encyclopedia)
+        if encyclopedia_result is not None:
+            return encyclopedia_result
         if corpus is None:
             return docs_guard_rpc_error(req_id, corpus_error, docs_paths)
         return retrieval_handle_resources_read(req_id, params, corpus)
@@ -692,6 +754,9 @@ def main() -> None:
     parser.add_argument("--data-dir", default=str(root / "data"))
     parser.add_argument("--workspace", action="append", dest="workspaces")
     parser.add_argument("--mods-dir", default=str(default_mods_dir()))
+    parser.add_argument("--game-dir")
+    parser.add_argument("--locale-cok")
+    parser.add_argument("--encyclopedia-cache-dir")
     args, extras = parser.parse_known_args()
 
     if extras:
@@ -703,6 +768,7 @@ def main() -> None:
 
     corpus: Optional[Corpus] = None
     wm: Optional[WorkflowManager] = None
+    encyclopedia: Optional[GameEncyclopediaSource] = None
     corpus_error: Optional[str] = None
     workflow_error: Optional[str] = None
     docs_paths = {
@@ -724,6 +790,18 @@ def main() -> None:
         workflow_error = str(exc)
         debug_log(f"WorkflowManager init failed: {workflow_error}")
 
+    try:
+        encyclopedia = GameEncyclopediaSource.load(
+            EncyclopediaConfig(
+                game_dir=Path(args.game_dir) if args.game_dir else None,
+                locale_cok=Path(args.locale_cok) if args.locale_cok else None,
+                cache_dir=Path(args.encyclopedia_cache_dir) if args.encyclopedia_cache_dir else None,
+            )
+        )
+    except Exception as exc:
+        debug_log(f"Game encyclopedia init failed: {exc}")
+        encyclopedia = None
+
     if debug_enabled():
         if corpus is not None:
             debug_log(f"Corpus loaded from {args.data_dir}")
@@ -735,6 +813,17 @@ def main() -> None:
             debug_log(f"Mods dir={wm.mods_dir}")
         else:
             debug_log(f"Workflow manager unavailable: {workflow_error}")
+        if encyclopedia is not None:
+            try:
+                encyclopedia_status = encyclopedia.status()
+            except Exception as exc:
+                encyclopedia_status = {"source": "game_encyclopedia", "available": False, "error": str(exc)}
+            debug_log(
+                "Game encyclopedia status: "
+                + json.dumps(encyclopedia_status, ensure_ascii=False, sort_keys=True)
+            )
+        else:
+            debug_log("Game encyclopedia status: unavailable (init returned None)")
 
     try:
         while True:
@@ -751,6 +840,7 @@ def main() -> None:
                         item,
                         corpus,
                         wm,
+                        encyclopedia=encyclopedia,
                         corpus_error=corpus_error,
                         workflow_error=workflow_error,
                         docs_paths=docs_paths,
@@ -769,6 +859,7 @@ def main() -> None:
                 msg,
                 corpus,
                 wm,
+                encyclopedia=encyclopedia,
                 corpus_error=corpus_error,
                 workflow_error=workflow_error,
                 docs_paths=docs_paths,
