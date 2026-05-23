@@ -15,4 +15,6 @@ mcp.config.json
 # Local game Encyclopedia cache/previews; generated from a user's installed game files.
 game-encyclopedia-cache/
 data-game-encyclopedia/
+Locale.cok
+*.cok
 *.Locale.cok

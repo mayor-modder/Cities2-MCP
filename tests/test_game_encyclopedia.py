@@ -318,6 +318,7 @@ class GameEncyclopediaSourceTests(unittest.TestCase):
 
             self.assertFalse(source.available)
             self.assertFalse(source.status()["available"])
+            self.assertIn("no glossary entries", source.status()["warning"])
             self.assertEqual(source.status()["locale_cok_path"], str(locale.resolve()))
             self.assertEqual(source.status()["cache_status"], "rebuilt")
             self.assertEqual(source.status()["entry_count"], 0)

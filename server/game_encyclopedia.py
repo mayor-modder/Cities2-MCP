@@ -544,6 +544,8 @@ class GameEncyclopediaSource:
     def status(self) -> JSON:
         payload = source_status_payload(self.discovery, cache_status=self.cache_status, entry_count=len(self.entries))
         payload["available"] = self.available
+        if not self.available and not payload.get("warning"):
+            payload["warning"] = "Game Encyclopedia was found, but no glossary entries could be loaded."
         return payload
 
     def search(self, query: str, *, limit: int = 5) -> List[JSON]:
