@@ -1,6 +1,13 @@
 ---
 name: cities2-knowledge
-description: MUST use automatically for any Cities: Skylines II gameplay, city-management, or game-mechanics question, even when the user does not mention Cities2-MCP, wiki, Encyclopedia, or sources. Use for plain questions like "How do I grow office demand?", "How do I get more people to use my subway?", "What makes citizens healthier?", "Why is housing demand low?", "How do taxes affect industry?", or "How does zoning/pollution/education/transit work?" Answers use the Cities2-MCP wiki corpus plus the user's local in-game Encyclopedia.
+description: >-
+  MUST use automatically for any Cities: Skylines II gameplay, city-management,
+  or game-mechanics question, even when the user does not mention Cities2-MCP,
+  wiki, Encyclopedia, or sources. Use for plain questions like "How do I grow
+  office demand?", "How do I get more people to use my subway?", "What makes
+  citizens healthier?", "Why is housing demand low?", "How do taxes affect
+  industry?", or "How does zoning/pollution/education/transit work?" Answers
+  use the Cities2-MCP wiki corpus plus the user's local in-game Encyclopedia.
 ---
 
 # Cities2 Knowledge
@@ -22,7 +29,10 @@ Use this skill when answering Cities: Skylines II gameplay questions with Cities
 5. Fetch fuller evidence:
    - Use `get_page(page_id)` for the best wiki page when snippets are not enough.
    - Use `get_encyclopedia_entry(entry_id)` for the best Encyclopedia entries.
-6. Answer from the retrieved material. Explain what to do and why, with short source labels such as `Wiki` and `Game Encyclopedia` when useful.
+6. Keep track of source titles and URLs:
+   - Wiki page title and `url` from `get_page` or search results.
+   - Game Encyclopedia entry titles from `get_encyclopedia_entry`.
+7. Answer from the retrieved material. Explain what to do and why, with short source labels such as `Wiki` and `Game Encyclopedia` when useful.
 
 ## Querying Well
 
@@ -46,3 +56,14 @@ If the first search misses, rewrite the query with related in-game labels from t
 - Be careful with guide-style claims. Phrase them as advice when they come from wiki guide pages, not as hard mechanics unless the Encyclopedia or patch notes support them.
 - If evidence is thin, say what the sources covered and what they did not cover.
 - Do not browse the live web unless the user explicitly asks for current external information.
+
+## Source Citation Style
+
+When sources were used, include a compact source note at the end of the answer. Prefer one short sentence or a `Sources:` line, not a bibliography.
+
+Good patterns:
+
+- `Sources used: Game Encyclopedia entries for Demand and Office Zones, plus the CS2 Wiki Zoning page: https://cs2.paradoxwikis.com/Zoning.`
+- `Source note: the Game Encyclopedia explains the in-game Demand and Office Zones entries; the wiki adds player-facing context from Zoning.`
+
+Use Markdown links for wiki pages when the client supports them. Name the Game Encyclopedia entries, but do not invent links for them unless the MCP resource URI is directly useful to the user. If the wiki and Encyclopedia disagree or emphasize different things, say that briefly in the answer.

@@ -1,6 +1,12 @@
 ---
 name: cities2-modding
-description: MUST use automatically for any Cities: Skylines II modding, mod project, asset/mod workflow, CS2 C# mod, CS2 UI mod, localization, build, package, toolchain, project analysis, scaffold, file edit, or dry-run launch request. Use even when the user does not mention Cities2-MCP. This skill answers CS2 modding questions and performs local CS2 mod project workflows with Cities2-MCP.
+description: >-
+  MUST use automatically for any Cities: Skylines II modding, mod project,
+  asset/mod workflow, CS2 C# mod, CS2 UI mod, localization, build, package,
+  toolchain, project analysis, scaffold, file edit, or dry-run launch request.
+  Use even when the user does not mention Cities2-MCP. This skill answers CS2
+  modding questions and performs local CS2 mod project workflows with
+  Cities2-MCP.
 ---
 
 # Cities2 Modding
@@ -19,7 +25,8 @@ Use this skill for Cities: Skylines II modding and local mod-project work throug
 2. Search with `search(query, limit=5)` and `query_reference(query, limit=5)`.
 3. Fetch the strongest wiki page with `get_page(page_id)` when snippets are not enough.
 4. Use `get_snippets(query, limit=3)` for code-oriented wiki snippets.
-5. Answer with the relevant docs context and note uncertainty when the corpus does not cover the exact API or version.
+5. Keep track of source page titles, URLs, and snippet topics.
+6. Answer with the relevant docs context and note uncertainty when the corpus does not cover the exact API or version.
 
 Example queries:
 
@@ -51,3 +58,4 @@ If a write/build tool returns diagnostics, summarize the actionable errors first
 - For implementation requests, inspect the project first and keep edits scoped.
 - Do not imply the optional .NET 6/modding toolchain is needed for wiki search or scaffolding; it is only needed for build, post-process, and package workflows.
 - Keep user-visible output practical: what to do, why, and what tool/source supports it.
+- When docs were used, include a compact source note at the end. Prefer one short sentence or a `Sources:` line naming the wiki page or snippet topic, with Markdown links for wiki URLs when available.

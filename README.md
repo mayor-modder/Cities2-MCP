@@ -45,7 +45,7 @@ Cities2-MCP ships Agent Skills that teach compatible agents how to query and int
 - `cities2-knowledge` answers gameplay and city-system questions from both the bundled wiki corpus and the local game Encyclopedia.
 - `cities2-modding` answers modding questions and guides local mod project workflows.
 
-These skills are stored in `skills/`. Install or copy them into your agent's skill directory if your client supports Agent Skills. They are the recommended way to get natural answers to questions like "how do I grow office demand?" because they tell the agent to use keyword queries, fetch full pages or entries, compare source authority, and synthesize an answer.
+These skills are stored in `skills/`. Install or copy them into your agent's skill directory if your client supports Agent Skills. They are the recommended way to get natural answers to questions like "how do I grow office demand?" because they tell the agent to use keyword queries, fetch full pages or entries, compare source authority, synthesize an answer, and include compact source notes naming the Game Encyclopedia entries and linked wiki pages used.
 
 ### Use Slash-Command Style Prompts
 
@@ -157,7 +157,7 @@ Skills live under `skills/`:
 - `skills/cities2-knowledge/SKILL.md`
 - `skills/cities2-modding/SKILL.md`
 
-Install them into a compatible client's skill folder, or keep them in the repo as project-level guidance where supported. The skills depend on the `cities2-mcp` MCP server being configured.
+Install them into a compatible client's skill folder, or keep them in the repo as project-level guidance where supported. The skills depend on the `cities2-mcp` MCP server being configured. Gameplay answers should include compact source notes that mention the local Game Encyclopedia entries and link to the relevant CS2 Wiki pages when available.
 
 Project templates are stored at:
 

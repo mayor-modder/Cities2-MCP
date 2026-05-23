@@ -242,6 +242,8 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn(f"name: {skill_name}", skill_text)
             self.assertIn("description:", skill_text)
             self.assertIn("MUST use automatically", skill_text)
+            self.assertIn("description: >-", skill_text)
+            self.assertIn("Source", skill_text)
             self.assertNotIn("TODO", skill_text)
             self.assertIn("cities2-mcp", metadata_text)
             self.assertIn(f"${skill_name}", metadata_text)
@@ -249,6 +251,8 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn(skill_name, install_text)
 
         self.assertIn("## 5. Install Agent Skills", install_text)
+        self.assertIn("compact source notes", readme_text)
+        self.assertIn("compact source notes", install_text)
         self.assertIn("%USERPROFILE%\\.codex\\skills", install_text)
         self.assertIn("Copy-Item -Recurse -Force", install_text)
         self.assertIn("~/.codex/skills", install_text)

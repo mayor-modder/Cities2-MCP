@@ -69,7 +69,7 @@ Client support varies. If a client does not show MCP prompts as slash commands, 
 
 ### Agent Skills
 
-Cities2-MCP also ships Agent Skills in the `skills/` directory. These are recommended for clients that support skills because they teach the agent how to query the wiki and local Encyclopedia with keywords, fetch full source records, compare source authority, and synthesize answers.
+Cities2-MCP also ships Agent Skills in the `skills/` directory. These are recommended for clients that support skills because they teach the agent how to query the wiki and local Encyclopedia with keywords, fetch full source records, compare source authority, synthesize answers, and include compact source notes with Encyclopedia entry names and wiki links.
 
 - `skills/cities2-knowledge` - gameplay and city-system questions using wiki plus local Encyclopedia.
 - `skills/cities2-modding` - modding questions and local mod project workflows.
@@ -268,7 +268,7 @@ For any MCP client not listed above, use the JSON shape from the "JSON clients" 
 
 ## 5. Install Agent Skills
 
-If the selected client supports Agent Skills, install the bundled Cities2-MCP skills after configuring the MCP server. These skills teach the agent how to query and interpret the wiki corpus plus local Game Encyclopedia.
+If the selected client supports Agent Skills, install the bundled Cities2-MCP skills after configuring the MCP server. These skills teach the agent how to query and interpret the wiki corpus plus local Game Encyclopedia, then cite the specific source pages or entries used.
 
 Install both skill folders:
 
@@ -351,7 +351,7 @@ If skills were installed, verify that the copied folders contain `SKILL.md`:
 - `cities2-knowledge/SKILL.md`
 - `cities2-modding/SKILL.md`
 
-New Codex sessions should list `cities2-knowledge` and `cities2-modding` in the available skills.
+New Codex sessions should list `cities2-knowledge` and `cities2-modding` in the available skills. A plain gameplay question such as "How do I grow office demand in Cities: Skylines II?" should cause the agent to use the Cities2 knowledge skill, retrieve both wiki and Encyclopedia sources when available, and include a short source note naming the Encyclopedia entries and linked wiki pages used.
 
 ## 7. Post-install
 
