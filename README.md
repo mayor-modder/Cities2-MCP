@@ -17,6 +17,14 @@ The server includes a prepared text corpus from the Cities: Skylines II Wiki. An
 
 This is useful for questions about game mechanics, modding APIs, toolchain setup, project structure, localization, UI mods, and related CS2 development topics.
 
+### Search The Local Game Encyclopedia
+
+When Cities: Skylines II is installed locally, Cities2-MCP also tries to read the in-game Encyclopedia from the user's own game files. This source is enabled by default when the server can find `Cities2_Data/Content/Game/Locale.cok`, especially for standard Steam installs.
+
+The extracted Encyclopedia index is cached locally on the user's machine and rebuilt only when the source game file, detected Steam build id, locale, or extractor version changes. Extracted game text is not committed to this repository, shipped in releases, or part of the redistributed wiki corpus.
+
+If the game install is not found automatically, set `CITIES2_GAME_DIR` to the Cities: Skylines II install directory or `CITIES2_LOCALE_COK` to the full `Locale.cok` path.
+
 ### Help With Mod Project Workflows
 
 The server also includes local workflow tools for CS2 mod projects. An AI assistant can:
@@ -99,6 +107,9 @@ Game and modding knowledge:
 - `get_page(page_id)`
 - `query_reference(query, limit=5)`
 - `get_snippets(query, limit=3)`
+- `search_encyclopedia(query, limit=5)`
+- `get_encyclopedia_entry(entry_id)`
+- `source_status()`
 
 Mod project workflow:
 
