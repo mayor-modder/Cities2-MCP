@@ -109,7 +109,7 @@ def default_steam_roots() -> List[Path]:
     return roots
 
 
-_VDF_PATH_RE = re.compile(r'"path"\s+"(?P<path>(?:\\.|[^"])*)"')
+_VDF_PATH_RE = re.compile(r'"path"\s+"(?P<path>(?:\\.|[^"\\])*)"')
 _VDF_BUILD_RE = re.compile(r'"buildid"\s+"(?P<buildid>\d+)"')
 
 

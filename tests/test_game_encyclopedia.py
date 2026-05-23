@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT / "server"))
 from game_encyclopedia import (  # noqa: E402
     GAME_ENCYCLOPEDIA_WARNING,
     EncyclopediaConfig,
+    _VDF_PATH_RE,
     find_locale_cok,
     source_status_payload,
 )
@@ -95,6 +96,9 @@ class GameEncyclopediaDiscoveryTests(unittest.TestCase):
         self.assertEqual(result.source_kind, "steam")
         self.assertEqual(result.steam_app_id, "949230")
         self.assertEqual(result.steam_build_id, "23061229")
+
+    def test_vdf_path_regex_does_not_ambiguously_match_backslashes(self) -> None:
+        self.assertIn(r'[^"\\]', _VDF_PATH_RE.pattern)
 
     def test_missing_source_returns_nonfatal_warning_status(self) -> None:
         with mock.patch.dict(os.environ, {"CITIES2_GAME_DIR": "", "CITIES2_LOCALE_COK": ""}, clear=False):
