@@ -110,6 +110,7 @@ from game_encyclopedia import (  # noqa: E402
     cache_dir_default,
     cache_is_fresh,
     current_source_fingerprint,
+    entries_to_chunks,
     load_cached_entries,
     write_cache,
 )
@@ -124,9 +125,22 @@ class GameEncyclopediaCacheTests(unittest.TestCase):
             discovery = find_locale_cok(EncyclopediaConfig(locale_cok=locale), steam_roots=[])
             fingerprint = current_source_fingerprint(discovery, locale="en-US")
             cache_dir = root / "cache"
-            entries = [{"entry_id": "roads", "title": "Roads", "text": "Road text"}]
+            entries = [
+                {
+                    "entry_id": "roads",
+                    "source": "game_encyclopedia",
+                    "source_key": "Glossary.SECTION_CONTENT[Roads]",
+                    "title": "Roads",
+                    "tab": "Roads",
+                    "category": "Basics",
+                    "raw_content": "Road text",
+                    "text": "Road text",
+                    "locale": "en-US",
+                    "metadata": {},
+                }
+            ]
 
-            write_cache(cache_dir, fingerprint, entries, chunks=entries)
+            write_cache(cache_dir, fingerprint, entries, chunks=entries_to_chunks(entries))
 
             self.assertTrue(cache_is_fresh(cache_dir, fingerprint))
             loaded = load_cached_entries(cache_dir)
@@ -254,6 +268,94 @@ class GameEncyclopediaParserTests(unittest.TestCase):
         )
 
         self.assertEqual(cleaned, "Roads\nPress Tool.Select near Roads.")
+
+
+from game_encyclopedia import GameEncyclopediaSource  # noqa: E402
+
+
+class GameEncyclopediaSourceTests(unittest.TestCase):
+    def test_source_rebuilds_cache_then_searches_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            locale = root / "Locale.cok"
+            locale.write_bytes(
+                synthetic_locale_blob(
+                    {
+                        "Glossary.TAB[Roads]": "Roads",
+                        "Glossary.CATEGORY[RoadBasics]": "Road Basics",
+                        "Glossary.SECTION_TITLE[Roads.RoadBasics.Roads]": "Roads",
+                        "Glossary.SECTION_CONTENT[Roads.RoadBasics.Roads]": "Roads connect buildings and zones.",
+                    }
+                )
+            )
+            source = GameEncyclopediaSource.load(
+                EncyclopediaConfig(locale_cok=locale, cache_dir=root / "cache"),
+                steam_roots=[],
+            )
+
+            self.assertTrue(source.available)
+            self.assertEqual(source.cache_status, "rebuilt")
+            results = source.search("connect zones", limit=3)
+            self.assertEqual(results[0]["entry_id"], "roads.roadbasics.roads")
+            self.assertEqual(results[0]["source"], "game_encyclopedia")
+
+            second = GameEncyclopediaSource.load(
+                EncyclopediaConfig(locale_cok=locale, cache_dir=root / "cache"),
+                steam_roots=[],
+            )
+            self.assertEqual(second.cache_status, "hit")
+
+    def test_zero_entry_source_status_reports_unavailable(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            locale = root / "Locale.cok"
+            locale.write_bytes(synthetic_locale_blob({"Glossary.TAB[Roads]": "Roads"}))
+
+            source = GameEncyclopediaSource.load(
+                EncyclopediaConfig(locale_cok=locale, cache_dir=root / "cache"),
+                steam_roots=[],
+            )
+
+            self.assertFalse(source.available)
+            self.assertFalse(source.status()["available"])
+            self.assertEqual(source.status()["locale_cok_path"], str(locale.resolve()))
+            self.assertEqual(source.status()["cache_status"], "rebuilt")
+            self.assertEqual(source.status()["entry_count"], 0)
+
+    def test_semantically_invalid_cache_rows_are_rebuilt(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            locale = root / "Locale.cok"
+            locale.write_bytes(
+                synthetic_locale_blob(
+                    {
+                        "Glossary.TAB[Roads]": "Roads",
+                        "Glossary.CATEGORY[RoadBasics]": "Road Basics",
+                        "Glossary.SECTION_TITLE[Roads.RoadBasics.Roads]": "Roads",
+                        "Glossary.SECTION_CONTENT[Roads.RoadBasics.Roads]": "Roads connect buildings and zones.",
+                    }
+                )
+            )
+            discovery = find_locale_cok(EncyclopediaConfig(locale_cok=locale), steam_roots=[])
+            fingerprint = current_source_fingerprint(discovery, locale="en-US")
+            write_cache(root / "cache", fingerprint, [{"title": "Bad"}], chunks=[{"text": "Bad"}])
+
+            source = GameEncyclopediaSource.load(
+                EncyclopediaConfig(locale_cok=locale, cache_dir=root / "cache"),
+                steam_roots=[],
+            )
+
+            self.assertEqual(source.cache_status, "rebuilt")
+            self.assertIsNotNone(source.get_entry("roads.roadbasics.roads"))
+            self.assertNotIn("None", source.entries_by_id)
+
+    def test_unavailable_source_search_returns_empty_list(self) -> None:
+        with mock.patch.dict(os.environ, {"CITIES2_GAME_DIR": "", "CITIES2_LOCALE_COK": ""}, clear=False):
+            source = GameEncyclopediaSource.load(EncyclopediaConfig(), steam_roots=[])
+
+        self.assertFalse(source.available)
+        self.assertEqual(source.search("roads"), [])
+        self.assertEqual(source.get_entry("roads"), None)
 
 
 if __name__ == "__main__":

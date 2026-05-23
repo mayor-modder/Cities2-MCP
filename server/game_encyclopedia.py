@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
+from retrieval.mcp_server import HybridIndex
+
 JSON = Dict[str, Any]
 APP_ID = "949230"
 EXTRACTOR_VERSION = "1"
@@ -362,7 +364,60 @@ def cache_is_fresh(cache_dir: Path, fingerprint: JSON) -> bool:
     cached = manifest.get("fingerprint")
     if cached != fingerprint:
         return False
-    return len(entries) == manifest.get("entry_count") and len(chunks) == manifest.get("chunk_count")
+    if len(entries) != manifest.get("entry_count") or len(chunks) != manifest.get("chunk_count"):
+        return False
+    return _valid_cached_entries(entries) and _valid_cached_chunks(chunks)
+
+
+def _has_string_fields(row: JSON, fields: List[str]) -> bool:
+    return all(isinstance(row.get(field), str) for field in fields)
+
+
+def _has_nonempty_string_fields(row: JSON, fields: List[str]) -> bool:
+    return all(isinstance(row.get(field), str) and bool(str(row.get(field)).strip()) for field in fields)
+
+
+def _valid_cached_entries(entries: List[JSON]) -> bool:
+    required = [
+        "entry_id",
+        "source",
+        "source_key",
+        "title",
+        "tab",
+        "category",
+        "raw_content",
+        "text",
+        "locale",
+    ]
+    return all(
+        isinstance(entry, dict)
+        and _has_string_fields(entry, required)
+        and _has_nonempty_string_fields(entry, ["entry_id"])
+        and entry.get("source") == "game_encyclopedia"
+        and isinstance(entry.get("metadata"), dict)
+        for entry in entries
+    )
+
+
+def _valid_cached_chunks(chunks: List[JSON]) -> bool:
+    required = [
+        "chunk_id",
+        "entry_id",
+        "source",
+        "title",
+        "tab",
+        "category",
+        "text",
+        "locale",
+    ]
+    return all(
+        isinstance(chunk, dict)
+        and _has_string_fields(chunk, required)
+        and _has_nonempty_string_fields(chunk, ["chunk_id", "entry_id"])
+        and chunk.get("source") == "game_encyclopedia"
+        and isinstance(chunk.get("metadata"), dict)
+        for chunk in chunks
+    )
 
 
 def _write_jsonl(path: Path, rows: List[JSON]) -> None:
@@ -404,6 +459,116 @@ def load_cached_entries(cache_dir: Path) -> List[JSON]:
 
 def load_cached_chunks(cache_dir: Path) -> List[JSON]:
     return _read_jsonl(cache_dir / "chunks.jsonl")
+
+
+def _source_metadata(discovery: LocaleDiscovery) -> JSON:
+    return {
+        "locale_cok_path": str(discovery.locale_cok_path or ""),
+        "game_dir": str(discovery.game_dir or ""),
+        "steam_app_id": discovery.steam_app_id or "",
+        "steam_build_id": discovery.steam_build_id or "",
+    }
+
+
+def entries_to_chunks(entries: List[JSON]) -> List[JSON]:
+    chunks: List[JSON] = []
+    for entry in entries:
+        chunks.append(
+            {
+                "chunk_id": f"game_encyclopedia:{entry['entry_id']}",
+                "entry_id": entry["entry_id"],
+                "source": "game_encyclopedia",
+                "title": entry["title"],
+                "tab": entry["tab"],
+                "category": entry["category"],
+                "text": "\n".join(
+                    [
+                        str(entry["title"]),
+                        str(entry["tab"]),
+                        str(entry["category"]),
+                        str(entry["text"]),
+                    ]
+                ).strip(),
+                "locale": entry["locale"],
+                "metadata": entry["metadata"],
+            }
+        )
+    return chunks
+
+
+class GameEncyclopediaSource:
+    def __init__(
+        self,
+        *,
+        discovery: LocaleDiscovery,
+        cache_status: str,
+        entries: List[JSON],
+        chunks: List[JSON],
+    ) -> None:
+        self.discovery = discovery
+        self.cache_status = cache_status
+        self.entries = entries
+        self.chunks = chunks
+        self.entries_by_id = {str(entry.get("entry_id")): entry for entry in entries}
+        self.index = HybridIndex(chunks, text_key="text") if chunks else None
+
+    @property
+    def available(self) -> bool:
+        return self.discovery.available and bool(self.entries)
+
+    @classmethod
+    def load(
+        cls,
+        config: EncyclopediaConfig,
+        *,
+        steam_roots: Optional[Iterable[Path]] = None,
+    ) -> "GameEncyclopediaSource":
+        discovery = find_locale_cok(config, steam_roots=steam_roots)
+        if not discovery.available or discovery.locale_cok_path is None:
+            return cls(discovery=discovery, cache_status="unavailable", entries=[], chunks=[])
+
+        cache_dir = config.cache_dir or cache_dir_default()
+        fingerprint = current_source_fingerprint(discovery, locale=config.locale)
+        if cache_is_fresh(cache_dir, fingerprint):
+            entries = load_cached_entries(cache_dir)
+            chunks = load_cached_chunks(cache_dir)
+            return cls(discovery=discovery, cache_status="hit", entries=entries, chunks=chunks)
+
+        data = discovery.locale_cok_path.read_bytes()
+        records = extract_glossary_records(data)
+        entries = records_to_entries(records, locale=config.locale, source_metadata=_source_metadata(discovery))
+        chunks = entries_to_chunks(entries)
+        write_cache(cache_dir, fingerprint, entries, chunks=chunks)
+        return cls(discovery=discovery, cache_status="rebuilt", entries=entries, chunks=chunks)
+
+    def status(self) -> JSON:
+        payload = source_status_payload(self.discovery, cache_status=self.cache_status, entry_count=len(self.entries))
+        payload["available"] = self.available
+        return payload
+
+    def search(self, query: str, *, limit: int = 5) -> List[JSON]:
+        if self.index is None:
+            return []
+        matches = self.index.search(query, limit=limit, title_key="title")
+        results: List[JSON] = []
+        for score, chunk in matches:
+            entry_id = str(chunk.get("entry_id", ""))
+            results.append(
+                {
+                    "score": round(score, 4),
+                    "source": "game_encyclopedia",
+                    "entry_id": entry_id,
+                    "title": chunk.get("title"),
+                    "tab": chunk.get("tab"),
+                    "category": chunk.get("category"),
+                    "snippet": str(chunk.get("text", ""))[:900],
+                    "metadata": chunk.get("metadata", {}),
+                }
+            )
+        return results
+
+    def get_entry(self, entry_id: str) -> Optional[JSON]:
+        return self.entries_by_id.get(entry_id)
 
 
 def source_status_payload(
