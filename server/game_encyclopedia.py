@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import time
+import zipfile
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,7 +15,7 @@ from retrieval.mcp_server import HybridIndex
 
 JSON = Dict[str, Any]
 APP_ID = "949230"
-EXTRACTOR_VERSION = "1"
+EXTRACTOR_VERSION = "2"
 GAME_ENCYCLOPEDIA_WARNING = (
     "Game Encyclopedia not found. Wiki search is still available. "
     "Set CITIES2_GAME_DIR or CITIES2_LOCALE_COK to enable local game Encyclopedia search."
@@ -240,6 +241,18 @@ def extract_glossary_records(data: bytes) -> "OrderedDict[str, str]":
         records[key] = value
         offset = after_value
     return records
+
+
+def read_locale_payload(locale_cok: Path, *, locale: str) -> bytes:
+    try:
+        with zipfile.ZipFile(locale_cok) as archive:
+            target = f"{locale}.loc".lower()
+            for name in archive.namelist():
+                if name.lower() == target:
+                    return archive.read(name)
+            return b""
+    except zipfile.BadZipFile:
+        return locale_cok.read_bytes()
 
 
 def _display_token(value: str) -> str:
@@ -534,7 +547,7 @@ class GameEncyclopediaSource:
             chunks = load_cached_chunks(cache_dir)
             return cls(discovery=discovery, cache_status="hit", entries=entries, chunks=chunks)
 
-        data = discovery.locale_cok_path.read_bytes()
+        data = read_locale_payload(discovery.locale_cok_path, locale=config.locale)
         records = extract_glossary_records(data)
         entries = records_to_entries(records, locale=config.locale, source_metadata=_source_metadata(discovery))
         chunks = entries_to_chunks(entries)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from unittest import mock
 
@@ -274,6 +275,41 @@ from game_encyclopedia import GameEncyclopediaSource  # noqa: E402
 
 
 class GameEncyclopediaSourceTests(unittest.TestCase):
+    def test_source_reads_requested_locale_member_from_cok_archive(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            locale = root / "Locale.cok"
+            en_blob = synthetic_locale_blob(
+                {
+                    "Glossary.TAB[OfficeZones]": "Office Zones",
+                    "Glossary.SECTION_TITLE[OfficeZones]": "Office Zones",
+                    "Glossary.SECTION_CONTENT[OfficeZones]": "Office zones need educated workers.",
+                }
+            )
+            ja_blob = synthetic_locale_blob(
+                {
+                    "Glossary.TAB[OfficeZones]": "オフィス区画",
+                    "Glossary.SECTION_TITLE[OfficeZones]": "オフィス区画",
+                    "Glossary.SECTION_CONTENT[OfficeZones]": "日本語の説明です。",
+                }
+            )
+            with zipfile.ZipFile(locale, "w") as archive:
+                archive.writestr("en-US.loc", en_blob)
+                archive.writestr("ja-JP.loc", ja_blob)
+
+            source = GameEncyclopediaSource.load(
+                EncyclopediaConfig(locale_cok=locale, locale="en-US", cache_dir=root / "cache"),
+                steam_roots=[],
+            )
+
+            self.assertTrue(source.available)
+            entry = source.get_entry("officezones")
+            self.assertIsNotNone(entry)
+            assert entry is not None
+            self.assertEqual(entry["title"], "Office Zones")
+            self.assertIn("educated workers", entry["text"])
+            self.assertNotIn("日本語", entry["text"])
+
     def test_source_rebuilds_cache_then_searches_entries(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
