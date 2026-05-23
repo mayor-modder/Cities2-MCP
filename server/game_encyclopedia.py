@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -94,6 +95,42 @@ def default_steam_roots() -> List[Path]:
     return roots
 
 
+_VDF_PATH_RE = re.compile(r'"path"\s+"(?P<path>(?:\\.|[^"])*)"')
+_VDF_BUILD_RE = re.compile(r'"buildid"\s+"(?P<buildid>\d+)"')
+
+
+def _decode_vdf_string(value: str) -> str:
+    return value.replace("\\\\", "\\")
+
+
+def steam_libraries(steam_root: Path) -> List[Path]:
+    libraries: List[Path] = []
+    if steam_root.exists():
+        libraries.append(steam_root.resolve())
+
+    vdf = steam_root / "steamapps" / "libraryfolders.vdf"
+    if not vdf.is_file():
+        return libraries
+
+    text = vdf.read_text(encoding="utf-8", errors="replace")
+    for match in _VDF_PATH_RE.finditer(text):
+        candidate = Path(_decode_vdf_string(match.group("path"))).expanduser()
+        if candidate.exists():
+            resolved = candidate.resolve()
+            if resolved not in libraries:
+                libraries.append(resolved)
+    return libraries
+
+
+def read_steam_build_id(library: Path) -> Optional[str]:
+    manifest = library / "steamapps" / f"appmanifest_{APP_ID}.acf"
+    if not manifest.is_file():
+        return None
+    text = manifest.read_text(encoding="utf-8", errors="replace")
+    match = _VDF_BUILD_RE.search(text)
+    return match.group("buildid") if match else None
+
+
 def find_locale_cok(
     config: EncyclopediaConfig,
     *,
@@ -126,6 +163,17 @@ def find_locale_cok(
 
 
 def discover_steam_locale(steam_root: Path) -> LocaleDiscovery:
+    for library in steam_libraries(steam_root.expanduser()):
+        game_dir = library / "steamapps" / "common" / "Cities Skylines II"
+        locale = _locale_from_game_dir(game_dir)
+        if locale is None:
+            continue
+        return _available(
+            locale,
+            source_kind="steam",
+            game_dir=game_dir,
+            steam_build_id=read_steam_build_id(library),
+        )
     return LocaleDiscovery(available=False)
 
 

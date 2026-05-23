@@ -70,6 +70,31 @@ class GameEncyclopediaDiscoveryTests(unittest.TestCase):
         self.assertEqual(result.locale_cok_path, locale)
         self.assertEqual(result.source_kind, "env_game_dir")
 
+    def test_steam_libraryfolders_vdf_discovers_secondary_library(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            steam_root = root / "Steam"
+            library = root / "SteamLibrary"
+            (steam_root / "steamapps").mkdir(parents=True)
+            (library / "steamapps" / "common" / "Cities Skylines II" / "Cities2_Data" / "Content" / "Game").mkdir(parents=True)
+            locale = library / "steamapps" / "common" / "Cities Skylines II" / "Cities2_Data" / "Content" / "Game" / "Locale.cok"
+            locale.write_bytes(b"locale")
+            (library / "steamapps" / "appmanifest_949230.acf").write_text('"AppState" { "buildid" "23061229" }', encoding="utf-8")
+            (steam_root / "steamapps" / "libraryfolders.vdf").write_text(
+                '"libraryfolders"\n{\n  "0" { "path" "' + str(steam_root).replace("\\", "\\\\") + '" }\n'
+                '  "1" { "path" "' + str(library).replace("\\", "\\\\") + '" }\n}\n',
+                encoding="utf-8",
+            )
+
+            with mock.patch.dict(os.environ, {"CITIES2_GAME_DIR": "", "CITIES2_LOCALE_COK": ""}, clear=False):
+                result = find_locale_cok(EncyclopediaConfig(), steam_roots=[steam_root])
+
+        self.assertTrue(result.available)
+        self.assertEqual(result.locale_cok_path, locale.resolve())
+        self.assertEqual(result.source_kind, "steam")
+        self.assertEqual(result.steam_app_id, "949230")
+        self.assertEqual(result.steam_build_id, "23061229")
+
     def test_missing_source_returns_nonfatal_warning_status(self) -> None:
         with mock.patch.dict(os.environ, {"CITIES2_GAME_DIR": "", "CITIES2_LOCALE_COK": ""}, clear=False):
             result = find_locale_cok(EncyclopediaConfig(), steam_roots=[])
