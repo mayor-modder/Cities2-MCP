@@ -247,6 +247,12 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn(skill_name, readme_text)
             self.assertIn(skill_name, install_text)
 
+        self.assertIn("## 5. Install Agent Skills", install_text)
+        self.assertIn("%USERPROFILE%\\.codex\\skills", install_text)
+        self.assertIn("Copy-Item -Recurse -Force", install_text)
+        self.assertIn("~/.codex/skills", install_text)
+        self.assertIn("New Codex sessions should list", install_text)
+
     def test_docs_do_not_advertise_unimplemented_workspace_escape_flag(self) -> None:
         for path in (ROOT / "README.md", ROOT / "INSTALL.md"):
             self.assertNotIn("--allow-any-workspace", path.read_text(encoding="utf-8"))

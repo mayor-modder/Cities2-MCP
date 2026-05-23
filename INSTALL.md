@@ -266,7 +266,49 @@ Do not add `CITIES2_GAME_DIR` unless automatic discovery fails or the user has a
 
 For any MCP client not listed above, use the JSON shape from the "JSON clients" section. Consult that client's documentation for where to place MCP server configuration.
 
-## 5. Verify
+## 5. Install Agent Skills
+
+If the selected client supports Agent Skills, install the bundled Cities2-MCP skills after configuring the MCP server. These skills teach the agent how to query and interpret the wiki corpus plus local Game Encyclopedia.
+
+Install both skill folders:
+
+- `<REPO_ROOT>/skills/cities2-knowledge`
+- `<REPO_ROOT>/skills/cities2-modding`
+
+### Codex skills
+
+For Codex, copy the two skill directories into the user's Codex skills folder:
+
+| Platform | Codex skills folder |
+|---|---|
+| Windows | `%USERPROFILE%\.codex\skills` |
+| macOS / Linux | `~/.codex/skills` |
+
+On Windows PowerShell:
+
+```powershell
+$src = "<REPO_ROOT>/skills"
+$dst = "$env:USERPROFILE/.codex/skills"
+New-Item -ItemType Directory -Force -Path $dst | Out-Null
+Copy-Item -Recurse -Force "$src/cities2-knowledge" "$dst/cities2-knowledge"
+Copy-Item -Recurse -Force "$src/cities2-modding" "$dst/cities2-modding"
+```
+
+On macOS or Linux:
+
+```sh
+mkdir -p ~/.codex/skills
+cp -R "<REPO_ROOT>/skills/cities2-knowledge" ~/.codex/skills/
+cp -R "<REPO_ROOT>/skills/cities2-modding" ~/.codex/skills/
+```
+
+### Other clients
+
+For Claude, Cursor, or other clients that support skills, use that client's documented skill-install location or project-level skill mechanism. If the client does not support Agent Skills, skip this step; the MCP server tools still work, and compatible clients may still expose the MCP prompts from `prompts/list`.
+
+Do not copy skills into a client's directory if that client does not support skills.
+
+## 6. Verify
 
 After writing the config, test that the server starts and responds. Run this from
 `REPO_ROOT` with the same Python interpreter used in the MCP config:
@@ -304,7 +346,14 @@ The expected Cities2-MCP tool names are:
 If either command fails, check that Python 3 is working and that the repository
 contains `server/retrieval/mcp_server.py`.
 
-## 6. Post-install
+If skills were installed, verify that the copied folders contain `SKILL.md`:
+
+- `cities2-knowledge/SKILL.md`
+- `cities2-modding/SKILL.md`
+
+New Codex sessions should list `cities2-knowledge` and `cities2-modding` in the available skills.
+
+## 7. Post-install
 
 Tell the user to restart **only the clients you installed into**. Use the platform-appropriate instructions:
 
