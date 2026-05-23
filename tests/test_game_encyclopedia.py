@@ -106,5 +106,70 @@ class GameEncyclopediaDiscoveryTests(unittest.TestCase):
         self.assertEqual(payload["entry_count"], 0)
 
 
+from game_encyclopedia import (  # noqa: E402
+    cache_dir_default,
+    cache_is_fresh,
+    current_source_fingerprint,
+    load_cached_entries,
+    write_cache,
+)
+
+
+class GameEncyclopediaCacheTests(unittest.TestCase):
+    def test_cache_hit_requires_matching_fingerprint(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            locale = root / "Locale.cok"
+            locale.write_bytes(b"abc")
+            discovery = find_locale_cok(EncyclopediaConfig(locale_cok=locale), steam_roots=[])
+            fingerprint = current_source_fingerprint(discovery, locale="en-US")
+            cache_dir = root / "cache"
+            entries = [{"entry_id": "roads", "title": "Roads", "text": "Road text"}]
+
+            write_cache(cache_dir, fingerprint, entries, chunks=entries)
+
+            self.assertTrue(cache_is_fresh(cache_dir, fingerprint))
+            loaded = load_cached_entries(cache_dir)
+            self.assertEqual(loaded, entries)
+
+            stale = dict(fingerprint)
+            stale["locale_cok_size"] = fingerprint["locale_cok_size"] + 1
+            self.assertFalse(cache_is_fresh(cache_dir, stale))
+
+    def test_default_cache_dir_is_user_local(self) -> None:
+        path = cache_dir_default()
+        self.assertIn("game-encyclopedia", str(path))
+
+    def test_cache_is_stale_when_jsonl_is_malformed(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            locale = root / "Locale.cok"
+            locale.write_bytes(b"abc")
+            discovery = find_locale_cok(EncyclopediaConfig(locale_cok=locale), steam_roots=[])
+            fingerprint = current_source_fingerprint(discovery, locale="en-US")
+            cache_dir = root / "cache"
+            entries = [{"entry_id": "roads", "title": "Roads", "text": "Road text"}]
+            write_cache(cache_dir, fingerprint, entries, chunks=entries)
+
+            (cache_dir / "entries.jsonl").write_text("{not json}\n", encoding="utf-8")
+
+            self.assertFalse(cache_is_fresh(cache_dir, fingerprint))
+
+    def test_cache_is_stale_when_manifest_counts_do_not_match_jsonl(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            locale = root / "Locale.cok"
+            locale.write_bytes(b"abc")
+            discovery = find_locale_cok(EncyclopediaConfig(locale_cok=locale), steam_roots=[])
+            fingerprint = current_source_fingerprint(discovery, locale="en-US")
+            cache_dir = root / "cache"
+            entries = [{"entry_id": "roads", "title": "Roads", "text": "Road text"}]
+            write_cache(cache_dir, fingerprint, entries, chunks=entries)
+
+            (cache_dir / "chunks.jsonl").write_text("", encoding="utf-8")
+
+            self.assertFalse(cache_is_fresh(cache_dir, fingerprint))
+
+
 if __name__ == "__main__":
     unittest.main()

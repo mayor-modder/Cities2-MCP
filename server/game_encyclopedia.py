@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 import os
 import re
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -175,6 +177,98 @@ def discover_steam_locale(steam_root: Path) -> LocaleDiscovery:
             steam_build_id=read_steam_build_id(library),
         )
     return LocaleDiscovery(available=False)
+
+
+def cache_dir_default() -> Path:
+    if os.name == "nt":
+        base = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local")))
+        return base / "Cities2-MCP" / "cache" / "game-encyclopedia"
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Caches" / "Cities2-MCP" / "game-encyclopedia"
+    base = Path(os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache")))
+    return base / "cities2-mcp" / "game-encyclopedia"
+
+
+def current_source_fingerprint(discovery: LocaleDiscovery, *, locale: str) -> JSON:
+    if not discovery.available or discovery.locale_cok_path is None:
+        return {
+            "extractor_version": EXTRACTOR_VERSION,
+            "locale": locale,
+            "available": False,
+        }
+    stat = discovery.locale_cok_path.stat()
+    return {
+        "extractor_version": EXTRACTOR_VERSION,
+        "locale": locale,
+        "locale_cok_path": str(discovery.locale_cok_path),
+        "locale_cok_size": stat.st_size,
+        "locale_cok_mtime_ns": stat.st_mtime_ns,
+        "steam_app_id": discovery.steam_app_id or "",
+        "steam_build_id": discovery.steam_build_id or "",
+    }
+
+
+def _manifest_path(cache_dir: Path) -> Path:
+    return cache_dir / "manifest.json"
+
+
+def cache_is_fresh(cache_dir: Path, fingerprint: JSON) -> bool:
+    manifest_path = _manifest_path(cache_dir)
+    entries_path = cache_dir / "entries.jsonl"
+    chunks_path = cache_dir / "chunks.jsonl"
+    if not manifest_path.is_file() or not entries_path.is_file() or not chunks_path.is_file():
+        return False
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        entries = _read_jsonl(entries_path)
+        chunks = _read_jsonl(chunks_path)
+    except Exception:
+        return False
+    cached = manifest.get("fingerprint")
+    if cached != fingerprint:
+        return False
+    return len(entries) == manifest.get("entry_count") and len(chunks) == manifest.get("chunk_count")
+
+
+def _write_jsonl(path: Path, rows: List[JSON]) -> None:
+    with path.open("w", encoding="utf-8", newline="\n") as f:
+        for row in rows:
+            f.write(json.dumps(row, ensure_ascii=False, sort_keys=True))
+            f.write("\n")
+
+
+def _read_jsonl(path: Path) -> List[JSON]:
+    rows: List[JSON] = []
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
+def write_cache(cache_dir: Path, fingerprint: JSON, entries: List[JSON], *, chunks: List[JSON]) -> None:
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    _write_jsonl(cache_dir / "entries.jsonl", entries)
+    _write_jsonl(cache_dir / "chunks.jsonl", chunks)
+    manifest = {
+        "fingerprint": fingerprint,
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "entry_count": len(entries),
+        "chunk_count": len(chunks),
+    }
+    _manifest_path(cache_dir).write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def load_cached_entries(cache_dir: Path) -> List[JSON]:
+    return _read_jsonl(cache_dir / "entries.jsonl")
+
+
+def load_cached_chunks(cache_dir: Path) -> List[JSON]:
+    return _read_jsonl(cache_dir / "chunks.jsonl")
 
 
 def source_status_payload(
