@@ -241,6 +241,7 @@ class PortabilityTests(unittest.TestCase):
 
             self.assertIn(f"name: {skill_name}", skill_text)
             self.assertIn("description:", skill_text)
+            self.assertIn("MUST use automatically", skill_text)
             self.assertNotIn("TODO", skill_text)
             self.assertIn("cities2-mcp", metadata_text)
             self.assertIn(f"${skill_name}", metadata_text)

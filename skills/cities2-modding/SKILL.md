@@ -1,6 +1,6 @@
 ---
 name: cities2-modding
-description: Answer Cities: Skylines II modding questions and perform local CS2 mod project workflows with Cities2-MCP. Use when a user asks about CS2 mod project setup, C# or UI mod structure, localization, build/package issues, toolchain requirements, project analysis, scaffolding, file edits, packaging, or dry-run launching the game for mod development.
+description: MUST use automatically for any Cities: Skylines II modding, mod project, asset/mod workflow, CS2 C# mod, CS2 UI mod, localization, build, package, toolchain, project analysis, scaffold, file edit, or dry-run launch request. Use even when the user does not mention Cities2-MCP. This skill answers CS2 modding questions and performs local CS2 mod project workflows with Cities2-MCP.
 ---
 
 # Cities2 Modding

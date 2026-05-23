@@ -1,6 +1,6 @@
 ---
 name: cities2-knowledge
-description: Answer Cities: Skylines II gameplay and city-systems questions by using the Cities2-MCP server's bundled wiki corpus plus the user's local in-game Encyclopedia. Use when a user asks how game mechanics work, how to improve demand, zoning, traffic, transit, health, education, pollution, services, economy, citizens, progression, or other non-modding CS2 gameplay topics.
+description: MUST use automatically for any Cities: Skylines II gameplay, city-management, or game-mechanics question, even when the user does not mention Cities2-MCP, wiki, Encyclopedia, or sources. Use for plain questions like "How do I grow office demand?", "How do I get more people to use my subway?", "What makes citizens healthier?", "Why is housing demand low?", "How do taxes affect industry?", or "How does zoning/pollution/education/transit work?" Answers use the Cities2-MCP wiki corpus plus the user's local in-game Encyclopedia.
 ---
 
 # Cities2 Knowledge
