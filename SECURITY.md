@@ -22,9 +22,8 @@ Use GitHub private vulnerability reporting for this repository:
 You can also reach the same form from the repository's Security tab by choosing
 **Report a vulnerability**.
 
-Do not open a public issue for security reports, and do not post
-proof-of-concept payloads, local file paths, tokens, save data, or other
-sensitive details publicly.
+Do not post proof-of-concept payloads, local file paths, tokens, save data, or
+other sensitive details publicly.
 
 Please include:
 
