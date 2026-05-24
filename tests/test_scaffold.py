@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "server"))
 
+from build_runner import BuildRunner  # noqa: E402
 from project_scaffold import ProjectScaffolder  # noqa: E402
 
 
@@ -111,6 +112,26 @@ class ScaffoldTests(unittest.TestCase):
         resolved = scaffolder.resolve_workspace_path(str(secondary / "mod"))
 
         self.assertEqual(resolved, (secondary / "mod").resolve())
+
+    def test_package_default_output_stays_inside_project(self) -> None:
+        result = self.scaffolder.scaffold_project(
+            name="Package Output",
+            template="cities2-ui",
+            target_dir=None,
+            metadata={},
+            options={},
+        )
+        project_dir = Path(result["project_dir"])
+
+        package = BuildRunner(self.scaffolder).package_project(
+            project_dir=str(project_dir),
+            output_dir=None,
+            package_name=None,
+            exclude_globs=None,
+        )
+
+        self.assertEqual(Path(package["package_path"]).parent, project_dir / "packages")
+        self.assertFalse((self.tmp / "packages").exists())
 
 
 if __name__ == "__main__":

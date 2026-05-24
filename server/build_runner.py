@@ -103,7 +103,7 @@ class BuildRunner:
         exclude_globs: Optional[List[str]],
     ) -> JSON:
         root = self.scaffolder.resolve_workspace_path(project_dir)
-        out_dir = self.scaffolder.resolve_workspace_path(output_dir) if output_dir else (self.workspace / "packages")
+        out_dir = self.scaffolder.resolve_workspace_path(output_dir) if output_dir else (root / "packages")
         out_dir.mkdir(parents=True, exist_ok=True)
 
         name = package_name or root.name
