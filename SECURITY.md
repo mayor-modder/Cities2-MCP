@@ -3,20 +3,24 @@
 ## Supported Versions
 
 Security fixes are applied to the default branch first. When practical, fixes are
-also included in the latest tagged release.
+also included in the latest public release.
 
 | Version | Supported |
 | --- | --- |
 | Default branch | Yes |
-| Latest tagged release | Yes |
+| Latest public release | Yes |
 | Older releases | Best effort |
 
 ## Reporting a Vulnerability
 
 Please do not open a public issue with exploit details.
 
-Use GitHub private vulnerability reporting for this repository. From the
-repository's Security tab, choose **Report a vulnerability**.
+Use GitHub private vulnerability reporting for this repository:
+
+<https://github.com/mayor-modder/Cities2-MCP/security/advisories/new>
+
+You can also reach the same form from the repository's Security tab by choosing
+**Report a vulnerability**.
 
 Do not open a public issue for security reports, and do not post
 proof-of-concept payloads, local file paths, tokens, save data, or other
@@ -24,7 +28,7 @@ sensitive details publicly.
 
 Please include:
 
-- the affected version, commit, or tag
+- the affected version, commit, or release
 - operating system and MCP client, if relevant
 - a short description of the impact
 - reproduction steps or a minimal proof of concept
@@ -38,32 +42,37 @@ want credit.
 ## Scope
 
 Cities2-MCP is a local MCP server for Cities: Skylines II knowledge and modding
-workflows. The most important security boundaries are local filesystem access,
-configured workspace allowlists, command execution for build/package workflows,
-and data read from a user's local game installation.
+workflows. It includes Python MCP server code, bundled wiki retrieval data,
+Agent Skills, mod project templates, local game Encyclopedia extraction, and
+workflow tools that can read, write, build, package, and dry-run launch local
+mod projects.
 
 Reports are especially useful when they involve:
 
-- reading or writing files outside configured `--workspace` roots
 - path traversal in project, package, scaffold, or file-write tools
+- reading or writing files outside configured `--workspace` roots
 - command injection or unsafe argument handling in build, package, analyzer, or
   launch helpers
-- leaking local game files, generated encyclopedia caches, secrets, or personal
-  paths through tool responses, packages, logs, or generated files
-- unsafe handling of untrusted mod project files, template metadata, or package
-  names
+- unsafe handling of untrusted mod project files, template metadata, package
+  names, or generated files
+- leaking local game files, generated Encyclopedia caches, personal paths,
+  secrets, or user data through tool responses, packages, logs, or generated
+  files
+- release workflow or artifact integrity issues
 - denial of service caused by malformed corpus, encyclopedia, project, or
   template inputs
 
 The following are usually out of scope unless they bypass a Cities2-MCP security
 control:
 
-- vulnerabilities in Cities: Skylines II, the Paradox/Colossal Order toolchain,
-  .NET, Python, Node.js, or an MCP client
+- vulnerabilities in Cities: Skylines II, Unity, Paradox Mods, GitHub, MCP
+  clients, .NET, Python, Node.js, or other third-party platforms
 - malicious mod code intentionally written by a user into a trusted workspace
 - risks that require a user to run arbitrary shell commands outside this server
 - prompt-injection behavior in an AI client that does not cause Cities2-MCP to
   violate its documented filesystem or command-execution boundaries
+- dependency reports that do not affect this project
+- denial-of-service reports based only on excessive automated traffic
 
 ## Safe Configuration Notes
 
@@ -71,7 +80,7 @@ control:
   folders you trust the MCP workflow tools to read, write, build, and package.
 - Treat build and package tools as local development actions. They may execute
   project toolchains and should only be used on trusted projects.
-- Do not commit locally extracted game encyclopedia text, user save data,
+- Do not commit locally extracted game Encyclopedia text, user save data,
   generated caches, or personal paths.
 - Review generated mod files before publishing or distributing them.
 
