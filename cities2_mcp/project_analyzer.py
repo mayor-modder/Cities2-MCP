@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List
 
-from project_scaffold import ProjectScaffolder
+from .project_scaffold import ProjectScaffolder
 
 JSON = Dict[str, Any]
 
@@ -324,7 +324,6 @@ class ProjectAnalyzer:
                 )
 
         has_root_pkg = (root / "package.json").exists()
-        has_ui_pkg = (root / "ui" / "package.json").exists()
         package_path = root / "package.json" if has_root_pkg else (root / "ui" / "package.json")
         package_text = package_path.read_text(encoding="utf-8") if package_path.exists() else ""
 

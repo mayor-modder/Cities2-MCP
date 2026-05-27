@@ -1,12 +1,8 @@
 from __future__ import annotations
 
 import unittest
-from pathlib import Path
-import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from server.mcp_server import domain_tools_catalog, handle_domain_tools
+from cities2_mcp.mcp_server import domain_tools_catalog, handle_domain_tools
 
 
 EXPECTED_DOMAIN_TOOLS = {

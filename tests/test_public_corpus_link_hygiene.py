@@ -6,8 +6,8 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
-PAGES_JSONL = ROOT / "data" / "index" / "pages.jsonl"
-CHUNKS_JSONL = ROOT / "data" / "index" / "chunks.jsonl"
+PAGES_JSONL = ROOT / "cities2_mcp" / "data" / "index" / "pages.jsonl"
+CHUNKS_JSONL = ROOT / "cities2_mcp" / "data" / "index" / "chunks.jsonl"
 INTERNAL_HOST = "cs2.paradoxwikis.com"
 MEDIA_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".ico")
 

@@ -1,5 +1,7 @@
 # Cities2-MCP
 
+<!-- mcp-name: io.github.mayor-modder/cities2-mcp -->
+
 Cities2-MCP — a local MCP server for Cities: Skylines II game knowledge and modding tools.
 
 It gives AI assistants access to a prepared local corpus of Cities: Skylines II Wiki text, plus tools for creating, inspecting, building, and packaging CS2 mod projects.
@@ -60,7 +62,31 @@ These prompts do not load the entire corpus into the model context. They guide t
 
 ## Licensing
 
-The MCP server code is licensed under the MIT License. The internal retrieval layer includes code originally split out as `wiki-mcp`; its MIT notice is preserved in `THIRD_PARTY_NOTICES.md`. The included `data` corpus is licensed under Creative Commons Attribution-ShareAlike 3.0; source attribution and transformation notes are in `data/ATTRIBUTION.md`.
+The MCP server code is licensed under the MIT License. The internal retrieval layer includes code originally split out as `wiki-mcp`; its MIT notice is preserved in `THIRD_PARTY_NOTICES.md`. The included `cities2_mcp/data` corpus is licensed under Creative Commons Attribution-ShareAlike 3.0; source attribution and transformation notes are in `cities2_mcp/data/ATTRIBUTION.md`.
+
+## Quick Install
+
+The packaged server includes the bundled wiki corpus and can be launched by MCP
+clients through `uvx`:
+
+```json
+{
+  "mcpServers": {
+    "cities2-mcp": {
+      "command": "uvx",
+      "args": [
+        "cities2-mcp",
+        "--workspace",
+        "/absolute/path/to/trusted/mod/workspace"
+      ]
+    }
+  }
+}
+```
+
+Omit `--workspace` if you only want wiki and local Encyclopedia search. Add one
+or more `--workspace` entries when you want the project workflow tools to write,
+analyze, build, or package local mod projects.
 
 ## Prerequisites
 
@@ -70,7 +96,7 @@ Clone the repository:
 git clone https://github.com/mayor-modder/Cities2-MCP.git
 ```
 
-The wiki retrieval code is included directly under `server/retrieval`, so no submodule setup is required.
+The wiki retrieval code is included directly under `cities2_mcp/retrieval`, so no submodule setup is required.
 
 Optional mod build/package workflows need the Cities: Skylines II modding
 toolchain, `dotnet`, and a .NET 6 runtime. Check with:
@@ -99,7 +125,6 @@ Run from the repository root:
 ```bash
 CITIES2_MODS_DIR="$HOME/Library/Application Support/Colossal Order/Cities Skylines II/Mods" \
 python3 server/mcp_server.py \
-  --data-dir data \
   --workspace .
 ```
 
@@ -109,15 +134,15 @@ Repeat `--workspace` to allow additional project roots. Relative tool paths reso
 
 ## Included Wiki Corpus
 
-The server reads the prepared corpus from `data` by default. The corpus contains page metadata and JSONL indexes used by the MCP retrieval tools.
+The packaged server reads the prepared corpus from `cities2_mcp/data` by default. The corpus contains page metadata and JSONL indexes used by the MCP retrieval tools.
 
 Corpus layout:
 
-- `data/LICENSE`
-- `data/ATTRIBUTION.md`
-- `data/manifest.json`
-- `data/index/pages.jsonl`
-- `data/index/chunks.jsonl`
+- `cities2_mcp/data/LICENSE`
+- `cities2_mcp/data/ATTRIBUTION.md`
+- `cities2_mcp/data/manifest.json`
+- `cities2_mcp/data/index/pages.jsonl`
+- `cities2_mcp/data/index/chunks.jsonl`
 
 ## MCP Tools
 
@@ -162,9 +187,9 @@ Install them into a compatible client's skill folder, or keep them in the repo a
 
 Project templates are stored at:
 
-- `server/templates/cities2-csharp`
-- `server/templates/cities2-ui`
-- `server/templates/cities2-hybrid`
+- `cities2_mcp/templates/cities2-csharp`
+- `cities2_mcp/templates/cities2-ui`
+- `cities2_mcp/templates/cities2-hybrid`
 
 ## Migration From Older Tool Names
 

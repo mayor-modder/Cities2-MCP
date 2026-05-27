@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
-from retrieval.mcp_server import HybridIndex
+from .retrieval.mcp_server import HybridIndex
 
 JSON = Dict[str, Any]
 APP_ID = "949230"

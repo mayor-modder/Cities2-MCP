@@ -9,8 +9,8 @@ import zipfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
-from diagnostics import parse_build_output
-from project_scaffold import ProjectScaffolder
+from .diagnostics import parse_build_output
+from .project_scaffold import ProjectScaffolder
 
 JSON = Dict[str, Any]
 

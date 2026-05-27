@@ -7,12 +7,9 @@ import zipfile
 from pathlib import Path
 from unittest import mock
 
-import sys
-
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "server"))
 
-from game_encyclopedia import (  # noqa: E402
+from cities2_mcp.game_encyclopedia import (
     GAME_ENCYCLOPEDIA_WARNING,
     EncyclopediaConfig,
     _VDF_PATH_RE,
@@ -111,7 +108,7 @@ class GameEncyclopediaDiscoveryTests(unittest.TestCase):
         self.assertEqual(payload["entry_count"], 0)
 
 
-from game_encyclopedia import (  # noqa: E402
+from cities2_mcp.game_encyclopedia import (
     cache_dir_default,
     cache_is_fresh,
     current_source_fingerprint,
@@ -190,7 +187,7 @@ class GameEncyclopediaCacheTests(unittest.TestCase):
             self.assertFalse(cache_is_fresh(cache_dir, fingerprint))
 
 
-from game_encyclopedia import (  # noqa: E402
+from cities2_mcp.game_encyclopedia import (
     clean_markup_text,
     extract_glossary_records,
     records_to_entries,
@@ -275,7 +272,7 @@ class GameEncyclopediaParserTests(unittest.TestCase):
         self.assertEqual(cleaned, "Roads\nPress Tool.Select near Roads.")
 
 
-from game_encyclopedia import GameEncyclopediaSource  # noqa: E402
+from cities2_mcp.game_encyclopedia import GameEncyclopediaSource
 
 
 class GameEncyclopediaSourceTests(unittest.TestCase):

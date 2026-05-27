@@ -1,24 +1,17 @@
 from __future__ import annotations
 
 import json
-import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
 
+from cities2_mcp.retrieval import mcp_server as retrieval_server
+from cities2_mcp.retrieval.mcp_server import Corpus
+
 ROOT = Path(__file__).resolve().parents[1]
-CORPUS = ROOT / "data"
+CORPUS = ROOT / "cities2_mcp" / "data"
 SOURCE_PREFIX = "Source: https://cs2.paradoxwikis.com/"
 OLD_SOURCE_HOST = "https://cities2.paradoxwikis.com/"
-
-def load_internal_corpus():
-    path = ROOT / "server" / "retrieval" / "mcp_server.py"
-    spec = importlib.util.spec_from_file_location("wiki_mcp_corpus_test", path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Unable to load module from {path}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module.Corpus
 
 
 class CorpusSourceLinkTests(unittest.TestCase):
@@ -93,20 +86,12 @@ class CorpusSourceLinkTests(unittest.TestCase):
         self.assertNotIn("Copyright (c) 2014 Paradox Interactive AB", attribution)
 
     def test_public_corpus_loads_without_private_markdown_paths(self) -> None:
-        Corpus = load_internal_corpus()
         corpus = Corpus([CORPUS])
 
         self.assertGreater(len(corpus.pages), 0)
         self.assertGreater(len(corpus.chunks), 0)
 
     def test_get_page_reconstructs_markdown_from_chunks_without_page_sidecars(self) -> None:
-        module_path = ROOT / "server" / "retrieval" / "mcp_server.py"
-        spec = importlib.util.spec_from_file_location("wiki_mcp_reconstruct_test", module_path)
-        if spec is None or spec.loader is None:
-            raise RuntimeError(f"Unable to load module from {module_path}")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-
         with tempfile.TemporaryDirectory(prefix="cities2-mcp-agent-corpus-") as tmp:
             data_dir = Path(tmp)
             (data_dir / "index").mkdir()
@@ -140,8 +125,12 @@ class CorpusSourceLinkTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            corpus = module.Corpus([data_dir])
-            response = module.handle_tools_call(1, {"name": "get_page", "arguments": {"page_id": "roads"}}, corpus)
+            corpus = Corpus([data_dir])
+            response = retrieval_server.handle_tools_call(
+                1,
+                {"name": "get_page", "arguments": {"page_id": "roads"}},
+                corpus,
+            )
             payload = json.loads(response["result"]["content"][0]["text"])
 
         self.assertIn("Roads move traffic.", payload["markdown"])
