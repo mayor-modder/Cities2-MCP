@@ -156,6 +156,7 @@ Skills live under `skills/`:
 
 - `skills/cities2-knowledge/SKILL.md`
 - `skills/cities2-modding/SKILL.md`
+- `skills/cities2-game-updates/SKILL.md`
 
 Install them into a compatible client's skill folder, or keep them in the repo as project-level guidance where supported. The skills depend on the `cities2-mcp` MCP server being configured. Gameplay answers should include compact source notes that mention the local Game Encyclopedia entries and link to the relevant CS2 Wiki pages when available.
 

@@ -1,9 +1,9 @@
 {
   "dataset": "cities2-docs",
   "source": "Cities: Skylines II Wiki text corpus transformed for Cities2-MCP retrieval",
-  "generated_at": "2026-05-12T05:55:11.965906+00:00",
+  "generated_at": "2026-05-27T21:23:49.802903+00:00",
   "page_count": 126,
-  "chunk_count": 1090,
+  "chunk_count": 1095,
   "paths": {
     "pages_jsonl": "index/pages.jsonl",
     "chunks_jsonl": "index/chunks.jsonl"
