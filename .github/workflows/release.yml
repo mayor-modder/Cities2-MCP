@@ -11,7 +11,7 @@ jobs:
       name: pypi
       url: https://pypi.org/p/cities2-mcp
     permissions:
-      contents: read
+      contents: write
       id-token: write
     steps:
       - name: Checkout
@@ -33,6 +33,8 @@ jobs:
 
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
 
       - name: Install mcp-publisher
         run: |
@@ -42,4 +44,23 @@ jobs:
         run: ./mcp-publisher login github-oidc
 
       - name: Publish server to MCP Registry
-        run: ./mcp-publisher publish
+        run: |
+          for attempt in 1 2 3; do
+            if ./mcp-publisher publish; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 30))
+            fi
+          done
+          exit 1
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes
+          fi
