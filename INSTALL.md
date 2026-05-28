@@ -32,7 +32,7 @@ analyze, build, or package local mod projects.
 If the user asks for a fresh install or asks you to ignore previous local
 checkouts, still prefer the packaged install. Do not clone this repository just
 to run the MCP server. Use `uvx cities2-mcp` for the latest published release,
-or `uvx --refresh cities2-mcp==0.1.5` when you need to force a clean package
+or `uvx --refresh cities2-mcp==0.1.6` when you need to force a clean package
 resolution for the current release.
 
 Use the source checkout instructions below when developing this repository or
@@ -399,7 +399,7 @@ release tag, configure a PyPI trusted publisher for:
 - Workflow file: `.github/workflows/release.yml`
 - Environment: `pypi`
 
-Then create and push a tag such as `v0.1.5`. The release workflow runs tests,
+Then create and push a tag such as `v0.1.6`. The release workflow runs tests,
 builds the wheel and source distribution, publishes to PyPI, authenticates to
 the MCP Registry with GitHub OIDC, and publishes `server.json` for
 `io.github.mayor-modder/cities2-mcp`.

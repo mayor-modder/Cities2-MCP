@@ -30,13 +30,13 @@ class PackagingTests(unittest.TestCase):
 
         project = pyproject["project"]
         self.assertEqual(project["name"], "cities2-mcp")
-        self.assertEqual(project["version"], "0.1.5")
+        self.assertEqual(project["version"], "0.1.6")
         self.assertEqual(project["scripts"]["cities2-mcp"], "cities2_mcp.mcp_server:main")
 
     def test_package_module_reports_version_and_bundled_data_dir(self) -> None:
         package = importlib.import_module("cities2_mcp")
 
-        self.assertEqual(package.__version__, "0.1.5")
+        self.assertEqual(package.__version__, "0.1.6")
         data_dir = package.bundled_data_dir()
         self.assertTrue((data_dir / "index" / "chunks.jsonl").exists())
         self.assertTrue((data_dir / "index" / "pages.jsonl").exists())
@@ -50,7 +50,7 @@ class PackagingTests(unittest.TestCase):
             check=True,
         )
 
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.5")
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.6")
 
     def test_default_start_without_workspace_keeps_knowledge_tools_available(self) -> None:
         from tests.smoke_mcp import call, rpc, rpc_ndjson
@@ -70,7 +70,7 @@ class PackagingTests(unittest.TestCase):
             search = call(proc, 3, "search", {"query": "modding toolchain requirements", "limit": 1})
             scaffold = call(proc, 4, "scaffold_project", {"name": "No Workspace", "template": "cities2-csharp"})
 
-            self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.5")
+            self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.6")
             self.assertEqual(len(tools["result"]["tools"]), 14)
             self.assertTrue(search["ok"])
             self.assertFalse(scaffold["ok"])
@@ -113,9 +113,9 @@ class PackagingTests(unittest.TestCase):
         server_json = json.loads((ROOT / "server.json").read_text(encoding="utf-8"))
 
         self.assertEqual(server_json["name"], "io.github.mayor-modder/cities2-mcp")
-        self.assertEqual(server_json["version"], "0.1.5")
+        self.assertEqual(server_json["version"], "0.1.6")
         package = server_json["packages"][0]
         self.assertEqual(package["registryType"], "pypi")
         self.assertEqual(package["identifier"], "cities2-mcp")
-        self.assertEqual(package["version"], "0.1.5")
+        self.assertEqual(package["version"], "0.1.6")
         self.assertEqual(package["transport"]["type"], "stdio")
