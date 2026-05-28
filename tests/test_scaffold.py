@@ -232,6 +232,10 @@ class ScaffoldTests(unittest.TestCase):
         self.assertFalse((project_dir / "LocaleEN.cs").exists())
         self.assertNotIn("Setting.cs", created_rel)
         self.assertNotIn("LocaleEN.cs", created_rel)
+        self.assertIn(
+            "Localization files were not added because settings support is disabled.",
+            result["warnings"],
+        )
 
     def test_write_path_escape_is_rejected(self) -> None:
         result = self.scaffolder.scaffold_project(
