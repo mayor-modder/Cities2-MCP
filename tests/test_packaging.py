@@ -178,13 +178,28 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(mcpb["version"], "0.1.7")
         self.assertEqual(mcpb["server"]["type"], "uv")
         self.assertIn("https://github.com/mayor-modder/Cities2-MCP#privacy-policy", mcpb["privacy_policies"])
-        self.assertIn("cities2-mcp==0.1.7", mcpb_pyproject["project"]["dependencies"])
+        self.assertNotIn("cities2-mcp==0.1.7", mcpb_pyproject["project"].get("dependencies", []))
         self.assertIn("## Privacy Policy", readme_text)
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "bin" / "cities2-mcp-launcher.js").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "run_server.py").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "cities2_mcp" / "mcp_server.py").exists())
+        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-mcpb" / "vendor" / "cities2_mcp" / "mcp_server.py").exists())
+        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-mcpb" / "vendor" / "cities2_mcp" / "data" / "index" / "chunks.jsonl").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-knowledge" / "SKILL.md").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-modding" / "SKILL.md").exists())
+
+    def test_claude_mcpb_wrapper_reports_version_from_vendored_server(self) -> None:
+        mcpb_root = ROOT / "integrations" / "anthropic" / "claude-mcpb"
+        result = subprocess.run(
+            [sys.executable, "src/server.py", "--version"],
+            cwd=mcpb_root,
+            env={**os.environ, "PYTHONPATH": ""},
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.7")
 
     def test_claude_plugin_vendored_launcher_reports_version(self) -> None:
         plugin_root = ROOT / "integrations" / "anthropic" / "claude-plugin"

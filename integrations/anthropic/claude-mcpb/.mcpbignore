@@ -1,5 +1,8 @@
 .venv/
 server/lib/
 server/venv/
+*.mcpb
+*.plugin
+*.zip
 *.pyc
 __pycache__/
