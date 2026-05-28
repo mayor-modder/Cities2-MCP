@@ -7,12 +7,12 @@
     "url": "https://github.com/mayor-modder/Cities2-MCP",
     "source": "github"
   },
-  "version": "0.1.7",
+  "version": "0.1.8",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "cities2-mcp",
-      "version": "0.1.7",
+      "version": "0.1.8",
       "transport": {
         "type": "stdio"
       },

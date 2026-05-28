@@ -157,8 +157,15 @@ Both Anthropic package shapes expose optional path settings. Wiki search uses
 the bundled corpus without any user folder. Mod workflow tools require a trusted
 mod projects folder and reject project paths outside that folder.
 
-Before official listing, Claude Code users can add this repository as a plugin
-marketplace and install the plugin:
+Before official listing, Claude Desktop users can install from this repository:
+
+1. From either the **Cowork** or **Code** tab, select **Customize** in the sidebar.
+2. Under **Personal plugins**, click **+**.
+3. Choose **Create Plugin** > **Add marketplace**.
+4. Enter `mayor-modder/Cities2-MCP`, then install **Cities2-MCP**.
+
+Claude Code users can add the same repository as a plugin marketplace and install
+the plugin:
 
 ```text
 /plugin marketplace add mayor-modder/Cities2-MCP

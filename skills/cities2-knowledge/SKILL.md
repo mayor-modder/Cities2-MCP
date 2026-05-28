@@ -1,19 +1,15 @@
 ---
 name: cities2-knowledge
-description: >-
-  MUST use automatically for any Cities: Skylines II gameplay, city-management,
-  game-mechanics, patch, update, changed, fixed, added, removed, improved,
-  or known-issue question, even when the user does not mention Cities2-MCP,
-  wiki, Encyclopedia, patch notes, or sources. Use for plain questions like
-  "How do I grow office demand?", "What changed in the latest patch?", "Did
-  traffic change?", "What makes citizens healthier?", "Why is housing demand
-  low?", or "How does zoning/pollution/education/transit work?" Answers use
-  the Cities2-MCP wiki corpus plus the user's local in-game Encyclopedia.
+description: "Use automatically for Cities: Skylines II gameplay, city-management, mechanics, patch/update, or known-issue questions; answers use the Cities2-MCP wiki corpus and local Encyclopedia."
+metadata:
+  short-description: "Answer CS2 gameplay and patch questions"
 ---
 
 # Cities2 Knowledge
 
 Use this skill when answering Cities: Skylines II gameplay questions with Cities2-MCP. The goal is to retrieve focused evidence from both available sources and synthesize a normal answer, not to show raw search results.
+
+Trigger this skill for plain questions like "How do I grow office demand?", "What changed in the latest patch?", "Did traffic change?", "What makes citizens healthier?", "Why is housing demand low?", or "How does zoning/pollution/education/transit work?", even when the user does not mention Cities2-MCP, wiki, Encyclopedia, patch notes, or sources.
 
 ## Source Roles
 

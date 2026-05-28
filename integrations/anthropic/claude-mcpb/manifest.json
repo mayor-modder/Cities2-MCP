@@ -3,7 +3,7 @@
   "manifest_version": "0.4",
   "name": "cities2-mcp",
   "display_name": "Cities2-MCP",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Local Cities: Skylines II wiki, Encyclopedia, and mod workflow tools for Claude Desktop.",
   "long_description": "Cities2-MCP gives Claude Desktop local access to a bundled Cities: Skylines II Wiki corpus, the user's installed in-game Encyclopedia when available, and optional mod project workflow tools inside a trusted workspace.",
   "author": {

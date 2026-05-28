@@ -1,17 +1,15 @@
 ---
 name: cities2-modding
-description: >-
-  MUST use automatically for any Cities: Skylines II modding, mod project,
-  asset/mod workflow, CS2 C# mod, CS2 UI mod, localization, build, package,
-  toolchain, project analysis, scaffold, file edit, or dry-run launch request.
-  Use even when the user does not mention Cities2-MCP. This skill answers CS2
-  modding questions and performs local CS2 mod project workflows with
-  Cities2-MCP.
+description: "Use automatically for Cities: Skylines II modding, mod projects, C#/UI mods, localization, scaffold, analyze, build, package, and dry-run launch requests."
+metadata:
+  short-description: "Use CS2 docs and mod workflow tools"
 ---
 
 # Cities2 Modding
 
 Use this skill for Cities: Skylines II modding and local mod-project work through Cities2-MCP. Keep documentation retrieval separate from write/build actions.
+
+Trigger this skill for asset/mod workflows, toolchain questions, project analysis, file edits, scaffolding, build/package/install work, or local dry-run launches, even when the user does not mention Cities2-MCP.
 
 ## Source And Tool Roles
 

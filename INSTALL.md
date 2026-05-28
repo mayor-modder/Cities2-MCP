@@ -32,7 +32,7 @@ analyze, build, or package local mod projects.
 If the user asks for a fresh install or asks you to ignore previous local
 checkouts, still prefer the packaged install. Do not clone this repository just
 to run the MCP server. Use `uvx cities2-mcp` for the latest published release,
-or `uvx --refresh cities2-mcp==0.1.7` when you need to force a clean package
+or `uvx --refresh cities2-mcp==0.1.8` when you need to force a clean package
 resolution for the current release.
 
 The MCP install command only configures the server. To install the bundled
@@ -116,9 +116,9 @@ Install these skills into the client's supported skill directory if the client d
 
 ## 3. Detect installed clients
 
-A client can be installed even if its config file does not exist yet — many clients only create config files on demand.
+A client can be installed even if its config file does not exist yet â€” many clients only create config files on demand.
 
-> **IMPORTANT — always include yourself.** If you are an AI agent running inside a client (Claude Code, Cursor, Codex, etc.), that client is installed by definition. Add it to the detected list regardless of whether its config file exists yet. Do not skip yourself.
+> **IMPORTANT â€” always include yourself.** If you are an AI agent running inside a client (Claude Code, Cursor, Codex, etc.), that client is installed by definition. Add it to the detected list regardless of whether its config file exists yet. Do not skip yourself.
 
 Do not collapse Claude clients into one entry. Claude Desktop app MCP settings and Claude Code MCP settings are separate, even when Claude Code is used inside the Desktop app. An agent may not be able to tell which one the user means from context. If the user asks to install for "Claude" or "Claude Code" and both surfaces might matter, ask the user which Claude surface they want: Claude Desktop app MCP settings, Claude Code MCP settings, or both.
 
@@ -137,9 +137,9 @@ Classify each detected client into one of three states:
 
 | State | Meaning | Action in step 4 |
 |---|---|---|
-| **Up to date** | Has a `cities2-mcp` entry using packaged `uvx cities2-mcp`, or a source checkout entry with the current `--data-dir` flag | Exclude from the picker — already installed |
-| **Outdated** | Has a legacy-named entry or uses old flags (`--chunks`, `--pages` instead of `--data-dir`) | Include in the picker — describe as "outdated entry will be replaced" |
-| **Not installed** | No matching entry found | Include in the picker — describe as "entry needs to be added" (or "config file will be created" if the file doesn't exist yet) |
+| **Up to date** | Has a `cities2-mcp` entry using packaged `uvx cities2-mcp`, or a source checkout entry with the current `--data-dir` flag | Exclude from the picker â€” already installed |
+| **Outdated** | Has a legacy-named entry or uses old flags (`--chunks`, `--pages` instead of `--data-dir`) | Include in the picker â€” describe as "outdated entry will be replaced" |
+| **Not installed** | No matching entry found | Include in the picker â€” describe as "entry needs to be added" (or "config file will be created" if the file doesn't exist yet) |
 
 When writing the config in step 4, if replacing an outdated entry, remove the old entry entirely before adding the new one.
 
@@ -187,7 +187,7 @@ Install globally by default. Only use project-level config if the user explicitl
 
 These clients all use a `mcpServers` key in their JSON config. Add the following entry inside the existing `mcpServers` object. If `mcpServers` does not exist, create it.
 
-**If the config file already exists**, read it, add the entry, and write it back — do not overwrite unrelated settings. **If the config file does not exist**, create it with just the `mcpServers` key containing the entry below.
+**If the config file already exists**, read it, add the entry, and write it back â€” do not overwrite unrelated settings. **If the config file does not exist**, create it with just the `mcpServers` key containing the entry below.
 
 Replace `PYTHON_PATH`, `REPO_ROOT`, `CITIES2_MODS_DIR`, and any additional
 workspace paths with the values resolved in step 2. On Windows, use
@@ -348,7 +348,17 @@ Code starts the plugin-provided `cities2-mcp` server automatically. The plugin
 sets `--workspace` to `${CLAUDE_PROJECT_DIR}`, so workflow tools are confined
 to the current Claude Code project.
 
-Before official listing, install through this repository's marketplace:
+Before official listing, install through this repository's marketplace.
+
+In Claude Desktop:
+
+1. From either the **Cowork** or **Code** tab, select **Customize** in the sidebar.
+2. Under **Personal plugins**, click **+**.
+3. Choose **Create Plugin** > **Add marketplace**.
+4. Enter `mayor-modder/Cities2-MCP`.
+5. Install and enable **Cities2-MCP**.
+
+In Claude Code:
 
 ```text
 /plugin marketplace add mayor-modder/Cities2-MCP
@@ -384,10 +394,15 @@ directory, game install directory, and direct `Locale.cok` path.
 
 ### Claude Desktop plugin package
 
-Claude Desktop's Plugins UI can also install the same plugin package used by
-Claude Code when it is distributed as a `.zip` or `.plugin` archive. This is the
-friendlier path when users want the slash commands and the local MCP server in
-one install.
+Claude Desktop's Plugins UI can install the same plugin package used by Claude
+Code. For end users, the friendliest path is adding this repository as a plugin
+marketplace from **Customize**: from either the **Cowork** or **Code** tab,
+select **Customize** in the sidebar, click **+** under **Personal plugins**,
+choose **Create Plugin** > **Add marketplace**, then enter
+`mayor-modder/Cities2-MCP`.
+
+A `.zip` or `.plugin` archive is still useful for local testing and direct
+artifact installs, but it should not be the first install path for normal users.
 
 The plugin exposes optional settings for a trusted mod projects folder, Mods folder,
 game install folder, and direct `Locale.cok` path. Leave them blank for wiki
@@ -510,7 +525,7 @@ release tag, configure a PyPI trusted publisher for:
 - Workflow file: `.github/workflows/release.yml`
 - Environment: `pypi`
 
-Then create and push a tag such as `v0.1.7`. The release workflow runs tests,
+Then create and push a tag such as `v0.1.8`. The release workflow runs tests,
 builds the wheel and source distribution, publishes to PyPI, authenticates to
 the MCP Registry with GitHub OIDC, and publishes `server.json` for
 `io.github.mayor-modder/cities2-mcp`.

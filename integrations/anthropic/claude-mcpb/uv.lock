@@ -4,5 +4,5 @@ requires-python = ">=3.10"
 
 [[package]]
 name = "cities2-mcp-claude-mcpb"
-version = "0.1.7"
+version = "0.1.8"
 source = { virtual = "." }

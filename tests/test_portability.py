@@ -244,6 +244,19 @@ class PortabilityTests(unittest.TestCase):
             self.assertNotIn("cities2-wiki", text)
             self.assertNotIn("cities2-encyclopedia", text)
 
+    def test_docs_include_current_claude_desktop_plugin_marketplace_path(self) -> None:
+        install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
+        readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+
+        for text in (install_text, readme_text):
+            self.assertIn("Cowork", text)
+            self.assertIn("Code", text)
+            self.assertIn("Customize", text)
+            self.assertIn("Personal plugins", text)
+            self.assertIn("Create Plugin", text)
+            self.assertIn("Add marketplace", text)
+            self.assertIn("mayor-modder/Cities2-MCP", text)
+
     def test_agent_skills_are_packaged_and_documented(self) -> None:
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
@@ -256,8 +269,9 @@ class PortabilityTests(unittest.TestCase):
 
             self.assertIn(f"name: {skill_name}", skill_text)
             self.assertIn("description:", skill_text)
-            self.assertIn("MUST use automatically", skill_text)
-            self.assertIn("description: >-", skill_text)
+            self.assertIn("Use automatically", skill_text)
+            self.assertIn("metadata:", skill_text)
+            self.assertIn("short-description:", skill_text)
             self.assertIn("Source", skill_text)
             self.assertNotIn("TODO", skill_text)
             self.assertIn("cities2-mcp", metadata_text)
