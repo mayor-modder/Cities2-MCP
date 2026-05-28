@@ -332,7 +332,7 @@ class ScaffoldTests(unittest.TestCase):
         }
 
         subprocess_env = BuildRunner._subprocess_env(env=env, platform="win32")
-        resolved = BuildRunner._resolve_command_argv(["npm", "--version"], subprocess_env)
+        resolved = BuildRunner._resolve_command_argv(["npm", "--version"], subprocess_env, platform="win32")
 
         self.assertEqual(str(npm_cmd).casefold(), resolved[0].casefold())
         self.assertEqual(["--version"], resolved[1:])

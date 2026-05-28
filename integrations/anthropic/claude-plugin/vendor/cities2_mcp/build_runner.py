@@ -82,7 +82,27 @@ class BuildRunner:
         return merged
 
     @staticmethod
-    def _resolve_command_argv(argv: Sequence[str], env: Dict[str, str]) -> List[str]:
+    @staticmethod
+    def _resolve_windows_command(command: str, env: Dict[str, str]) -> str:
+        path_value = env.get("PATH", "")
+        path_parts = [part for part in str(path_value).split(os.pathsep) if part]
+        extensions = [ext for ext in str(env.get("PATHEXT", ".COM;.EXE;.BAT;.CMD")).split(";") if ext]
+        names = [command] if Path(command).suffix else [command + ext for ext in extensions]
+        for directory in path_parts:
+            for name in names:
+                candidate = Path(directory) / name
+                if candidate.is_file():
+                    return str(candidate)
+        return ""
+
+    @classmethod
+    def _resolve_command_argv(
+        cls,
+        argv: Sequence[str],
+        env: Dict[str, str],
+        *,
+        platform: Optional[str] = None,
+    ) -> List[str]:
         if not argv:
             return []
         command = str(argv[0])
@@ -90,6 +110,8 @@ class BuildRunner:
             return [command, *[str(arg) for arg in argv[1:]]]
 
         resolved = shutil.which(command, path=env.get("PATH"))
+        if not resolved and (platform or sys.platform).startswith("win"):
+            resolved = cls._resolve_windows_command(command, env)
         if resolved:
             return [resolved, *[str(arg) for arg in argv[1:]]]
         return [command, *[str(arg) for arg in argv[1:]]]
