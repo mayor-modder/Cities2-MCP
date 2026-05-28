@@ -232,7 +232,7 @@ class PortabilityTests(unittest.TestCase):
     def test_agent_skills_are_packaged_and_documented(self) -> None:
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
-        skill_names = ["cities2-knowledge", "cities2-modding"]
+        skill_names = ["cities2-knowledge", "cities2-modding", "cities2-game-updates"]
 
         for skill_name in skill_names:
             skill_dir = ROOT / "skills" / skill_name

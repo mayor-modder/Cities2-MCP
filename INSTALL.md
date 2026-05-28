@@ -270,14 +270,15 @@ For any MCP client not listed above, use the JSON shape from the "JSON clients" 
 
 If the selected client supports Agent Skills, install the bundled Cities2-MCP skills after configuring the MCP server. These skills teach the agent how to query and interpret the wiki corpus plus local Game Encyclopedia, then cite the specific source pages or entries used.
 
-Install both skill folders:
+Install the user-facing skill folders:
 
 - `<REPO_ROOT>/skills/cities2-knowledge`
 - `<REPO_ROOT>/skills/cities2-modding`
+- `<REPO_ROOT>/skills/cities2-game-updates`
 
 ### Codex skills
 
-For Codex, copy the two skill directories into the user's Codex skills folder:
+For Codex, copy the skill directories into the user's Codex skills folder:
 
 | Platform | Codex skills folder |
 |---|---|
@@ -292,6 +293,7 @@ $dst = "$env:USERPROFILE/.codex/skills"
 New-Item -ItemType Directory -Force -Path $dst | Out-Null
 Copy-Item -Recurse -Force "$src/cities2-knowledge" "$dst/cities2-knowledge"
 Copy-Item -Recurse -Force "$src/cities2-modding" "$dst/cities2-modding"
+Copy-Item -Recurse -Force "$src/cities2-game-updates" "$dst/cities2-game-updates"
 ```
 
 On macOS or Linux:
@@ -300,6 +302,7 @@ On macOS or Linux:
 mkdir -p ~/.codex/skills
 cp -R "<REPO_ROOT>/skills/cities2-knowledge" ~/.codex/skills/
 cp -R "<REPO_ROOT>/skills/cities2-modding" ~/.codex/skills/
+cp -R "<REPO_ROOT>/skills/cities2-game-updates" ~/.codex/skills/
 ```
 
 ### Other clients
