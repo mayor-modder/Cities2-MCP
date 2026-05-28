@@ -40,6 +40,19 @@ Example queries:
 Before writing files, building, packaging, or launching:
 
 1. Confirm the target project path is inside a configured workspace.
+   - If no trusted mod projects folder is configured, or the requested project
+     is outside it, do not present this as a tool failure. Tell the user the
+     knowledge tools still work, but local mod workflow tools need an allowed
+     folder before they can read/write/build projects.
+   - Offer the user the practical fix: add the specific mod project folder, or
+     preferably add the parent folder that contains all of their CS2 mod
+     projects so future projects under it work too.
+   - In Claude Desktop, direct the user to the Cities2-MCP plugin/extension
+     settings and the `Trusted mod projects folder` option. In Claude Code,
+     project-scoped installs normally use the current project automatically; if
+     it is still blocked, suggest reinstalling/enabling the plugin from the
+     desired project or configuring a parent folder if the host exposes plugin
+     settings.
 2. Explain the intended local action briefly.
 3. Use the narrowest tool for the task:
    - `scaffold_project` for new mod templates.
@@ -51,6 +64,11 @@ Before writing files, building, packaging, or launching:
    - `launch_cities2` only as a dry run unless the user clearly asks to launch.
 
 If a write/build tool returns diagnostics, summarize the actionable errors first and include paths or commands that matter.
+
+If a workflow tool returns a workspace/allowlist/configuration error, stop and
+help the user configure access before retrying. Phrase it as a normal setup step,
+not as a crash: "Cities2-MCP can work on that project after you add its folder,
+or a shared parent folder, to Trusted mod projects folder."
 
 When scaffolding a new project, `scaffold_project` chooses a default `game_version`
 from the bundled corpus and returns `game_version`, `game_version_source`,
