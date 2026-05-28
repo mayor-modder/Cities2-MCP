@@ -140,17 +140,18 @@ Reference config templates with placeholders are also available at:
 Cities2-MCP includes two Anthropic package shapes under
 `integrations/anthropic/`:
 
-- `claude-plugin/` is the Claude Code plugin. It bundles the two skills and a
+- `claude-plugin/` is the Claude plugin. It bundles the two skills and a
   plugin-local launcher so installing the plugin provides slash commands and
-  starts the MCP server automatically.
+  starts the MCP server automatically. Claude Desktop's Plugins installer can
+  also use this package when distributed as a `.zip` or `.plugin` archive.
 - `claude-mcpb/` is the Claude Desktop MCPB source. It uses Anthropic's `uv`
-  runtime support and wraps the published PyPI package for one-click local
-  desktop-extension installs without asking users to install `uvx` manually.
+  runtime support and vendors the server for one-click local desktop-extension
+  installs without asking users to install `uvx` manually.
 
 Local PyPI MCP servers are not listed directly in Anthropic's Connectors
-Directory. The plugin is the path for Claude Code skill discoverability; the
-MCPB is the path for Claude Desktop extension testing and Connectors Directory
-submission.
+Directory. The plugin is the friendliest install path when users want slash
+commands plus the local MCP server. The MCPB is the lower-level Claude Desktop
+extension path for extension testing and Connectors Directory submission.
 
 Before official listing, Claude Code users can add this repository as a plugin
 marketplace and install the plugin:

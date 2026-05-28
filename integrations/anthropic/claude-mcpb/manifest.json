@@ -63,25 +63,25 @@
     "trusted_workspace": {
       "type": "directory",
       "title": "Trusted mod workspace",
-      "description": "Folder where Cities2-MCP workflow tools may write, analyze, build, and package mod projects. Choose a mod project folder or a trusted parent folder. Wiki and Encyclopedia tools do not need this folder.",
+      "description": "Optional. Choose a mod project folder, or a trusted parent folder containing projects, to enable scaffold, edit, analyze, build, and package workflows.",
       "required": false
     },
     "mods_dir": {
       "type": "directory",
       "title": "Cities: Skylines II Mods folder",
-      "description": "Optional local Mods folder used by build and package workflows.",
+      "description": "Optional. Cities2-MCP normally uses the standard local Mods folder; set this only if your Mods folder is somewhere else.",
       "required": false
     },
     "game_dir": {
       "type": "directory",
       "title": "Cities: Skylines II install folder",
-      "description": "Optional game install folder. Set this only when automatic Game Encyclopedia discovery does not find the game.",
+      "description": "Optional. Cities2-MCP normally discovers Steam installs automatically; set this only if Encyclopedia search cannot find your game.",
       "required": false
     },
     "locale_cok": {
       "type": "file",
       "title": "Locale.cok file",
-      "description": "Optional direct path to Locale.cok when the in-game Encyclopedia file should be selected directly.",
+      "description": "Optional. Direct path to Locale.cok; use only when automatic game discovery cannot find the in-game Encyclopedia file.",
       "required": false
     }
   }

@@ -377,10 +377,22 @@ cd integrations/anthropic/claude-mcpb
 npx @anthropic-ai/mcpb pack
 ```
 
-The MCPB wrapper depends on `cities2-mcp==0.1.7`, so build and submit the public
-`.mcpb` only after that PyPI release exists. The manifest includes optional
-Claude Desktop settings for a trusted workspace, Mods directory, game install
-directory, and direct `Locale.cok` path.
+The MCPB wrapper vendors the server package and wiki corpus, so local Desktop
+testing does not depend on the matching PyPI release already existing. The
+manifest includes optional Claude Desktop settings for a trusted workspace, Mods
+directory, game install directory, and direct `Locale.cok` path.
+
+### Claude Desktop plugin package
+
+Claude Desktop's Plugins UI can also install the same plugin package used by
+Claude Code when it is distributed as a `.zip` or `.plugin` archive. This is the
+friendlier path when users want the slash commands and the local MCP server in
+one install.
+
+For local testing, package the contents of `integrations/anthropic/claude-plugin`
+so the archive root contains `.claude-plugin/plugin.json`, `.mcp.json`,
+`skills/`, `bin/`, and `vendor/`. The archive may use either `.zip` or
+`.plugin`.
 
 ### Codex skills
 

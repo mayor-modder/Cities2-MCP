@@ -82,12 +82,19 @@ class BuildRunner:
         return merged
 
     @staticmethod
-    @staticmethod
     def _resolve_windows_command(command: str, env: Dict[str, str]) -> str:
         path_value = env.get("PATH", "")
         path_parts = [part for part in str(path_value).split(os.pathsep) if part]
         extensions = [ext for ext in str(env.get("PATHEXT", ".COM;.EXE;.BAT;.CMD")).split(";") if ext]
-        names = [command] if Path(command).suffix else [command + ext for ext in extensions]
+        if Path(command).suffix:
+            names = [command]
+        else:
+            names = []
+            for ext in extensions:
+                for suffix in (ext, ext.lower(), ext.upper()):
+                    name = command + suffix
+                    if name not in names:
+                        names.append(name)
         for directory in path_parts:
             for name in names:
                 candidate = Path(directory) / name

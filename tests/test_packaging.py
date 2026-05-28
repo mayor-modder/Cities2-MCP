@@ -178,6 +178,13 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(mcpb["version"], "0.1.7")
         self.assertEqual(mcpb["server"]["type"], "uv")
         self.assertIn("https://github.com/mayor-modder/Cities2-MCP#privacy-policy", mcpb["privacy_policies"])
+        user_config = mcpb["user_config"]
+        self.assertIn("Optional.", user_config["trusted_workspace"]["description"])
+        self.assertIn("trusted parent folder", user_config["trusted_workspace"]["description"])
+        self.assertIn("standard local Mods folder", user_config["mods_dir"]["description"])
+        self.assertIn("discovers Steam installs automatically", user_config["game_dir"]["description"])
+        self.assertIn("automatic game discovery", user_config["locale_cok"]["description"])
+        self.assertNotIn("Wiki and Encyclopedia tools do not need this folder", json.dumps(user_config))
         self.assertNotIn("cities2-mcp==0.1.7", mcpb_pyproject["project"].get("dependencies", []))
         self.assertIn("## Privacy Policy", readme_text)
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "bin" / "cities2-mcp-launcher.js").exists())
