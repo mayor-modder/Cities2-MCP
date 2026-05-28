@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import tempfile
 import unittest
@@ -295,6 +296,46 @@ class ScaffoldTests(unittest.TestCase):
 
         self.assertEqual(Path(package["package_path"]).parent, project_dir / "packages")
         self.assertFalse((self.tmp / "packages").exists())
+
+    def test_build_runner_adds_common_windows_tool_dirs_to_subprocess_path(self) -> None:
+        program_files = self.tmp / "Program Files"
+        node_dir = program_files / "nodejs"
+        dotnet_dir = program_files / "dotnet"
+        node_dir.mkdir(parents=True)
+        dotnet_dir.mkdir()
+        env = {
+            "PATH": str(self.tmp / "existing"),
+            "PROGRAMFILES": str(program_files),
+            "PROGRAMFILES(X86)": "",
+            "LOCALAPPDATA": "",
+        }
+
+        subprocess_env = BuildRunner._subprocess_env(env=env, platform="win32")
+        path_parts = subprocess_env["PATH"].split(os.pathsep)
+
+        self.assertIn(str(node_dir), path_parts)
+        self.assertIn(str(dotnet_dir), path_parts)
+        self.assertEqual(1, path_parts.count(str(node_dir)))
+
+    def test_build_runner_resolves_tools_from_augmented_path(self) -> None:
+        program_files = self.tmp / "Program Files"
+        node_dir = program_files / "nodejs"
+        node_dir.mkdir(parents=True)
+        npm_cmd = node_dir / "npm.cmd"
+        npm_cmd.write_text("@echo off\n", encoding="utf-8")
+        env = {
+            "PATH": "",
+            "PATHEXT": ".COM;.EXE;.BAT;.CMD",
+            "PROGRAMFILES": str(program_files),
+            "PROGRAMFILES(X86)": "",
+            "LOCALAPPDATA": "",
+        }
+
+        subprocess_env = BuildRunner._subprocess_env(env=env, platform="win32")
+        resolved = BuildRunner._resolve_command_argv(["npm", "--version"], subprocess_env)
+
+        self.assertEqual(str(npm_cmd).casefold(), resolved[0].casefold())
+        self.assertEqual(["--version"], resolved[1:])
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import fnmatch
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -30,12 +31,78 @@ class BuildRunner:
             return text
         return text[-max_chars:]
 
+    @staticmethod
+    def _common_windows_tool_dirs(env: Dict[str, str]) -> List[Path]:
+        candidates: List[Path] = []
+        folded_env = {key.casefold(): value for key, value in env.items()}
+        for key in ("ProgramFiles", "ProgramFiles(x86)"):
+            root = str(folded_env.get(key.casefold(), "")).strip()
+            if not root:
+                continue
+            candidates.append(Path(root) / "nodejs")
+            candidates.append(Path(root) / "dotnet")
+
+        local_appdata = str(folded_env.get("localappdata", "")).strip()
+        if local_appdata:
+            candidates.append(Path(local_appdata) / "Programs" / "nodejs")
+            candidates.append(Path(local_appdata) / "Microsoft" / "WinGet" / "Packages")
+
+        seen: set[str] = set()
+        unique: List[Path] = []
+        for candidate in candidates:
+            text = str(candidate)
+            if text not in seen:
+                seen.add(text)
+                unique.append(candidate)
+        return unique
+
+    @classmethod
+    def _subprocess_env(
+        cls,
+        *,
+        env: Optional[Dict[str, str]] = None,
+        platform: Optional[str] = None,
+    ) -> Dict[str, str]:
+        merged = dict(os.environ if env is None else env)
+        platform_name = platform or sys.platform
+        if not platform_name.startswith("win"):
+            return merged
+
+        path_parts = [part for part in str(merged.get("PATH", "")).split(os.pathsep) if part]
+        normalized = {part.casefold() for part in path_parts}
+        for candidate in cls._common_windows_tool_dirs(merged):
+            if not candidate.is_dir():
+                continue
+            candidate_text = str(candidate)
+            if candidate_text.casefold() in normalized:
+                continue
+            path_parts.append(candidate_text)
+            normalized.add(candidate_text.casefold())
+        merged["PATH"] = os.pathsep.join(path_parts)
+        return merged
+
+    @staticmethod
+    def _resolve_command_argv(argv: Sequence[str], env: Dict[str, str]) -> List[str]:
+        if not argv:
+            return []
+        command = str(argv[0])
+        if any(separator in command for separator in ("/", "\\")):
+            return [command, *[str(arg) for arg in argv[1:]]]
+
+        resolved = shutil.which(command, path=env.get("PATH"))
+        if resolved:
+            return [resolved, *[str(arg) for arg in argv[1:]]]
+        return [command, *[str(arg) for arg in argv[1:]]]
+
     def _run_command(self, argv: Sequence[str], cwd: Path, timeout_sec: int) -> JSON:
         started = time.monotonic()
+        env = self._subprocess_env()
+        resolved_argv = self._resolve_command_argv(argv, env)
         try:
             proc = subprocess.run(
-                list(argv),
+                resolved_argv,
                 cwd=str(cwd),
+                env=env,
                 capture_output=True,
                 text=True,
                 timeout=max(10, int(timeout_sec)),
