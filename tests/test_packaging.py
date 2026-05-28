@@ -8,6 +8,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from cities2_mcp.agent_assets import install_agent_assets
+
 try:
     import tomllib
 except ModuleNotFoundError:  # pragma: no cover
@@ -119,3 +121,44 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(package["identifier"], "cities2-mcp")
         self.assertEqual(package["version"], "0.1.6")
         self.assertEqual(package["transport"]["type"], "stdio")
+
+    def test_agent_asset_installer_copies_codex_and_claude_assets(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-assets-") as tmp:
+            home = Path(tmp)
+            (home / ".codex" / "skills" / "cities2-game-updates").mkdir(parents=True)
+            (home / ".claude" / "skills" / "cities2-game-updates").mkdir(parents=True)
+            (home / ".claude" / "commands").mkdir(parents=True)
+            (home / ".claude" / "commands" / "cities2-game-updates.md").write_text("old\n", encoding="utf-8")
+
+            results = install_agent_assets(["all"], home=home)
+
+            self.assertEqual({result.client for result in results}, {"codex", "claude"})
+            for client_root in (home / ".codex" / "skills", home / ".claude" / "skills"):
+                self.assertTrue((client_root / "cities2-knowledge" / "SKILL.md").exists())
+                self.assertTrue((client_root / "cities2-modding" / "SKILL.md").exists())
+                self.assertFalse((client_root / "cities2-game-updates").exists())
+            self.assertTrue((home / ".claude" / "commands" / "cities2-knowledge.md").exists())
+            self.assertTrue((home / ".claude" / "commands" / "cities2-modding.md").exists())
+            self.assertFalse((home / ".claude" / "commands" / "cities2-game-updates.md").exists())
+
+    def test_agent_asset_installer_cli_exits_without_starting_stdio_server(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-cli-assets-") as tmp:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "cities2_mcp.mcp_server",
+                    "install-agent-assets",
+                    "--client",
+                    "codex",
+                    "--home",
+                    tmp,
+                ],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+
+            self.assertIn("codex: installed", result.stdout)
+            self.assertTrue((Path(tmp) / ".codex" / "skills" / "cities2-knowledge" / "SKILL.md").exists())

@@ -908,6 +908,11 @@ def handle_request(
 
 
 def main() -> None:
+    if len(sys.argv) > 1 and sys.argv[1] in {"install-agent-assets", "install-skills"}:
+        from . import agent_assets
+
+        raise SystemExit(agent_assets.main(sys.argv[2:]))
+
     parser = argparse.ArgumentParser(description=SERVER_NAME)
     parser.add_argument("--data-dir", default=str(bundled_data_dir()))
     parser.add_argument("--workspace", action="append", dest="workspaces")

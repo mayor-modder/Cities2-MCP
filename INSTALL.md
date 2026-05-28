@@ -35,6 +35,19 @@ to run the MCP server. Use `uvx cities2-mcp` for the latest published release,
 or `uvx --refresh cities2-mcp==0.1.6` when you need to force a clean package
 resolution for the current release.
 
+The MCP install command only configures the server. To install the bundled
+slash-command skills too, run the package helper after the MCP server is
+configured:
+
+```sh
+uvx cities2-mcp install-agent-assets
+```
+
+Use `--client codex` or `--client claude` to target one client. The helper
+copies the two current user-facing assets, `cities2-knowledge` and
+`cities2-modding`, and removes the old `cities2-game-updates` asset name from
+the target client folders.
+
 Use the source checkout instructions below when developing this repository or
 when a user explicitly wants to run from a local clone.
 
@@ -300,6 +313,28 @@ Install the user-facing skill folders:
 - `<REPO_ROOT>/skills/cities2-knowledge`
 - `<REPO_ROOT>/skills/cities2-modding`
 
+For packaged installs, prefer the package helper:
+
+```sh
+uvx cities2-mcp install-agent-assets
+```
+
+This installs Codex skills under `~/.codex/skills`. For Claude Code it installs
+skills under `~/.claude/skills` and creates `/cities2-knowledge` and
+`/cities2-modding` command files under `~/.claude/commands`. Use
+`uvx cities2-mcp install-agent-assets --client codex` or
+`uvx cities2-mcp install-agent-assets --client claude` when only one client
+should be updated.
+
+For a project-specific Claude Code install, run:
+
+```sh
+uvx cities2-mcp install-agent-assets --client claude --claude-scope project --claude-project-dir <PROJECT_DIR>
+```
+
+The helper removes stale `cities2-game-updates` assets by default. Add
+`--keep-legacy` only if the user explicitly wants to keep that old command.
+
 ### Codex skills
 
 For Codex, copy the skill directories into the user's Codex skills folder:
@@ -329,7 +364,16 @@ cp -R "<REPO_ROOT>/skills/cities2-modding" ~/.codex/skills/
 
 ### Other clients
 
-For Claude, Cursor, or other clients that support skills, use that client's documented skill-install location or project-level skill mechanism. If the client does not support Agent Skills, skip this step; the MCP server tools still work.
+For Claude Code, custom slash command files live in `~/.claude/commands` for
+user-wide commands or `.claude/commands` for project commands. The package
+helper writes those command files automatically. If installing manually, create
+`cities2-knowledge.md` and `cities2-modding.md` in the appropriate commands
+folder and make each command tell the agent to use the connected `cities2-mcp`
+MCP server plus the matching skill workflow.
+
+For Cursor or other clients that support skills, use that client's documented
+skill-install location or project-level skill mechanism. If the client does not
+support Agent Skills, skip this step; the MCP server tools still work.
 
 Do not copy skills into a client's directory if that client does not support skills.
 

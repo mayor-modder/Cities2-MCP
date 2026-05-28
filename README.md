@@ -77,6 +77,17 @@ Omit `--workspace` if you only want wiki and local Encyclopedia search. Add one
 or more `--workspace` entries when you want the project workflow tools to write,
 analyze, build, or package local mod projects.
 
+To install the bundled slash-command skills for Codex and Claude Code, run:
+
+```bash
+uvx cities2-mcp install-agent-assets
+```
+
+The plain MCP install command only connects the server. This helper installs
+the two user-facing agent assets too: `cities2-knowledge` and
+`cities2-modding`. For Claude Code it also writes `/cities2-knowledge` and
+`/cities2-modding` command files under `~/.claude/commands`.
+
 ## Prerequisites
 
 Clone the repository:
@@ -163,6 +174,16 @@ Skills live under `skills/`:
 - `skills/cities2-modding/SKILL.md`
 
 Install them into a compatible client's skill folder, or keep them in the repo as project-level guidance where supported. The skills depend on the `cities2-mcp` MCP server being configured. Gameplay and update answers should include compact source notes that mention the local Game Encyclopedia entries and link to the relevant CS2 Wiki pages when available.
+
+Packaged installs can copy these assets from the wheel:
+
+```bash
+uvx cities2-mcp install-agent-assets
+```
+
+Use `--client codex` or `--client claude` to target one client. The installer
+also removes the old `cities2-game-updates` asset name from the target client
+folders so stale commands do not linger after upgrading.
 
 Project templates are stored at:
 
