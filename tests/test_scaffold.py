@@ -5,6 +5,7 @@ import os
 import shutil
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 from cities2_mcp.build_runner import BuildRunner
@@ -296,6 +297,36 @@ class ScaffoldTests(unittest.TestCase):
 
         self.assertEqual(Path(package["package_path"]).parent, project_dir / "packages")
         self.assertFalse((self.tmp / "packages").exists())
+
+    def test_package_project_excludes_generated_dependency_and_output_dirs(self) -> None:
+        result = self.scaffolder.scaffold_project(
+            name="Package Clean",
+            template="cities2-ui",
+            target_dir=None,
+            metadata={},
+            options={},
+        )
+        project_dir = Path(result["project_dir"])
+        (project_dir / "node_modules" / "left-pad").mkdir(parents=True)
+        (project_dir / "node_modules" / "left-pad" / "index.js").write_text("module.exports = 1\n", encoding="utf-8")
+        (project_dir / "packages").mkdir(exist_ok=True)
+        (project_dir / "packages" / "old.zip").write_bytes(b"old")
+
+        package = BuildRunner(self.scaffolder).package_project(
+            project_dir=str(project_dir),
+            output_dir=None,
+            package_name=None,
+            exclude_globs=None,
+        )
+
+        with zipfile.ZipFile(package["package_path"]) as zf:
+            names = set(zf.namelist())
+
+        self.assertIn("package.json", names)
+        self.assertIn("src/index.tsx", names)
+        self.assertNotIn("node_modules/left-pad/index.js", names)
+        self.assertNotIn("packages/old.zip", names)
+        self.assertNotIn("packages/package-clean.zip", names)
 
     def test_build_runner_adds_common_windows_tool_dirs_to_subprocess_path(self) -> None:
         program_files = self.tmp / "Program Files"

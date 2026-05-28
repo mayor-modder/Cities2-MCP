@@ -20,6 +20,17 @@ class BuildRunner:
     PROFILE_VALUES = {"debug", "release"}
     STEP_VALUES = {"ui", "dotnet", "package"}
     PROJECT_PROFILE_VALUES = {"cities2-csharp", "cities2-ui", "cities2-hybrid", "auto"}
+    DEFAULT_PACKAGE_EXCLUDES = {
+        ".git/**",
+        ".venv/**",
+        "__pycache__/**",
+        "*.pyc",
+        "bin/**",
+        "node_modules/**",
+        "obj/**",
+        "packages/**",
+    }
+    PRUNE_PACKAGE_DIR_NAMES = {".git", ".venv", "__pycache__", "bin", "node_modules", "obj", "packages"}
 
     def __init__(self, scaffolder: ProjectScaffolder) -> None:
         self.scaffolder = scaffolder
@@ -204,19 +215,30 @@ class BuildRunner:
 
         name = package_name or root.name
         zip_path = (out_dir / f"{name}.zip").resolve()
-        excludes = [str(x) for x in (exclude_globs or []) if str(x).strip()]
+        excludes = sorted(self.DEFAULT_PACKAGE_EXCLUDES | {str(x) for x in (exclude_globs or []) if str(x).strip()})
 
         entries = 0
         with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-            for p in sorted(root.rglob("*")):
-                if not p.is_file():
-                    continue
-                rel = p.relative_to(root)
-                rel_str = rel.as_posix()
-                if any(fnmatch.fnmatch(rel_str, g) for g in excludes):
-                    continue
-                zf.write(p, arcname=rel_str)
-                entries += 1
+            for current_root, dirnames, filenames in os.walk(root):
+                current = Path(current_root)
+                rel_dir = current.relative_to(root).as_posix()
+                if rel_dir == ".":
+                    rel_dir = ""
+                dirnames[:] = [
+                    dirname
+                    for dirname in dirnames
+                    if dirname not in self.PRUNE_PACKAGE_DIR_NAMES
+                ]
+                for filename in sorted(filenames):
+                    p = current / filename
+                    if p.resolve() == zip_path:
+                        continue
+                    rel = p.relative_to(root)
+                    rel_str = rel.as_posix()
+                    if any(fnmatch.fnmatch(rel_str, g) for g in excludes):
+                        continue
+                    zf.write(p, arcname=rel_str)
+                    entries += 1
 
         return {
             "ok": True,
