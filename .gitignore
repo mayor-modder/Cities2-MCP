@@ -4,6 +4,7 @@ packages/
 __pycache__/
 .pytest_cache/
 *.py[cod]
+*.mcpb
 .venv/
 .venv-skill/
 venv/

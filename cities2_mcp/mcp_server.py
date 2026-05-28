@@ -193,6 +193,13 @@ def domain_tools_catalog() -> List[JSON]:
         {
             "name": "scaffold_project",
             "description": "Scaffold a Cities: Skylines II mod project from a template.",
+            "annotations": {
+                "title": "Scaffold Mod Project",
+                "readOnlyHint": False,
+                "destructiveHint": False,
+                "idempotentHint": False,
+                "openWorldHint": False,
+            },
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -234,6 +241,13 @@ def domain_tools_catalog() -> List[JSON]:
         {
             "name": "write_project_file",
             "description": "Write files inside a configured Cities: Skylines II mod project workspace.",
+            "annotations": {
+                "title": "Write Project File",
+                "readOnlyHint": False,
+                "destructiveHint": True,
+                "idempotentHint": False,
+                "openWorldHint": False,
+            },
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -252,6 +266,13 @@ def domain_tools_catalog() -> List[JSON]:
         {
             "name": "list_project_tree",
             "description": "List files in a configured Cities: Skylines II mod project workspace.",
+            "annotations": {
+                "title": "List Project Tree",
+                "readOnlyHint": True,
+                "destructiveHint": False,
+                "idempotentHint": True,
+                "openWorldHint": False,
+            },
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -271,6 +292,13 @@ def domain_tools_catalog() -> List[JSON]:
         {
             "name": "build_project",
             "description": "Build a Cities: Skylines II mod project and return normalized diagnostics.",
+            "annotations": {
+                "title": "Build Mod Project",
+                "readOnlyHint": False,
+                "destructiveHint": False,
+                "idempotentHint": False,
+                "openWorldHint": False,
+            },
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -302,6 +330,13 @@ def domain_tools_catalog() -> List[JSON]:
         {
             "name": "analyze_project",
             "description": "Run static checks for Cities: Skylines II mod project structure and lifecycle patterns.",
+            "annotations": {
+                "title": "Analyze Mod Project",
+                "readOnlyHint": True,
+                "destructiveHint": False,
+                "idempotentHint": True,
+                "openWorldHint": False,
+            },
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -319,6 +354,13 @@ def domain_tools_catalog() -> List[JSON]:
         {
             "name": "package_project",
             "description": "Create a zip package for a Cities: Skylines II mod project.",
+            "annotations": {
+                "title": "Package Mod Project",
+                "readOnlyHint": False,
+                "destructiveHint": True,
+                "idempotentHint": False,
+                "openWorldHint": False,
+            },
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -333,6 +375,13 @@ def domain_tools_catalog() -> List[JSON]:
         {
             "name": "launch_cities2",
             "description": "Launch Cities: Skylines II with platform-aware executable resolution (dry-run by default).",
+            "annotations": {
+                "title": "Launch Cities: Skylines II",
+                "readOnlyHint": False,
+                "destructiveHint": False,
+                "idempotentHint": False,
+                "openWorldHint": True,
+            },
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -355,6 +404,13 @@ def encyclopedia_tools_catalog() -> List[JSON]:
         {
             "name": "search_encyclopedia",
             "description": "Search the local Cities: Skylines II in-game Encyclopedia read from the user's installed game files.",
+            "annotations": {
+                "title": "Search Game Encyclopedia",
+                "readOnlyHint": True,
+                "destructiveHint": False,
+                "idempotentHint": True,
+                "openWorldHint": False,
+            },
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -367,6 +423,13 @@ def encyclopedia_tools_catalog() -> List[JSON]:
         {
             "name": "get_encyclopedia_entry",
             "description": "Return one local Cities: Skylines II in-game Encyclopedia entry by entry_id.",
+            "annotations": {
+                "title": "Get Encyclopedia Entry",
+                "readOnlyHint": True,
+                "destructiveHint": False,
+                "idempotentHint": True,
+                "openWorldHint": False,
+            },
             "inputSchema": {
                 "type": "object",
                 "properties": {"entry_id": {"type": "string"}},
@@ -376,6 +439,13 @@ def encyclopedia_tools_catalog() -> List[JSON]:
         {
             "name": "source_status",
             "description": "Report Cities2-MCP source availability for the wiki corpus and local game Encyclopedia.",
+            "annotations": {
+                "title": "Check Source Status",
+                "readOnlyHint": True,
+                "destructiveHint": False,
+                "idempotentHint": True,
+                "openWorldHint": False,
+            },
             "inputSchema": {"type": "object", "properties": {}},
         },
     ]

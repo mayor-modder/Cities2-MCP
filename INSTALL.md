@@ -32,7 +32,7 @@ analyze, build, or package local mod projects.
 If the user asks for a fresh install or asks you to ignore previous local
 checkouts, still prefer the packaged install. Do not clone this repository just
 to run the MCP server. Use `uvx cities2-mcp` for the latest published release,
-or `uvx --refresh cities2-mcp==0.1.6` when you need to force a clean package
+or `uvx --refresh cities2-mcp==0.1.7` when you need to force a clean package
 resolution for the current release.
 
 The MCP install command only configures the server. To install the bundled
@@ -335,6 +335,47 @@ uvx cities2-mcp install-agent-assets --client claude --claude-scope project --cl
 The helper removes stale `cities2-game-updates` assets by default. Add
 `--keep-legacy` only if the user explicitly wants to keep that old command.
 
+### Claude Code plugin
+
+The tracked Claude Code plugin source lives at
+`integrations/anthropic/claude-plugin`. It bundles the two skills only.
+
+This plugin path is best for Claude Code distribution because Anthropic plugins
+can make slash commands discoverable. It intentionally does not auto-configure
+the MCP server because the simple Claude Code MCP command path uses `uvx`, and
+`uvx` must already be installed on the user's machine. For users with `uvx`
+available, add a project-local MCP config with a trusted workspace:
+
+```sh
+claude mcp add --scope local cities2-mcp -- uvx cities2-mcp --workspace .
+```
+
+Validate the plugin from the repository root:
+
+```sh
+claude plugin validate integrations/anthropic/claude-plugin --strict
+```
+
+### Claude Desktop MCPB
+
+The tracked Claude Desktop extension source lives at
+`integrations/anthropic/claude-mcpb`. This is the correct Anthropic package
+shape for a local PyPI-backed MCP server; local PyPI MCP servers are not listed
+directly in the Connectors Directory. This is also the preferred path for end
+users who should not have to know about `uvx`.
+
+Build and validate it from the MCPB directory:
+
+```sh
+cd integrations/anthropic/claude-mcpb
+npx @anthropic-ai/mcpb pack
+```
+
+The MCPB wrapper depends on `cities2-mcp==0.1.7`, so build and submit the public
+`.mcpb` only after that PyPI release exists. The manifest includes optional
+Claude Desktop settings for a trusted workspace, Mods directory, game install
+directory, and direct `Locale.cok` path.
+
 ### Codex skills
 
 For Codex, copy the skill directories into the user's Codex skills folder:
@@ -443,10 +484,21 @@ release tag, configure a PyPI trusted publisher for:
 - Workflow file: `.github/workflows/release.yml`
 - Environment: `pypi`
 
-Then create and push a tag such as `v0.1.6`. The release workflow runs tests,
+Then create and push a tag such as `v0.1.7`. The release workflow runs tests,
 builds the wheel and source distribution, publishes to PyPI, authenticates to
 the MCP Registry with GitHub OIDC, and publishes `server.json` for
 `io.github.mayor-modder/cities2-mcp`.
+
+After the PyPI release exists:
+
+1. Validate `integrations/anthropic/claude-plugin` with
+   `claude plugin validate --strict`, then submit that public GitHub path to
+   the Claude plugin directory.
+2. Build `integrations/anthropic/claude-mcpb` with
+   `npx @anthropic-ai/mcpb pack`, test the generated `.mcpb` in Claude Desktop,
+   then submit it through Anthropic's desktop extension submission form.
+3. Keep the MCP Registry `server.json`, Claude plugin version, MCPB manifest
+   version, and PyPI version aligned for each public release.
 
 ## Troubleshooting
 

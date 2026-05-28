@@ -507,6 +507,13 @@ def tools_catalog() -> List[JSON]:
         {
             "name": "search",
             "description": "Search the bundled Cities: Skylines II Wiki corpus for gameplay, systems, and modding information.",
+            "annotations": {
+                "title": "Search Wiki Corpus",
+                "readOnlyHint": True,
+                "destructiveHint": False,
+                "idempotentHint": True,
+                "openWorldHint": False,
+            },
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -519,6 +526,13 @@ def tools_catalog() -> List[JSON]:
         {
             "name": "get_page",
             "description": "Return a full page from the bundled Cities: Skylines II Wiki corpus by page_id.",
+            "annotations": {
+                "title": "Get Wiki Page",
+                "readOnlyHint": True,
+                "destructiveHint": False,
+                "idempotentHint": True,
+                "openWorldHint": False,
+            },
             "inputSchema": {
                 "type": "object",
                 "properties": {"page_id": {"type": "string"}},
@@ -528,6 +542,13 @@ def tools_catalog() -> List[JSON]:
         {
             "name": "query_reference",
             "description": "Search page-level Cities: Skylines II Wiki references: titles, sections, URLs, and links.",
+            "annotations": {
+                "title": "Query Wiki References",
+                "readOnlyHint": True,
+                "destructiveHint": False,
+                "idempotentHint": True,
+                "openWorldHint": False,
+            },
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -540,6 +561,13 @@ def tools_catalog() -> List[JSON]:
         {
             "name": "get_snippets",
             "description": "Retrieve Cities: Skylines II modding code snippets extracted from the bundled wiki corpus.",
+            "annotations": {
+                "title": "Get Modding Snippets",
+                "readOnlyHint": True,
+                "destructiveHint": False,
+                "idempotentHint": True,
+                "openWorldHint": False,
+            },
             "inputSchema": {
                 "type": "object",
                 "properties": {

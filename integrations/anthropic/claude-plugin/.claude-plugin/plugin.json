@@ -1,0 +1,19 @@
+{
+  "name": "cities2-mcp",
+  "version": "0.1.7",
+  "description": "Cities: Skylines II wiki, Encyclopedia, patch, and modding workflows for Claude Code.",
+  "author": {
+    "name": "mayor-modder",
+    "url": "https://github.com/mayor-modder"
+  },
+  "homepage": "https://github.com/mayor-modder/Cities2-MCP",
+  "repository": "https://github.com/mayor-modder/Cities2-MCP",
+  "license": "MIT",
+  "keywords": [
+    "cities-skylines-ii",
+    "mcp",
+    "modding",
+    "gameplay",
+    "agent-skills"
+  ]
+}

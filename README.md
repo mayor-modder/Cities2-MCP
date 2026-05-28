@@ -53,6 +53,23 @@ These skills are stored in `skills/`. Install or copy them into your agent's ski
 
 The MCP server code is licensed under the MIT License. The internal retrieval layer includes code originally split out as `wiki-mcp`; its MIT notice is preserved in `THIRD_PARTY_NOTICES.md`. The included `cities2_mcp/data` corpus is licensed under Creative Commons Attribution-ShareAlike 3.0; source attribution and transformation notes are in `cities2_mcp/data/ATTRIBUTION.md`.
 
+## Privacy Policy
+
+Cities2-MCP runs locally on the user's machine. It does not collect telemetry,
+send usage data to mayor-modder, or require an account.
+
+The server reads the bundled wiki corpus from the installed package. When
+available, it can read the user's local Cities: Skylines II game files to build
+a local in-game Encyclopedia cache. If workflow tools are enabled with
+`--workspace`, it can read and write files only inside the configured trusted
+workspace paths. Build, package, and launch tools may run local development
+commands on the user's machine when explicitly invoked by the connected agent.
+
+Cities2-MCP does not share data with third parties. Local cache files remain on
+the user's machine. Users can remove the package, MCP client configuration, and
+local Encyclopedia cache at any time. Privacy or security issues can be reported
+through the GitHub issue tracker.
+
 ## Quick Install
 
 The packaged server includes the bundled wiki corpus and can be launched by MCP
@@ -117,6 +134,23 @@ Reference config templates with placeholders are also available at:
 
 - `mcp.config.example.json` for JSON clients
 - `INSTALL.md` includes the Codex TOML shape
+
+## Anthropic Distribution
+
+Cities2-MCP includes two Anthropic package shapes under
+`integrations/anthropic/`:
+
+- `claude-plugin/` is the Claude Code plugin. It bundles the two skills and a
+  intentionally does not auto-configure MCP, because the simple Claude Code MCP
+  command path depends on `uvx` being installed separately.
+- `claude-mcpb/` is the Claude Desktop MCPB source. It uses Anthropic's `uv`
+  runtime support and wraps the published PyPI package for one-click local
+  desktop-extension installs without asking users to install `uvx` manually.
+
+Local PyPI MCP servers are not listed directly in Anthropic's Connectors
+Directory. The plugin is the path for Claude Code skill discoverability; the
+MCPB is the path for Claude Desktop extension testing and Connectors Directory
+submission.
 
 ## Start MCP Server
 

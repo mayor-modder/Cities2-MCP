@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from cities2_mcp.agent_assets import install_agent_assets
+from cities2_mcp import mcp_server
 
 try:
     import tomllib
@@ -32,13 +33,13 @@ class PackagingTests(unittest.TestCase):
 
         project = pyproject["project"]
         self.assertEqual(project["name"], "cities2-mcp")
-        self.assertEqual(project["version"], "0.1.6")
+        self.assertEqual(project["version"], "0.1.7")
         self.assertEqual(project["scripts"]["cities2-mcp"], "cities2_mcp.mcp_server:main")
 
     def test_package_module_reports_version_and_bundled_data_dir(self) -> None:
         package = importlib.import_module("cities2_mcp")
 
-        self.assertEqual(package.__version__, "0.1.6")
+        self.assertEqual(package.__version__, "0.1.7")
         data_dir = package.bundled_data_dir()
         self.assertTrue((data_dir / "index" / "chunks.jsonl").exists())
         self.assertTrue((data_dir / "index" / "pages.jsonl").exists())
@@ -52,7 +53,7 @@ class PackagingTests(unittest.TestCase):
             check=True,
         )
 
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.6")
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.7")
 
     def test_default_start_without_workspace_keeps_knowledge_tools_available(self) -> None:
         from tests.smoke_mcp import call, rpc, rpc_ndjson
@@ -72,7 +73,7 @@ class PackagingTests(unittest.TestCase):
             search = call(proc, 3, "search", {"query": "modding toolchain requirements", "limit": 1})
             scaffold = call(proc, 4, "scaffold_project", {"name": "No Workspace", "template": "cities2-csharp"})
 
-            self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.6")
+            self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.7")
             self.assertEqual(len(tools["result"]["tools"]), 14)
             self.assertTrue(search["ok"])
             self.assertFalse(scaffold["ok"])
@@ -115,12 +116,61 @@ class PackagingTests(unittest.TestCase):
         server_json = json.loads((ROOT / "server.json").read_text(encoding="utf-8"))
 
         self.assertEqual(server_json["name"], "io.github.mayor-modder/cities2-mcp")
-        self.assertEqual(server_json["version"], "0.1.6")
+        self.assertEqual(server_json["version"], "0.1.7")
         package = server_json["packages"][0]
         self.assertEqual(package["registryType"], "pypi")
         self.assertEqual(package["identifier"], "cities2-mcp")
-        self.assertEqual(package["version"], "0.1.6")
+        self.assertEqual(package["version"], "0.1.7")
         self.assertEqual(package["transport"]["type"], "stdio")
+
+    def test_all_public_tools_have_directory_review_annotations(self) -> None:
+        response = mcp_server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "tools/list",
+                "params": {},
+            },
+            corpus=None,
+            wm=None,
+        )
+
+        tools = response["result"]["tools"]
+        self.assertEqual(len(tools), 14)
+        for tool in tools:
+            annotations = tool.get("annotations")
+            self.assertIsInstance(annotations, dict, tool["name"])
+            self.assertIsInstance(annotations.get("title"), str, tool["name"])
+            self.assertGreater(len(annotations["title"]), 3, tool["name"])
+            for key in ("readOnlyHint", "destructiveHint", "openWorldHint"):
+                self.assertIsInstance(annotations.get(key), bool, f"{tool['name']} {key}")
+
+    def test_anthropic_distribution_artifacts_are_version_aligned(self) -> None:
+        plugin = json.loads(
+            (ROOT / "integrations" / "anthropic" / "claude-plugin" / ".claude-plugin" / "plugin.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        mcpb = json.loads(
+            (ROOT / "integrations" / "anthropic" / "claude-mcpb" / "manifest.json").read_text(encoding="utf-8")
+        )
+        mcpb_pyproject = tomllib.loads(
+            (ROOT / "integrations" / "anthropic" / "claude-mcpb" / "pyproject.toml").read_text(encoding="utf-8")
+        )
+        readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+
+        self.assertEqual(plugin["name"], "cities2-mcp")
+        self.assertEqual(plugin["version"], "0.1.7")
+        self.assertNotIn("mcpServers", plugin)
+        self.assertFalse((ROOT / "integrations" / "anthropic" / "claude-plugin" / ".mcp.json").exists())
+        self.assertEqual(mcpb["manifest_version"], "0.4")
+        self.assertEqual(mcpb["version"], "0.1.7")
+        self.assertEqual(mcpb["server"]["type"], "uv")
+        self.assertIn("https://github.com/mayor-modder/Cities2-MCP#privacy-policy", mcpb["privacy_policies"])
+        self.assertIn("cities2-mcp==0.1.7", mcpb_pyproject["project"]["dependencies"])
+        self.assertIn("## Privacy Policy", readme_text)
+        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-knowledge" / "SKILL.md").exists())
+        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-modding" / "SKILL.md").exists())
 
     def test_agent_asset_installer_copies_codex_and_claude_assets(self) -> None:
         with tempfile.TemporaryDirectory(prefix="cities2-mcp-assets-") as tmp:

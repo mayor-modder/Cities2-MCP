@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cities2-mcp"
-version = "0.1.6"
+version = "0.1.7"
 description = "Local MCP server for Cities: Skylines II game knowledge and modding workflows."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -54,6 +54,7 @@ include = [
   "skills/**",
   "tests/**",
   "scripts/**",
+  "integrations/**",
   "server/mcp_server.py",
   "README.md",
   "INSTALL.md",

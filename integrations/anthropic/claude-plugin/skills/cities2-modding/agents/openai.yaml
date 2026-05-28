@@ -1,0 +1,10 @@
+interface:
+  display_name: "Cities2 Modding"
+  short_description: "Use CS2 docs and local mod workflow tools"
+  default_prompt: "Use $cities2-modding to answer a Cities: Skylines II modding question or work on a local mod project."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "cities2-mcp"
+      description: "Cities2-MCP local server with wiki corpus and local mod workflow tools"
