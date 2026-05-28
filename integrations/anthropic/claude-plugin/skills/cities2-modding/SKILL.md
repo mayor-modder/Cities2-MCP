@@ -48,11 +48,14 @@ Before writing files, building, packaging, or launching:
      preferably add the parent folder that contains all of their CS2 mod
      projects so future projects under it work too.
    - In Claude Desktop, direct the user to the Cities2-MCP plugin/extension
-     settings and the `Trusted mod projects folder` option. In Claude Code,
-     project-scoped installs normally use the current project automatically; if
-     it is still blocked, suggest reinstalling/enabling the plugin from the
-     desired project or configuring a parent folder if the host exposes plugin
-     settings.
+     settings and the `Trusted mod projects folder` option. If the agent has
+     local file/command access, offer to fix the Claude Desktop setting directly:
+     identify the relevant settings file or app-managed config, ask before
+     editing it, back it up, and set the folder to either this project or a
+     shared parent folder. In Claude Code, project-scoped installs normally use
+     the current project automatically; if it is still blocked, suggest
+     reinstalling/enabling the plugin from the desired project or configuring a
+     parent folder if the host exposes plugin settings.
 2. Explain the intended local action briefly.
 3. Use the narrowest tool for the task:
    - `scaffold_project` for new mod templates.
