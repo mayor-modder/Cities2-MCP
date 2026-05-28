@@ -186,7 +186,8 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("https://github.com/mayor-modder/Cities2-MCP#privacy-policy", mcpb["privacy_policies"])
         user_config = mcpb["user_config"]
         self.assertIn("Optional.", user_config["trusted_workspace"]["description"])
-        self.assertIn("trusted parent folder", user_config["trusted_workspace"]["description"])
+        self.assertEqual("Trusted mod projects folder", user_config["trusted_workspace"]["title"])
+        self.assertIn("projects underneath it", user_config["trusted_workspace"]["description"])
         self.assertIn("standard local Mods folder", user_config["mods_dir"]["description"])
         self.assertIn("discovers Steam installs automatically", user_config["game_dir"]["description"])
         self.assertIn("automatic game discovery", user_config["locale_cok"]["description"])

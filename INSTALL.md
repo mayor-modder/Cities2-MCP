@@ -389,10 +389,11 @@ Claude Code when it is distributed as a `.zip` or `.plugin` archive. This is the
 friendlier path when users want the slash commands and the local MCP server in
 one install.
 
-The plugin exposes optional settings for a trusted mod workspace, Mods folder,
+The plugin exposes optional settings for a trusted mod projects folder, Mods folder,
 game install folder, and direct `Locale.cok` path. Leave them blank for wiki
-search. Set the trusted workspace only when you want mod project workflow tools;
-the server rejects workflow reads and writes outside the configured workspace.
+search. Set the trusted mod projects folder only when you want mod project
+workflow tools; choose a parent folder once to cover every mod project beneath
+it. The server rejects workflow reads and writes outside the configured folder.
 Claude may still show a broad local-extension warning because the MCP server
 runs as a local process on your computer.
 

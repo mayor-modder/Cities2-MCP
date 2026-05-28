@@ -13,8 +13,8 @@
   "userConfig": {
     "trusted_workspace": {
       "type": "directory",
-      "title": "Trusted mod workspace",
-      "description": "Optional. Choose a mod project folder, or a trusted parent folder containing projects, to enable scaffold, edit, analyze, build, and package workflows.",
+      "title": "Trusted mod projects folder",
+      "description": "Optional. Choose the parent folder that contains your mod projects to enable scaffold, edit, analyze, build, and package workflows for projects underneath it.",
       "required": false
     },
     "mods_dir": {
