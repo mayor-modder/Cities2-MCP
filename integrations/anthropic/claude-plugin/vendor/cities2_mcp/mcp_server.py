@@ -92,13 +92,29 @@ def docs_guard_rpc_error(req_id: object, corpus_error: Optional[str], docs_paths
 
 
 class WorkflowManager:
-    def __init__(self, workspaces: List[Path], mods_dir: Path) -> None:
+    def __init__(
+        self,
+        workspaces: List[Path],
+        mods_dir: Path,
+        *,
+        installed_game_version: Optional[str] = None,
+        installed_game_version_source: Optional[str] = None,
+        installed_steam_build_id: Optional[str] = None,
+        installed_steam_build_id_source: Optional[str] = None,
+    ) -> None:
         if not workspaces:
             raise ValueError("At least one workspace must be configured")
         self.workspaces = [workspace.resolve() for workspace in workspaces]
         self.workspace = self.workspaces[0]
         self.mods_dir = mods_dir.expanduser().resolve()
-        self.scaffolder = ProjectScaffolder(self.workspace, additional_workspaces=self.workspaces[1:])
+        self.scaffolder = ProjectScaffolder(
+            self.workspace,
+            additional_workspaces=self.workspaces[1:],
+            installed_game_version=installed_game_version,
+            installed_game_version_source=installed_game_version_source,
+            installed_steam_build_id=installed_steam_build_id,
+            installed_steam_build_id_source=installed_steam_build_id_source,
+        )
         self.builder = BuildRunner(self.scaffolder)
         self.analyzer = ProjectAnalyzer(self.scaffolder)
 
@@ -171,6 +187,24 @@ def resolve_data_dir(value: str) -> Path:
     if configured.resolve() == checkout_data.resolve():
         return bundled_data_dir()
     return configured
+
+
+def installed_game_context(encyclopedia: Optional[GameEncyclopediaSource]) -> JSON:
+    game_version = os.environ.get("CITIES2_GAME_VERSION", "").strip()
+    steam_build_id = os.environ.get("CITIES2_STEAM_BUILD_ID", "").strip()
+    context = {
+        "installed_game_version": game_version or None,
+        "installed_game_version_source": "CITIES2_GAME_VERSION" if game_version else None,
+        "installed_steam_build_id": steam_build_id or None,
+        "installed_steam_build_id_source": "CITIES2_STEAM_BUILD_ID" if steam_build_id else None,
+    }
+
+    discovery = getattr(encyclopedia, "discovery", None)
+    discovered_build_id = str(getattr(discovery, "steam_build_id", "") or "").strip()
+    if discovered_build_id and not steam_build_id:
+        context["installed_steam_build_id"] = discovered_build_id
+        context["installed_steam_build_id_source"] = "steam"
+    return context
 
 
 WORKFLOW_TOOL_NAMES = {
@@ -1018,15 +1052,6 @@ def main() -> None:
         corpus_error = str(exc)
         debug_log(f"Corpus init failed: {corpus_error}")
 
-    if workspace_paths:
-        try:
-            wm = WorkflowManager(workspace_paths, Path(args.mods_dir))
-        except Exception as exc:
-            workflow_error = str(exc)
-            debug_log(f"WorkflowManager init failed: {workflow_error}")
-    else:
-        workflow_error = "Configure at least one --workspace to use Cities2-MCP workflow tools."
-
     try:
         encyclopedia = GameEncyclopediaSource.load(
             EncyclopediaConfig(
@@ -1038,6 +1063,15 @@ def main() -> None:
     except Exception as exc:
         debug_log(f"Game encyclopedia init failed: {exc}")
         encyclopedia = None
+
+    if workspace_paths:
+        try:
+            wm = WorkflowManager(workspace_paths, Path(args.mods_dir), **installed_game_context(encyclopedia))
+        except Exception as exc:
+            workflow_error = str(exc)
+            debug_log(f"WorkflowManager init failed: {workflow_error}")
+    else:
+        workflow_error = "Configure at least one --workspace to use Cities2-MCP workflow tools."
 
     if debug_enabled():
         if corpus is not None:

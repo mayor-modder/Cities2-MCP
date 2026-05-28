@@ -50,7 +50,7 @@ class ScaffoldTests(unittest.TestCase):
         self.assertIn('<Reference Include="Unity.Collections">', csproj)
         self.assertLess(csproj.index("Mod.targets"), csproj.rindex("<LangVersion>"))
 
-    def test_default_game_version_comes_from_bundled_patch_index(self) -> None:
+    def test_default_game_version_comes_from_bundled_manifest(self) -> None:
         result = self.scaffolder.scaffold_project(
             name="Version Default",
             template="cities2-csharp",
@@ -63,9 +63,44 @@ class ScaffoldTests(unittest.TestCase):
         csproj = (project_dir / "version-default.csproj").read_text(encoding="utf-8")
 
         self.assertEqual(result["game_version"], "1.5.*")
-        self.assertEqual(result["game_version_source"], "bundled_corpus_patch_index")
+        self.assertEqual(result["game_version_source"], "bundled_corpus_manifest")
+        self.assertEqual(result["bundled_game_version"], "1.5.9f1")
         self.assertEqual(result["metadata"]["game_version"], "1.5.*")
         self.assertIn("<GameVersion>1.5.*</GameVersion>", csproj)
+
+    def test_default_game_version_can_fall_back_to_patch_index(self) -> None:
+        data_dir = self.tmp / "data-with-patch-index"
+        index_dir = data_dir / "index"
+        index_dir.mkdir(parents=True)
+        (index_dir / "chunks.jsonl").write_text(
+            json.dumps(
+                {
+                    "page_id": "patches",
+                    "title": "Patches",
+                    "section": "Introduction",
+                    "text": "Version history\n\n1.6.2f1 2026-07-01 Patch\n\n1.5.9f1 2026-05-27 Patch",
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        scaffolder = ProjectScaffolder(
+            self.tmp / "patch-index-workspace",
+            templates_dir=ROOT / "cities2_mcp" / "templates",
+            data_dir=data_dir,
+        )
+
+        result = scaffolder.scaffold_project(
+            name="Patch Index Version",
+            template="cities2-csharp",
+            target_dir=None,
+            metadata={},
+            options={},
+        )
+
+        self.assertEqual(result["game_version"], "1.6.*")
+        self.assertEqual(result["game_version_source"], "bundled_corpus_patch_index")
+        self.assertEqual(result["bundled_game_version"], "1.6.2f1")
 
     def test_default_game_version_prefers_manifest_metadata(self) -> None:
         data_dir = self.tmp / "data-with-version"
@@ -90,6 +125,7 @@ class ScaffoldTests(unittest.TestCase):
 
         self.assertEqual(result["game_version"], "1.6.*")
         self.assertEqual(result["game_version_source"], "bundled_corpus_manifest")
+        self.assertEqual(result["bundled_game_version"], "1.6.2f1")
 
     def test_explicit_game_version_metadata_overrides_default(self) -> None:
         result = self.scaffolder.scaffold_project(
@@ -122,6 +158,61 @@ class ScaffoldTests(unittest.TestCase):
 
         self.assertEqual(result["game_version"], "1.5.*")
         self.assertEqual(result["game_version_source"], "package_fallback")
+
+    def test_scaffold_warns_when_installed_game_version_is_newer_than_bundle(self) -> None:
+        data_dir = self.tmp / "data-with-current-version"
+        data_dir.mkdir()
+        (data_dir / "manifest.json").write_text(
+            json.dumps({"current_game_version": "1.5.9f1"}),
+            encoding="utf-8",
+        )
+        scaffolder = ProjectScaffolder(
+            self.tmp / "newer-game-workspace",
+            templates_dir=ROOT / "cities2_mcp" / "templates",
+            data_dir=data_dir,
+            installed_game_version="1.6.1f1",
+            installed_game_version_source="test",
+        )
+
+        result = scaffolder.scaffold_project(
+            name="Newer Game",
+            template="cities2-csharp",
+            target_dir=None,
+            metadata={},
+            options={},
+        )
+
+        self.assertEqual(result["installed_game_version"], "1.6.1f1")
+        self.assertEqual(result["installed_game_version_source"], "test")
+        self.assertEqual(result["bundled_game_version"], "1.5.9f1")
+        self.assertIn("check for an updated Cities2-MCP release", "\n".join(result["warnings"]))
+
+    def test_scaffold_warns_when_installed_steam_build_is_newer_than_bundle(self) -> None:
+        data_dir = self.tmp / "data-with-steam-build"
+        data_dir.mkdir()
+        (data_dir / "manifest.json").write_text(
+            json.dumps({"current_game_version": "1.5.9f1", "steam_build_id": "100"}),
+            encoding="utf-8",
+        )
+        scaffolder = ProjectScaffolder(
+            self.tmp / "newer-build-workspace",
+            templates_dir=ROOT / "cities2_mcp" / "templates",
+            data_dir=data_dir,
+            installed_steam_build_id="101",
+            installed_steam_build_id_source="steam",
+        )
+
+        result = scaffolder.scaffold_project(
+            name="Newer Build",
+            template="cities2-csharp",
+            target_dir=None,
+            metadata={},
+            options={},
+        )
+
+        self.assertEqual(result["installed_steam_build_id"], "101")
+        self.assertEqual(result["bundled_steam_build_id"], "100")
+        self.assertIn("Steam build 101", "\n".join(result["warnings"]))
 
     def test_files_created_excludes_optionally_removed_files(self) -> None:
         result = self.scaffolder.scaffold_project(

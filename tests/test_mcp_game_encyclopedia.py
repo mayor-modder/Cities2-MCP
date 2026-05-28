@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class FakeAvailableEncyclopedia:
     available = True
     entries = [{"entry_id": "roads/basic", "title": "Basic Roads"}]
+    discovery = None
 
     def search(self, query: str, *, limit: int = 5):
         return []
@@ -294,7 +295,7 @@ class McpGameEncyclopediaTests(unittest.TestCase):
         try:
             self.module.sys.argv = ["mcp_server.py"]
             self.module.Corpus = lambda paths: None
-            self.module.WorkflowManager = lambda workspaces, mods_dir: None
+            self.module.WorkflowManager = lambda workspaces, mods_dir, **kwargs: None
             self.module.GameEncyclopediaSource.load = lambda config: loaded_encyclopedia
             self.module.read_message = lambda: next(messages)
             self.module.debug_enabled = lambda: True
@@ -346,7 +347,7 @@ class McpGameEncyclopediaTests(unittest.TestCase):
         try:
             self.module.sys.argv = ["mcp_server.py"]
             self.module.Corpus = lambda paths: None
-            self.module.WorkflowManager = lambda workspaces, mods_dir: None
+            self.module.WorkflowManager = lambda workspaces, mods_dir, **kwargs: None
             self.module.GameEncyclopediaSource.load = lambda config: loaded_encyclopedia
             self.module.read_message = lambda: next(messages)
             self.module.send_message = sent_messages.append
@@ -365,3 +366,36 @@ class McpGameEncyclopediaTests(unittest.TestCase):
         self.assertEqual([loaded_encyclopedia], seen_encyclopedias)
         payload = json.loads(sent_messages[0]["result"]["content"][0]["text"])
         self.assertTrue(payload["game_encyclopedia"]["available"])
+
+    def test_main_passes_installed_steam_build_to_workflow_manager(self) -> None:
+        class Discovery:
+            steam_build_id = "23290000"
+
+        loaded_encyclopedia = FakeAvailableEncyclopedia()
+        loaded_encyclopedia.discovery = Discovery()
+        seen_kwargs = []
+        messages = iter([None])
+
+        original_argv = self.module.sys.argv
+        original_corpus = self.module.Corpus
+        original_wm = self.module.WorkflowManager
+        original_load = self.module.GameEncyclopediaSource.load
+        original_read = self.module.read_message
+
+        try:
+            self.module.sys.argv = ["mcp_server.py", "--workspace", str(ROOT)]
+            self.module.Corpus = lambda paths: None
+            self.module.WorkflowManager = lambda workspaces, mods_dir, **kwargs: seen_kwargs.append(kwargs)
+            self.module.GameEncyclopediaSource.load = lambda config: loaded_encyclopedia
+            self.module.read_message = lambda: next(messages)
+
+            self.module.main()
+        finally:
+            self.module.sys.argv = original_argv
+            self.module.Corpus = original_corpus
+            self.module.WorkflowManager = original_wm
+            self.module.GameEncyclopediaSource.load = original_load
+            self.module.read_message = original_read
+
+        self.assertEqual("23290000", seen_kwargs[0]["installed_steam_build_id"])
+        self.assertEqual("steam", seen_kwargs[0]["installed_steam_build_id_source"])

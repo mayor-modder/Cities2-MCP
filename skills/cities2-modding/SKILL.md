@@ -53,9 +53,12 @@ Before writing files, building, packaging, or launching:
 If a write/build tool returns diagnostics, summarize the actionable errors first and include paths or commands that matter.
 
 When scaffolding a new project, `scaffold_project` chooses a default `game_version`
-from the bundled corpus and returns `game_version` plus `game_version_source`.
-If the user names a newer target game version than the bundled default, pass
-`metadata.game_version` explicitly instead of using the default.
+from the bundled corpus and returns `game_version`, `game_version_source`,
+`bundled_game_version`, and any installed-game warning. If the warning says the
+installed game appears newer than the bundled Cities2-MCP package, tell the user
+the project was still created and recommend checking for an updated Cities2-MCP
+release before deeper modding work. If the user names a newer target game
+version than the bundled default, pass `metadata.game_version` explicitly.
 
 ## Answer Style
 

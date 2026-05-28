@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from html import escape
 from pathlib import Path
@@ -20,6 +21,10 @@ class ProjectScaffolder:
         templates_dir: Optional[Path] = None,
         additional_workspaces: Optional[Sequence[Path]] = None,
         data_dir: Optional[Path] = None,
+        installed_game_version: Optional[str] = None,
+        installed_game_version_source: Optional[str] = None,
+        installed_steam_build_id: Optional[str] = None,
+        installed_steam_build_id_source: Optional[str] = None,
     ) -> None:
         self.workspace = workspace.resolve()
         self.allowed_workspaces = self._build_allowed_workspaces(additional_workspaces or [])
@@ -28,6 +33,16 @@ class ProjectScaffolder:
         package_dir = Path(__file__).resolve().parent
         self.templates_dir = (templates_dir or (package_dir / "templates")).resolve()
         self.data_dir = (data_dir or (package_dir / "data")).resolve()
+        env_game_version = os.environ.get("CITIES2_GAME_VERSION", "").strip()
+        env_steam_build_id = os.environ.get("CITIES2_STEAM_BUILD_ID", "").strip()
+        self.installed_game_version = str(installed_game_version or env_game_version).strip()
+        self.installed_game_version_source = str(
+            installed_game_version_source or ("CITIES2_GAME_VERSION" if env_game_version else "")
+        ).strip()
+        self.installed_steam_build_id = self._normalize_steam_build_id(installed_steam_build_id or env_steam_build_id)
+        self.installed_steam_build_id_source = str(
+            installed_steam_build_id_source or ("CITIES2_STEAM_BUILD_ID" if env_steam_build_id else "")
+        ).strip()
 
     def _build_allowed_workspaces(self, additional_workspaces: Sequence[Path]) -> List[Path]:
         workspaces: List[Path] = []
@@ -84,7 +99,7 @@ class ProjectScaffolder:
         return (major, int(match.group(2)), patch, fix)
 
     @classmethod
-    def _best_version_pattern(cls, values: Sequence[object], *, require_game_patch_format: bool = False) -> str:
+    def _best_version(cls, values: Sequence[object], *, require_game_patch_format: bool = False) -> str:
         pattern = (
             r"\b\d+\.\d+\.(?:\d+f\d+|[xX])\b"
             if require_game_patch_format
@@ -98,7 +113,22 @@ class ProjectScaffolder:
         best = max(versions, key=cls._version_score)
         if cls._version_score(best) == (-1, -1, -1, -1):
             return ""
+        return best
+
+    @classmethod
+    def _best_version_pattern(cls, values: Sequence[object], *, require_game_patch_format: bool = False) -> str:
+        best = cls._best_version(values, require_game_patch_format=require_game_patch_format)
+        if not best:
+            return ""
         return cls._version_pattern(best)
+
+    @classmethod
+    def _is_newer_version(cls, left: str, right: str) -> bool:
+        left_score = cls._version_score(left)
+        right_score = cls._version_score(right)
+        if left_score == (-1, -1, -1, -1) or right_score == (-1, -1, -1, -1):
+            return False
+        return left_score > right_score
 
     @staticmethod
     def _manifest_version_candidates(value: object) -> List[object]:
@@ -115,17 +145,72 @@ class ProjectScaffolder:
                 candidates.extend(ProjectScaffolder._manifest_version_candidates(item))
         return candidates
 
-    def _game_version_from_manifest(self) -> str:
+    @staticmethod
+    def _normalize_steam_build_id(value: object) -> str:
+        match = re.search(r"\b\d+\b", str(value or ""))
+        return match.group(0) if match else ""
+
+    @staticmethod
+    def _manifest_steam_build_candidates(value: object) -> List[object]:
+        candidates: List[object] = []
+        if isinstance(value, dict):
+            for key, item in value.items():
+                key_text = str(key).casefold().replace("-", "_")
+                if key_text in {"steam_build_id", "steam_buildid", "build_id", "buildid"}:
+                    candidates.append(item)
+                if isinstance(item, (dict, list)):
+                    candidates.extend(ProjectScaffolder._manifest_steam_build_candidates(item))
+        elif isinstance(value, list):
+            for item in value:
+                candidates.extend(ProjectScaffolder._manifest_steam_build_candidates(item))
+        return candidates
+
+    @staticmethod
+    def _is_newer_steam_build(left: str, right: str) -> bool:
+        try:
+            return int(left) > int(right)
+        except ValueError:
+            return False
+
+    def _read_manifest(self) -> JSON:
         manifest_path = self.data_dir / "manifest.json"
         if not manifest_path.exists():
-            return ""
+            return {}
         try:
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+            value = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
         except Exception:
+            return {}
+        return value if isinstance(value, dict) else {}
+
+    def _game_version_from_manifest(self) -> str:
+        manifest = self._read_manifest()
+        if not manifest:
             return ""
         return self._best_version_pattern(self._manifest_version_candidates(manifest))
 
+    def _latest_game_version_from_manifest(self) -> str:
+        manifest = self._read_manifest()
+        if not manifest:
+            return ""
+        return self._best_version(self._manifest_version_candidates(manifest))
+
+    def _steam_build_id_from_manifest(self) -> str:
+        manifest = self._read_manifest()
+        if not manifest:
+            return ""
+        for candidate in self._manifest_steam_build_candidates(manifest):
+            build_id = self._normalize_steam_build_id(candidate)
+            if build_id:
+                return build_id
+        return ""
+
     def _game_version_from_patch_index(self) -> str:
+        return self._game_version_from_patch_index_value(pattern=True)
+
+    def _latest_game_version_from_patch_index(self) -> str:
+        return self._game_version_from_patch_index_value(pattern=False)
+
+    def _game_version_from_patch_index_value(self, *, pattern: bool) -> str:
         chunks_path = self.data_dir / "index" / "chunks.jsonl"
         if not chunks_path.exists():
             return ""
@@ -144,7 +229,9 @@ class ProjectScaffolder:
                         candidates.append(row.get("text", ""))
         except OSError:
             return ""
-        return self._best_version_pattern(candidates, require_game_patch_format=True)
+        if pattern:
+            return self._best_version_pattern(candidates, require_game_patch_format=True)
+        return self._best_version(candidates, require_game_patch_format=True)
 
     def default_game_version_info(self) -> JSON:
         manifest_version = self._game_version_from_manifest()
@@ -152,17 +239,50 @@ class ProjectScaffolder:
             return {
                 "game_version": manifest_version,
                 "game_version_source": "bundled_corpus_manifest",
+                "bundled_game_version": self._latest_game_version_from_manifest() or manifest_version,
+                "bundled_steam_build_id": self._steam_build_id_from_manifest(),
             }
         patch_index_version = self._game_version_from_patch_index()
         if patch_index_version:
             return {
                 "game_version": patch_index_version,
                 "game_version_source": "bundled_corpus_patch_index",
+                "bundled_game_version": self._latest_game_version_from_patch_index() or patch_index_version,
+                "bundled_steam_build_id": self._steam_build_id_from_manifest(),
             }
         return {
             "game_version": FALLBACK_GAME_VERSION_PATTERN,
             "game_version_source": "package_fallback",
+            "bundled_game_version": FALLBACK_GAME_VERSION_PATTERN,
+            "bundled_steam_build_id": self._steam_build_id_from_manifest(),
         }
+
+    def _installed_game_warning(self, game_version: str, default_game_version_info: JSON) -> str:
+        bundled_game_version = str(default_game_version_info.get("bundled_game_version", "")).strip()
+        bundled_steam_build_id = self._normalize_steam_build_id(default_game_version_info.get("bundled_steam_build_id", ""))
+
+        installed_evidence = ""
+        bundled_evidence = ""
+        if self.installed_game_version and self._is_newer_version(self.installed_game_version, bundled_game_version):
+            installed_source = f" from {self.installed_game_version_source}" if self.installed_game_version_source else ""
+            installed_evidence = f"installed game version {self.installed_game_version}{installed_source}"
+            bundled_evidence = f"bundled knowledge is current through {bundled_game_version}"
+        elif (
+            self.installed_steam_build_id
+            and bundled_steam_build_id
+            and self._is_newer_steam_build(self.installed_steam_build_id, bundled_steam_build_id)
+        ):
+            installed_source = f" from {self.installed_steam_build_id_source}" if self.installed_steam_build_id_source else ""
+            installed_evidence = f"installed Steam build {self.installed_steam_build_id}{installed_source}"
+            bundled_evidence = f"bundled Steam build is {bundled_steam_build_id}"
+
+        if not installed_evidence:
+            return ""
+        return (
+            f"Cities: Skylines II appears newer than this Cities2-MCP package ({installed_evidence}; "
+            f"{bundled_evidence}). The project was still scaffolded with GameVersion {game_version}; "
+            "check for an updated Cities2-MCP release or pass metadata.game_version explicitly if needed."
+        )
 
     def _default_metadata(self, name: str, slug: str) -> JSON:
         game_version = self.default_game_version_info()["game_version"]
@@ -392,6 +512,9 @@ class ProjectScaffolder:
 
         created = self._copy_template_tree(template_dir, root, tokens)
         warnings: List[str] = []
+        installed_game_warning = self._installed_game_warning(str(md.get("game_version", "")), default_game_version_info)
+        if installed_game_warning:
+            warnings.append(installed_game_warning)
 
         include_changelog = self._bool_option(opts, "include_changelog", True)
         if not include_changelog:
@@ -436,6 +559,12 @@ class ProjectScaffolder:
             "recommended_commands": recommended,
             "game_version": str(md.get("game_version", "")),
             "game_version_source": game_version_source,
+            "bundled_game_version": str(default_game_version_info.get("bundled_game_version", "")),
+            "bundled_steam_build_id": str(default_game_version_info.get("bundled_steam_build_id", "")),
+            "installed_game_version": self.installed_game_version,
+            "installed_game_version_source": self.installed_game_version_source,
+            "installed_steam_build_id": self.installed_steam_build_id,
+            "installed_steam_build_id_source": self.installed_steam_build_id_source,
             "metadata": md,
             "options": opts,
         }
