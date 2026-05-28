@@ -153,6 +153,10 @@ Directory. The plugin is the friendliest install path when users want slash
 commands plus the local MCP server. The MCPB is the lower-level Claude Desktop
 extension path for extension testing and Connectors Directory submission.
 
+Both Anthropic package shapes expose optional path settings. Wiki search uses
+the bundled corpus without any user folder. Mod workflow tools require a trusted
+workspace and reject project paths outside that workspace.
+
 Before official listing, Claude Code users can add this repository as a plugin
 marketplace and install the plugin:
 

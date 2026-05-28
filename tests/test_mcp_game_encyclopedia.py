@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import unittest
 from pathlib import Path
 
@@ -399,3 +400,36 @@ class McpGameEncyclopediaTests(unittest.TestCase):
 
         self.assertEqual("23290000", seen_kwargs[0]["installed_steam_build_id"])
         self.assertEqual("steam", seen_kwargs[0]["installed_steam_build_id_source"])
+
+    def test_main_uses_trusted_workspace_env_and_ignores_unresolved_template_args(self) -> None:
+        seen_workspaces = []
+        messages = iter([None])
+
+        original_argv = self.module.sys.argv
+        original_corpus = self.module.Corpus
+        original_wm = self.module.WorkflowManager
+        original_load = self.module.GameEncyclopediaSource.load
+        original_read = self.module.read_message
+        original_env = os.environ.get("CITIES2_MCP_WORKSPACE")
+
+        try:
+            self.module.sys.argv = ["mcp_server.py", "--workspace", "${CLAUDE_PROJECT_DIR}"]
+            os.environ["CITIES2_MCP_WORKSPACE"] = str(ROOT)
+            self.module.Corpus = lambda paths: None
+            self.module.WorkflowManager = lambda workspaces, mods_dir, **kwargs: seen_workspaces.append(workspaces)
+            self.module.GameEncyclopediaSource.load = lambda config: FakeAvailableEncyclopedia()
+            self.module.read_message = lambda: next(messages)
+
+            self.module.main()
+        finally:
+            self.module.sys.argv = original_argv
+            self.module.Corpus = original_corpus
+            self.module.WorkflowManager = original_wm
+            self.module.GameEncyclopediaSource.load = original_load
+            self.module.read_message = original_read
+            if original_env is None:
+                os.environ.pop("CITIES2_MCP_WORKSPACE", None)
+            else:
+                os.environ["CITIES2_MCP_WORKSPACE"] = original_env
+
+        self.assertEqual([[ROOT]], seen_workspaces)

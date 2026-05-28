@@ -6,7 +6,13 @@
         "${CLAUDE_PLUGIN_ROOT}/bin/cities2-mcp-launcher.js",
         "--workspace",
         "${CLAUDE_PROJECT_DIR}"
-      ]
+      ],
+      "env": {
+        "CITIES2_MCP_WORKSPACE": "${user_config.trusted_workspace}",
+        "CITIES2_MODS_DIR": "${user_config.mods_dir}",
+        "CITIES2_GAME_DIR": "${user_config.game_dir}",
+        "CITIES2_LOCALE_COK": "${user_config.locale_cok}"
+      }
     }
   }
 }

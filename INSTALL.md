@@ -389,6 +389,13 @@ Claude Code when it is distributed as a `.zip` or `.plugin` archive. This is the
 friendlier path when users want the slash commands and the local MCP server in
 one install.
 
+The plugin exposes optional settings for a trusted mod workspace, Mods folder,
+game install folder, and direct `Locale.cok` path. Leave them blank for wiki
+search. Set the trusted workspace only when you want mod project workflow tools;
+the server rejects workflow reads and writes outside the configured workspace.
+Claude may still show a broad local-extension warning because the MCP server
+runs as a local process on your computer.
+
 For local testing, package the contents of `integrations/anthropic/claude-plugin`
 so the archive root contains `.claude-plugin/plugin.json`, `.mcp.json`,
 `skills/`, `bin/`, and `vendor/`. The archive may use either `.zip` or

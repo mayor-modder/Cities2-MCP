@@ -134,8 +134,17 @@ def _as_str_list(value: object) -> List[str]:
     return [str(x) for x in value]
 
 
+def _configured_path_value(value: object) -> Optional[str]:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    if text.startswith("${") and text.endswith("}"):
+        return None
+    return text
+
+
 def default_mods_dir() -> Path:
-    env = os.environ.get("CITIES2_MODS_DIR")
+    env = _configured_path_value(os.environ.get("CITIES2_MODS_DIR"))
     if env:
         return Path(env).expanduser()
     if os.name == "nt":
@@ -1044,7 +1053,11 @@ def main() -> None:
         "chunks": str(data_dir / "index" / "chunks.jsonl"),
         "pages": str(data_dir / "index" / "pages.jsonl"),
     }
-    workspace_paths = [Path(value) for value in (args.workspaces or [])]
+    workspace_values = [_configured_path_value(value) for value in (args.workspaces or [])]
+    env_workspace = _configured_path_value(os.environ.get("CITIES2_MCP_WORKSPACE"))
+    if env_workspace:
+        workspace_values.append(env_workspace)
+    workspace_paths = [Path(value) for value in workspace_values if value]
 
     try:
         corpus = Corpus([data_dir])

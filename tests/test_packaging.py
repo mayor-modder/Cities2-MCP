@@ -165,11 +165,17 @@ class PackagingTests(unittest.TestCase):
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
 
         self.assertEqual(plugin["name"], "cities2-mcp")
+        self.assertEqual(plugin["displayName"], "Cities2-MCP")
         self.assertEqual(plugin["version"], "0.1.7")
+        self.assertIn("trusted_workspace", plugin["userConfig"])
         self.assertNotIn("mcpServers", plugin)
         self.assertEqual(plugin_mcp["mcpServers"]["cities2-mcp"]["command"], "node")
         self.assertIn("${CLAUDE_PLUGIN_ROOT}/bin/cities2-mcp-launcher.js", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
         self.assertIn("${CLAUDE_PROJECT_DIR}", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
+        self.assertEqual(
+            plugin_mcp["mcpServers"]["cities2-mcp"]["env"]["CITIES2_MCP_WORKSPACE"],
+            "${user_config.trusted_workspace}",
+        )
         self.assertNotIn("uvx", json.dumps(plugin_mcp))
         self.assertEqual(marketplace["name"], "cities2-mcp")
         self.assertEqual(marketplace["plugins"][0]["source"], "./integrations/anthropic/claude-plugin")
