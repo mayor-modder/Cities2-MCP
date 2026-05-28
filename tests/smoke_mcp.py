@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import argparse
 import shutil
 import subprocess
 import sys
@@ -97,19 +98,26 @@ def rpc_ndjson(proc, i: int, method: str, params: dict) -> dict:
 
 
 def main() -> None:
-    ws = Path(tempfile.mkdtemp(prefix="cities2-mcp-smoke-"))
+    parser = argparse.ArgumentParser(description="Protocol-level smoke test for Cities2-MCP")
+    parser.add_argument("--server-command", help="Installed cities2-mcp command to launch instead of the source wrapper")
+    parser.add_argument("--use-bundled-data", action="store_true", help="Do not pass --data-dir; use packaged defaults")
+    args = parser.parse_args()
 
-    proc = subprocess.Popen(
+    ws = Path(tempfile.mkdtemp(prefix="cities2-mcp-smoke-"))
+    command = [args.server_command] if args.server_command else [PYTHON, str(SERVER)]
+    if not args.use_bundled_data:
+        command.extend(["--data-dir", str(DATA_DIR)])
+    command.extend(
         [
-            PYTHON,
-            str(SERVER),
-            "--data-dir",
-            str(DATA_DIR),
             "--workspace",
             str(ws),
             "--mods-dir",
             str(ws / "local-mods"),
-        ],
+        ]
+    )
+
+    proc = subprocess.Popen(
+        command,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

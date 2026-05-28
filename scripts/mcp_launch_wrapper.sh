@@ -16,5 +16,4 @@ LOG_FILE="${CITIES2_MCP_LAUNCH_LOG:-/tmp/cities2-mcp-launch.log}"
 } >> "$LOG_FILE" 2>/dev/null || true
 
 exec "$PYTHON_BIN" "$REPO_ROOT/server/mcp_server.py" \
-  --data-dir "$REPO_ROOT/data" \
   --workspace "$REPO_ROOT"

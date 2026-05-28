@@ -2,6 +2,36 @@
 
 This guide is written for AI coding agents. If a user asks you to install this MCP server, follow these steps in order.
 
+## Preferred packaged install
+
+For normal users, install through the published Python package with `uvx`:
+
+```json
+{
+  "mcpServers": {
+    "cities2-mcp": {
+      "command": "uvx",
+      "args": [
+        "cities2-mcp",
+        "--workspace",
+        "<TRUSTED_MOD_PROJECT_OR_PARENT_FOLDER>"
+      ],
+      "env": {
+        "CITIES2_MODS_DIR": "<CITIES2_MODS_DIR>"
+      }
+    }
+  }
+}
+```
+
+The packaged server includes the bundled wiki corpus, so `--data-dir` is not
+needed. Omit `--workspace` only for wiki and local Encyclopedia search; add one
+or more `--workspace` entries when the user wants workflow tools to write,
+analyze, build, or package local mod projects.
+
+Use the source checkout instructions below when developing this repository or
+when a user explicitly wants to run from a local clone.
+
 ## 1. Prerequisites
 
 Before configuring any client, verify these prerequisites:
@@ -99,7 +129,7 @@ Classify each detected client into one of three states:
 
 | State | Meaning | Action in step 4 |
 |---|---|---|
-| **Up to date** | Has a `cities2-mcp` entry with the current `--data-dir` flag | Exclude from the picker — already installed |
+| **Up to date** | Has a `cities2-mcp` entry using packaged `uvx cities2-mcp`, or a source checkout entry with the current `--data-dir` flag | Exclude from the picker — already installed |
 | **Outdated** | Has a legacy-named entry or uses old flags (`--chunks`, `--pages` instead of `--data-dir`) | Include in the picker — describe as "outdated entry will be replaced" |
 | **Not installed** | No matching entry found | Include in the picker — describe as "entry needs to be added" (or "config file will be created" if the file doesn't exist yet) |
 
@@ -347,7 +377,7 @@ The expected Cities2-MCP tool names are:
 - `launch_cities2`
 
 If either command fails, check that Python 3 is working and that the repository
-contains `server/retrieval/mcp_server.py`.
+contains `cities2_mcp/retrieval/mcp_server.py`.
 
 If skills were installed, verify that the copied folders contain `SKILL.md`:
 
@@ -367,6 +397,21 @@ Tell the user to restart **only the clients you installed into**. Use the platfo
 | Codex | Start a new session. | Start a new session. | Start a new session. |
 | Cursor | `Ctrl+Shift+P` > "Reload Window" or restart. | `Cmd+Shift+P` > "Reload Window" or restart. | `Ctrl+Shift+P` > "Reload Window" or restart. |
 
+## Publishing
+
+Package and MCP Registry releases are tag driven. Before pushing the first
+release tag, configure a PyPI trusted publisher for:
+
+- PyPI project: `cities2-mcp`
+- GitHub owner/repository: `mayor-modder` / `Cities2-MCP`
+- Workflow file: `.github/workflows/release.yml`
+- Environment: `pypi`
+
+Then create and push a tag such as `v0.1.5`. The release workflow runs tests,
+builds the wheel and source distribution, publishes to PyPI, authenticates to
+the MCP Registry with GitHub OIDC, and publishes `server.json` for
+`io.github.mayor-modder/cities2-mcp`.
+
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
@@ -374,6 +419,6 @@ Tell the user to restart **only the clients you installed into**. Use the platfo
 | "Server disconnected" immediately after startup | `command` is an alias (`py`, `python3`) that the MCP client cannot resolve | Use the full absolute path from `sys.executable` (step 1) |
 | Server connects then disconnects during `tools/list` or `resources/list` | stdout encoding error on Windows (`cp1252` cannot encode Unicode) | Update to the latest version of this repo (the ndjson output path writes via `sys.stdout.buffer` with explicit UTF-8) |
 | Server does not appear after config change | Client was still running in the background | Fully quit and restart (see step 6) |
-| `ModuleNotFoundError` on startup | Missing files or wrong `REPO_ROOT` in config | Confirm `REPO_ROOT` points to this repository and that `server/retrieval/mcp_server.py` exists |
+| `ModuleNotFoundError` on startup | Missing files, wrong `REPO_ROOT`, or unavailable package command | For packaged installs, verify `uvx cities2-mcp --version`. For source installs, confirm `REPO_ROOT` points to this repository and that `cities2_mcp/retrieval/mcp_server.py` exists |
 | `Path must stay inside configured workspaces` when using project tools | The target mod repo is outside every configured `--workspace` allowlist entry | Add that mod repo, or a trusted parent folder containing it, as another `--workspace` entry and restart the client |
 | Claude reports InfoLoom, save analysis, live city data, or city recovery tools as part of Cities2-MCP | Claude is also loading an older or separate Cities2-related MCP server, often from a previous local tools repo | Inspect every configured MCP server whose key, command, args, or path contains `cities2`, `skylines`, `infoloom`, `dataexport`, `saveinvestigator`, or `city_recovery`. Remove stale entries from the client config, keep only the current `cities2-mcp` entry for this repo, then fully restart the client. |

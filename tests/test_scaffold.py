@@ -1,22 +1,20 @@
 from __future__ import annotations
 
 import shutil
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "server"))
+from cities2_mcp.build_runner import BuildRunner
+from cities2_mcp.project_scaffold import ProjectScaffolder
 
-from build_runner import BuildRunner  # noqa: E402
-from project_scaffold import ProjectScaffolder  # noqa: E402
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class ScaffoldTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = Path(tempfile.mkdtemp(prefix="cities2-mcp-scaffold-"))
-        self.scaffolder = ProjectScaffolder(self.tmp, templates_dir=ROOT / "server" / "templates")
+        self.scaffolder = ProjectScaffolder(self.tmp, templates_dir=ROOT / "cities2_mcp" / "templates")
 
     def tearDown(self) -> None:
         shutil.rmtree(self.tmp, ignore_errors=True)

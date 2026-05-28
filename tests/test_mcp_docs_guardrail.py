@@ -1,26 +1,18 @@
 from __future__ import annotations
 
-import importlib.util
 import json
 import unittest
 from pathlib import Path
 
+from cities2_mcp import mcp_server
+
 ROOT = Path(__file__).resolve().parents[1]
-
-
-def load_module(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Unable to load module from {path}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 class DocsGuardrailTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.module = load_module("mcp_server_docs_guardrail", ROOT / "server" / "mcp_server.py")
+        cls.module = mcp_server
         cls.docs_paths = {
             "chunks": r"C:\broken\data\index\chunks.jsonl",
             "pages": r"C:\broken\data\index\pages.jsonl",

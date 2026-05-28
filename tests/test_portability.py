@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import importlib.util
 import io
-import json
 import sys
 import unittest
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from types import SimpleNamespace
 from unittest import mock
+
+from cities2_mcp import bundled_data_dir
+from cities2_mcp import mcp_server
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -44,8 +46,9 @@ class PortabilityTests(unittest.TestCase):
 
         with mock.patch.object(module.subprocess, "Popen", return_value=fake_proc) as popen_mock:
             with mock.patch.object(module, "rpc_ndjson", side_effect=RuntimeError("stop")):
-                with self.assertRaisesRegex(RuntimeError, "stop"):
-                    module.main()
+                with mock.patch.object(sys, "argv", ["smoke_mcp.py"]):
+                    with self.assertRaisesRegex(RuntimeError, "stop"):
+                        module.main()
 
         argv = popen_mock.call_args.args[0]
         self.assertEqual(argv[0], sys.executable)
@@ -87,6 +90,7 @@ class PortabilityTests(unittest.TestCase):
         argv = [str(item) for item in popen_mock.call_args.args[0]]
         self.assertIn(str(ROOT / "data"), argv)
         self.assertNotIn(str(ROOT / "data" / "cities2-docs"), argv)
+        self.assertTrue(bundled_data_dir().exists())
 
     def test_cli_examples_map_to_current_tool_names(self) -> None:
         module = load_module("workbench_cli_tool_mapping", ROOT / "scripts" / "workbench_cli.py")
@@ -127,12 +131,11 @@ class PortabilityTests(unittest.TestCase):
         self.assertEqual(build["arguments"]["steps"], ["ui", "dotnet"])
 
     def test_default_mods_dir_uses_windows_locallow_path(self) -> None:
-        module = load_module("mcp_server_portability", ROOT / "server" / "mcp_server.py")
-        expected = Path(r"C:\Users\Test\AppData\LocalLow\Colossal Order\Cities Skylines II\Mods")
+        expected = PureWindowsPath(r"C:\Users\Test\AppData\LocalLow\Colossal Order\Cities Skylines II\Mods")
 
-        with mock.patch.dict(module.os.environ, {"LOCALAPPDATA": r"C:\Users\Test\AppData\Local"}, clear=True):
-            with mock.patch.object(module.os, "name", "nt"):
-                actual = module.default_mods_dir()
+        with mock.patch.dict(mcp_server.os.environ, {"LOCALAPPDATA": r"C:\Users\Test\AppData\Local"}, clear=True):
+            with mock.patch.object(mcp_server.os, "name", "nt"):
+                actual = mcp_server.default_mods_dir()
 
         self.assertEqual(actual, expected)
 
@@ -153,7 +156,7 @@ class PortabilityTests(unittest.TestCase):
             ROOT / "README.md",
             ROOT / "scripts" / "mcp_launch_wrapper.sh",
             ROOT / "scripts" / "workbench_cli.py",
-            ROOT / "server" / "mcp_server.py",
+            ROOT / "cities2_mcp" / "mcp_server.py",
         ]
         for path in targets:
             text = path.read_text(encoding="utf-8")
@@ -167,7 +170,7 @@ class PortabilityTests(unittest.TestCase):
 
     def test_public_name_uses_cities2_mcp_label(self) -> None:
         label = "Cities2-MCP — game knowledge and modding tools for Cities: Skylines II"
-        server_text = (ROOT / "server" / "mcp_server.py").read_text(encoding="utf-8")
+        server_text = (ROOT / "cities2_mcp" / "mcp_server.py").read_text(encoding="utf-8")
         example_config = (ROOT / "mcp.config.example.json").read_text(encoding="utf-8")
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
 
@@ -179,8 +182,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("cities2-modding-workbench", install_text)
 
     def test_mcp_initialize_describes_full_public_scope(self) -> None:
-        module = load_module("mcp_server_public_scope", ROOT / "server" / "mcp_server.py")
-        response = module.handle_request(
+        response = mcp_server.handle_request(
             {
                 "jsonrpc": "2.0",
                 "id": 1,
@@ -198,8 +200,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertNotIn("Generic MediaWiki", instructions)
 
     def test_tool_descriptions_identify_wiki_and_mod_workflow_scope(self) -> None:
-        module = load_module("mcp_server_tool_descriptions", ROOT / "server" / "mcp_server.py")
-        response = module.handle_request(
+        response = mcp_server.handle_request(
             {
                 "jsonrpc": "2.0",
                 "id": 1,
@@ -343,12 +344,12 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn(stale_token, install_text)
 
     def test_retrieval_layer_is_internal_not_a_submodule(self) -> None:
-        server_text = (ROOT / "server" / "mcp_server.py").read_text(encoding="utf-8")
+        server_text = (ROOT / "cities2_mcp" / "mcp_server.py").read_text(encoding="utf-8")
         notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
 
         self.assertFalse((ROOT / ".gitmodules").exists())
-        self.assertTrue((ROOT / "server" / "retrieval" / "mcp_server.py").exists())
-        self.assertFalse((ROOT / "server" / "retrieval" / "LICENSE.wiki-mcp").exists())
+        self.assertTrue((ROOT / "cities2_mcp" / "retrieval" / "mcp_server.py").exists())
+        self.assertFalse((ROOT / "cities2_mcp" / "retrieval" / "LICENSE.wiki-mcp").exists())
         self.assertIn("wiki-mcp contributors", notices)
         self.assertFalse((ROOT / "vendor" / "wiki-mcp").exists())
         self.assertNotIn("vendor/wiki-mcp", server_text)

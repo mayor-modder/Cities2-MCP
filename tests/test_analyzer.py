@@ -1,22 +1,20 @@
 from __future__ import annotations
 
 import shutil
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "server"))
+from cities2_mcp.project_analyzer import ProjectAnalyzer
+from cities2_mcp.project_scaffold import ProjectScaffolder
 
-from project_analyzer import ProjectAnalyzer  # noqa: E402
-from project_scaffold import ProjectScaffolder  # noqa: E402
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class AnalyzerTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = Path(tempfile.mkdtemp(prefix="cities2-mcp-analyze-"))
-        self.scaffolder = ProjectScaffolder(self.tmp, templates_dir=ROOT / "server" / "templates")
+        self.scaffolder = ProjectScaffolder(self.tmp, templates_dir=ROOT / "cities2_mcp" / "templates")
         self.analyzer = ProjectAnalyzer(self.scaffolder)
 
     def tearDown(self) -> None:
@@ -107,7 +105,7 @@ class AnalyzerTests(unittest.TestCase):
         secondary = self.tmp / "secondary"
         scaffolder = ProjectScaffolder(
             self.tmp,
-            templates_dir=ROOT / "server" / "templates",
+            templates_dir=ROOT / "cities2_mcp" / "templates",
             additional_workspaces=[secondary],
         )
         analyzer = ProjectAnalyzer(scaffolder)
