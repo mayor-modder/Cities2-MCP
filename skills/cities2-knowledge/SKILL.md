@@ -2,12 +2,13 @@
 name: cities2-knowledge
 description: >-
   MUST use automatically for any Cities: Skylines II gameplay, city-management,
-  or game-mechanics question, even when the user does not mention Cities2-MCP,
-  wiki, Encyclopedia, or sources. Use for plain questions like "How do I grow
-  office demand?", "How do I get more people to use my subway?", "What makes
-  citizens healthier?", "Why is housing demand low?", "How do taxes affect
-  industry?", or "How does zoning/pollution/education/transit work?" Answers
-  use the Cities2-MCP wiki corpus plus the user's local in-game Encyclopedia.
+  game-mechanics, patch, update, changed, fixed, added, removed, improved,
+  or known-issue question, even when the user does not mention Cities2-MCP,
+  wiki, Encyclopedia, patch notes, or sources. Use for plain questions like
+  "How do I grow office demand?", "What changed in the latest patch?", "Did
+  traffic change?", "What makes citizens healthier?", "Why is housing demand
+  low?", or "How does zoning/pollution/education/transit work?" Answers use
+  the Cities2-MCP wiki corpus plus the user's local in-game Encyclopedia.
 ---
 
 # Cities2 Knowledge
@@ -34,6 +35,16 @@ Use this skill when answering Cities: Skylines II gameplay questions with Cities
    - Game Encyclopedia entry titles from `get_encyclopedia_entry`.
 7. Answer from the retrieved material. Explain what to do and why, with short source labels such as `Wiki` and `Game Encyclopedia` when useful.
 
+## Patch And Update Questions
+
+For questions about what is new, changed, fixed, currently broken, patched, or recently released, treat the wiki corpus as the primary patch-note source and the Game Encyclopedia as supporting terminology.
+
+1. Call `source_status()` first.
+2. Search compact update terms such as `latest patch game history patch notes`, `Main Page/news`, `Patches`, a version number, or a codename from the question.
+3. Fetch exact pages before summarizing. Read `Main Page/news` or `Patches` to identify the newest listed version, then fetch the patch-family page. If the newest version is in Patch 1.5.X, use `get_page("patch-1-5-x")` and inspect the exact version section.
+4. Do not stop at older sections such as `1.5.7f1` if `Main Page/news`, `Patches`, or the patch-family page list newer versions.
+5. Summarize practical impact in plain English. Group broad update answers by gameplay/simulation, UI/player-facing changes, visuals/performance/crashes, modding/editor workflow, DLC/asset fixes, and known issues when those categories are relevant.
+
 ## Querying Well
 
 Use compact gameplay terms. Prefer nouns and mechanic names over conversational wording.
@@ -46,6 +57,10 @@ Examples:
   Query: `subway public transportation passengers stops comfort traffic bus train citizens`
 - User: "What makes citizens healthier?"
   Query: `health healthcare citizens sick pollution noise deathcare hospital clinic welfare`
+- User: "What's new in the latest patch?"
+  Query: `latest patch game history patch notes`
+- User: "Did traffic change?"
+  Query: `vehicles U-turns turn lanes highway exits intersections`
 
 If the first search misses, rewrite the query with related in-game labels from the source results. For example, try `public transportation passenger transportation subway stations` after a subway query.
 

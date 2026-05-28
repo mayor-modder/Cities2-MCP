@@ -76,7 +76,32 @@ class McpGameEncyclopediaTests(unittest.TestCase):
         self.assertIn("cities2-wiki", prompts)
         self.assertIn("cities2-encyclopedia", prompts)
         self.assertIn("cities2-modding", prompts)
+        self.assertNotIn("cities2-updates", prompts)
         self.assertTrue(prompts["cities2"]["arguments"][0]["required"])
+
+    def test_generic_prompt_adds_update_routing_for_latest_patch_questions(self) -> None:
+        response = self.module.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 13,
+                "method": "prompts/get",
+                "params": {
+                    "name": "cities2",
+                    "arguments": {"question": "What's new in the latest patch?"},
+                },
+            },
+            corpus=None,
+            wm=None,
+            encyclopedia=None,
+            corpus_error=None,
+            workflow_error=None,
+            docs_paths={},
+        )
+
+        text = response["result"]["messages"][0]["content"]["text"]
+        self.assertIn("Latest patch/update workflow", text)
+        self.assertIn("Main Page/news", text)
+        self.assertIn("get_page(\"patch-1-5-x\")", text)
 
     def test_prompts_get_returns_portable_source_workflow_prompt(self) -> None:
         response = self.module.handle_request(

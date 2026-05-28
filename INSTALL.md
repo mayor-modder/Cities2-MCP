@@ -29,6 +29,12 @@ needed. Omit `--workspace` only for wiki and local Encyclopedia search; add one
 or more `--workspace` entries when the user wants workflow tools to write,
 analyze, build, or package local mod projects.
 
+If the user asks for a fresh install or asks you to ignore previous local
+checkouts, still prefer the packaged install. Do not clone this repository just
+to run the MCP server. Use `uvx cities2-mcp` for the latest published release,
+or `uvx --refresh cities2-mcp==0.1.5` when you need to force a clean package
+resolution for the current release.
+
 Use the source checkout instructions below when developing this repository or
 when a user explicitly wants to run from a local clone.
 
@@ -86,22 +92,11 @@ Advanced: if `CITIES2_GAME_DIR` is not enough, set `CITIES2_LOCALE_COK` to the f
 
 `--workspace` is a safety allowlist for workflow tools that write, build, or package projects. Repeat it once for each entry in `WORKSPACE_ROOTS`. Absolute project paths outside the configured workspaces are rejected with `Path must stay inside configured workspaces`.
 
-### Slash-command style prompts
+### Slash commands
 
-Cities2-MCP exposes MCP prompts that compatible clients may show as slash commands, prompt templates, or command-palette entries:
+Cities2-MCP ships slash-command skills in the `skills/` directory. These are recommended because they teach the agent how to query the wiki and local Encyclopedia with keywords, fetch full source records, compare source authority, synthesize answers, and include compact source notes with Encyclopedia entry names and wiki links.
 
-- `/cities2` - answer using both the bundled wiki corpus and the local game Encyclopedia when available.
-- `/cities2-wiki` - answer using only the bundled wiki corpus.
-- `/cities2-encyclopedia` - answer using only the local in-game Encyclopedia.
-- `/cities2-modding` - answer modding questions with docs and local project workflow tools.
-
-Client support varies. If a client does not show MCP prompts as slash commands, the same workflows may still be available through that client's MCP prompt picker.
-
-### Agent Skills
-
-Cities2-MCP also ships Agent Skills in the `skills/` directory. These are recommended for clients that support skills because they teach the agent how to query the wiki and local Encyclopedia with keywords, fetch full source records, compare source authority, synthesize answers, and include compact source notes with Encyclopedia entry names and wiki links.
-
-- `skills/cities2-knowledge` - gameplay and city-system questions using wiki plus local Encyclopedia.
+- `skills/cities2-knowledge` - gameplay, city-system, patch, and game-update questions using wiki plus local Encyclopedia.
 - `skills/cities2-modding` - modding questions and local mod project workflows.
 
 Install these skills into the client's supported skill directory if the client does not load project-level skills automatically. The skills depend on the `cities2-mcp` MCP server being configured first.
@@ -304,7 +299,6 @@ Install the user-facing skill folders:
 
 - `<REPO_ROOT>/skills/cities2-knowledge`
 - `<REPO_ROOT>/skills/cities2-modding`
-- `<REPO_ROOT>/skills/cities2-game-updates`
 
 ### Codex skills
 
@@ -323,7 +317,6 @@ $dst = "$env:USERPROFILE/.codex/skills"
 New-Item -ItemType Directory -Force -Path $dst | Out-Null
 Copy-Item -Recurse -Force "$src/cities2-knowledge" "$dst/cities2-knowledge"
 Copy-Item -Recurse -Force "$src/cities2-modding" "$dst/cities2-modding"
-Copy-Item -Recurse -Force "$src/cities2-game-updates" "$dst/cities2-game-updates"
 ```
 
 On macOS or Linux:
@@ -332,12 +325,11 @@ On macOS or Linux:
 mkdir -p ~/.codex/skills
 cp -R "<REPO_ROOT>/skills/cities2-knowledge" ~/.codex/skills/
 cp -R "<REPO_ROOT>/skills/cities2-modding" ~/.codex/skills/
-cp -R "<REPO_ROOT>/skills/cities2-game-updates" ~/.codex/skills/
 ```
 
 ### Other clients
 
-For Claude, Cursor, or other clients that support skills, use that client's documented skill-install location or project-level skill mechanism. If the client does not support Agent Skills, skip this step; the MCP server tools still work, and compatible clients may still expose the MCP prompts from `prompts/list`.
+For Claude, Cursor, or other clients that support skills, use that client's documented skill-install location or project-level skill mechanism. If the client does not support Agent Skills, skip this step; the MCP server tools still work.
 
 Do not copy skills into a client's directory if that client does not support skills.
 

@@ -230,10 +230,24 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("6.", text)
             self.assertIn("dotnet --list-runtimes", text)
 
+    def test_public_docs_describe_skills_as_slash_commands_not_mcp_prompts(self) -> None:
+        install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
+        readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+
+        for text in (install_text, readme_text):
+            self.assertIn("slash commands", text.lower())
+            self.assertIn("cities2-knowledge", text)
+            self.assertIn("cities2-modding", text)
+            self.assertNotIn("MCP prompt templates", text)
+            self.assertNotIn("MCP Prompts", text)
+            self.assertNotIn("prompts/list", text)
+            self.assertNotIn("cities2-wiki", text)
+            self.assertNotIn("cities2-encyclopedia", text)
+
     def test_agent_skills_are_packaged_and_documented(self) -> None:
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
-        skill_names = ["cities2-knowledge", "cities2-modding", "cities2-game-updates"]
+        skill_names = ["cities2-knowledge", "cities2-modding"]
 
         for skill_name in skill_names:
             skill_dir = ROOT / "skills" / skill_name
@@ -254,6 +268,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("## 5. Install Agent Skills", install_text)
         self.assertIn("compact source notes", readme_text)
         self.assertIn("compact source notes", install_text)
+        self.assertIn("patch", (ROOT / "skills" / "cities2-knowledge" / "SKILL.md").read_text(encoding="utf-8"))
         self.assertIn("%USERPROFILE%\\.codex\\skills", install_text)
         self.assertIn("Copy-Item -Recurse -Force", install_text)
         self.assertIn("~/.codex/skills", install_text)

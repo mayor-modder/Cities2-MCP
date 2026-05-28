@@ -434,6 +434,38 @@ PROMPT_DEFINITIONS: Dict[str, JSON] = {
 }
 
 
+UPDATE_QUERY_MARKERS = (
+    "latest patch",
+    "latest update",
+    "what's new",
+    "what is new",
+    "what changed",
+    "patch notes",
+    "new patch",
+    "recent patch",
+    "recent update",
+    "game update",
+    "known issue",
+    "known issues",
+    "morning dew",
+)
+
+
+LATEST_PATCH_GUIDANCE = (
+    "\n\nLatest patch/update workflow:\n"
+    "Use source_status() first. For latest/current patch questions, do not answer from the first broad search result "
+    "alone. Search or fetch Main Page/news and Patches to identify the newest listed version, then fetch the exact "
+    "patch-family page. When Patches indicates the latest release is in Patch 1.5.X, use get_page(\"patch-1-5-x\") "
+    "and inspect the exact version section before summarizing. If a page lists newer versions than the section you "
+    "first read, follow the newer version instead of stopping at older notes such as 1.5.7f1."
+)
+
+
+def is_update_question(question: str) -> bool:
+    normalized = question.casefold()
+    return any(marker in normalized for marker in UPDATE_QUERY_MARKERS)
+
+
 def prompts_catalog() -> List[JSON]:
     return [
         {
@@ -447,11 +479,15 @@ def prompts_catalog() -> List[JSON]:
 
 def prompt_text(name: str, question: str) -> str:
     definition = PROMPT_DEFINITIONS[name]
+    tool_guidance = str(definition["tool_guidance"])
+    if name in {"cities2", "cities2-wiki", "cities2-modding"} and is_update_question(question):
+        tool_guidance += LATEST_PATCH_GUIDANCE
+
     return (
         f"You are answering a Cities: Skylines II request through Cities2-MCP.\n\n"
         f"Mode: /{name}\n"
         f"User question: {question}\n\n"
-        f"Source workflow:\n{definition['tool_guidance']}\n\n"
+        f"Source workflow:\n{tool_guidance}\n\n"
         "Answer normally and synthesize the retrieved material instead of showing raw search results. "
         "Use concise source labels such as Wiki, Game Encyclopedia, or Mod project tools when they matter. "
         "If there is not enough retrieved evidence, say what is missing rather than guessing."
