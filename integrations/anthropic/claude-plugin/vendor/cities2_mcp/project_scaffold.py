@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 JSON = Dict[str, Any]
+FALLBACK_GAME_VERSION_PATTERN = "1.5.*"
 
 
 class ProjectScaffolder:
@@ -18,12 +19,15 @@ class ProjectScaffolder:
         workspace: Path,
         templates_dir: Optional[Path] = None,
         additional_workspaces: Optional[Sequence[Path]] = None,
+        data_dir: Optional[Path] = None,
     ) -> None:
         self.workspace = workspace.resolve()
         self.allowed_workspaces = self._build_allowed_workspaces(additional_workspaces or [])
         self.projects_root = self.workspace / "mods"
         self.projects_root.mkdir(parents=True, exist_ok=True)
-        self.templates_dir = (templates_dir or (Path(__file__).resolve().parent / "templates")).resolve()
+        package_dir = Path(__file__).resolve().parent
+        self.templates_dir = (templates_dir or (package_dir / "templates")).resolve()
+        self.data_dir = (data_dir or (package_dir / "data")).resolve()
 
     def _build_allowed_workspaces(self, additional_workspaces: Sequence[Path]) -> List[Path]:
         workspaces: List[Path] = []
@@ -59,12 +63,114 @@ class ProjectScaffolder:
         return "".join(p[:1].upper() + p[1:] for p in parts)
 
     @staticmethod
-    def _default_metadata(name: str, slug: str) -> JSON:
+    def _version_pattern(value: object) -> str:
+        text = str(value or "")
+        match = re.search(r"\b(\d+)\.(\d+)(?:\.(?:\d+|[xX])(?:f\d+)?)?\b", text)
+        if not match:
+            return ""
+        return f"{match.group(1)}.{match.group(2)}.*"
+
+    @staticmethod
+    def _version_score(value: str) -> tuple[int, int, int, int]:
+        match = re.search(r"\b(\d+)\.(\d+)(?:\.(\d+|[xX]))?(?:f(\d+))?\b", value)
+        if not match:
+            return (-1, -1, -1, -1)
+        major = int(match.group(1))
+        if major > 9:
+            return (-1, -1, -1, -1)
+        patch_text = match.group(3)
+        patch = -1 if patch_text is None or patch_text.lower() == "x" else int(patch_text)
+        fix = -1 if match.group(4) is None else int(match.group(4))
+        return (major, int(match.group(2)), patch, fix)
+
+    @classmethod
+    def _best_version_pattern(cls, values: Sequence[object], *, require_game_patch_format: bool = False) -> str:
+        pattern = (
+            r"\b\d+\.\d+\.(?:\d+f\d+|[xX])\b"
+            if require_game_patch_format
+            else r"\b\d+\.\d+(?:\.(?:\d+|[xX]))?(?:f\d+)?\b"
+        )
+        versions: List[str] = []
+        for value in values:
+            versions.extend(re.findall(pattern, str(value or "")))
+        if not versions:
+            return ""
+        best = max(versions, key=cls._version_score)
+        if cls._version_score(best) == (-1, -1, -1, -1):
+            return ""
+        return cls._version_pattern(best)
+
+    @staticmethod
+    def _manifest_version_candidates(value: object) -> List[object]:
+        candidates: List[object] = []
+        if isinstance(value, dict):
+            for key, item in value.items():
+                key_text = str(key).casefold()
+                if ("game" in key_text or "patch" in key_text) and "version" in key_text:
+                    candidates.append(item)
+                if isinstance(item, (dict, list)):
+                    candidates.extend(ProjectScaffolder._manifest_version_candidates(item))
+        elif isinstance(value, list):
+            for item in value:
+                candidates.extend(ProjectScaffolder._manifest_version_candidates(item))
+        return candidates
+
+    def _game_version_from_manifest(self) -> str:
+        manifest_path = self.data_dir / "manifest.json"
+        if not manifest_path.exists():
+            return ""
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+        except Exception:
+            return ""
+        return self._best_version_pattern(self._manifest_version_candidates(manifest))
+
+    def _game_version_from_patch_index(self) -> str:
+        chunks_path = self.data_dir / "index" / "chunks.jsonl"
+        if not chunks_path.exists():
+            return ""
+        candidates: List[object] = []
+        try:
+            with chunks_path.open("r", encoding="utf-8-sig") as handle:
+                for line in handle:
+                    try:
+                        row = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    page_id = str(row.get("page_id", "")).casefold()
+                    title = str(row.get("title", "")).casefold()
+                    if page_id == "patches" or page_id.startswith("patch-") or title.startswith("patch"):
+                        candidates.append(row.get("section", ""))
+                        candidates.append(row.get("text", ""))
+        except OSError:
+            return ""
+        return self._best_version_pattern(candidates, require_game_patch_format=True)
+
+    def default_game_version_info(self) -> JSON:
+        manifest_version = self._game_version_from_manifest()
+        if manifest_version:
+            return {
+                "game_version": manifest_version,
+                "game_version_source": "bundled_corpus_manifest",
+            }
+        patch_index_version = self._game_version_from_patch_index()
+        if patch_index_version:
+            return {
+                "game_version": patch_index_version,
+                "game_version_source": "bundled_corpus_patch_index",
+            }
+        return {
+            "game_version": FALLBACK_GAME_VERSION_PATTERN,
+            "game_version_source": "package_fallback",
+        }
+
+    def _default_metadata(self, name: str, slug: str) -> JSON:
+        game_version = self.default_game_version_info()["game_version"]
         return {
             "mod_id": "",
             "display_name": name,
             "short_description": f"{name} generated by Cities2-MCP modding tools.",
-            "game_version": "1.3.*",
+            "game_version": game_version,
             "github_url": "",
             "forum_url": "",
             "version": "0.1.0",
@@ -277,7 +383,10 @@ class ProjectScaffolder:
             raise ValueError(f"Target directory is not empty: {root}")
         root.mkdir(parents=True, exist_ok=True)
 
+        metadata_game_version = str((metadata or {}).get("game_version", "")).strip()
+        default_game_version_info = self.default_game_version_info()
         md = self._merge_defaults(self._default_metadata(name, slug), metadata)
+        game_version_source = "metadata" if metadata_game_version else str(default_game_version_info["game_version_source"])
         opts = self._merge_defaults(self._default_options(template), options)
         tokens = self._template_tokens(template, md, opts)
 
@@ -325,6 +434,8 @@ class ProjectScaffolder:
             "files_created": created,
             "warnings": warnings,
             "recommended_commands": recommended,
+            "game_version": str(md.get("game_version", "")),
+            "game_version_source": game_version_source,
             "metadata": md,
             "options": opts,
         }

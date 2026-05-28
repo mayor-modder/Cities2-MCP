@@ -229,10 +229,13 @@ class PackagingTests(unittest.TestCase):
                 init = rpc_ndjson(proc, 1, "initialize", {"protocolVersion": "2025-06-18"})
                 tools = rpc(proc, 2, "tools/list", {})
                 status = call(proc, 3, "source_status", {})
+                scaffold = call(proc, 4, "scaffold_project", {"name": "Plugin Version", "template": "cities2-csharp"})
 
                 self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.7")
                 self.assertEqual(len(tools["result"]["tools"]), 14)
                 self.assertTrue(status["wiki"]["available"])
+                self.assertEqual(scaffold["game_version"], "1.5.*")
+                self.assertIn("game_version_source", scaffold)
             finally:
                 self._stop_proc(proc)
 

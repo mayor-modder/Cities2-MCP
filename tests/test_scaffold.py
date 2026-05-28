@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 import tempfile
 import unittest
@@ -48,6 +49,79 @@ class ScaffoldTests(unittest.TestCase):
 
         self.assertIn('<Reference Include="Unity.Collections">', csproj)
         self.assertLess(csproj.index("Mod.targets"), csproj.rindex("<LangVersion>"))
+
+    def test_default_game_version_comes_from_bundled_patch_index(self) -> None:
+        result = self.scaffolder.scaffold_project(
+            name="Version Default",
+            template="cities2-csharp",
+            target_dir=None,
+            metadata={},
+            options={},
+        )
+
+        project_dir = Path(result["project_dir"])
+        csproj = (project_dir / "version-default.csproj").read_text(encoding="utf-8")
+
+        self.assertEqual(result["game_version"], "1.5.*")
+        self.assertEqual(result["game_version_source"], "bundled_corpus_patch_index")
+        self.assertEqual(result["metadata"]["game_version"], "1.5.*")
+        self.assertIn("<GameVersion>1.5.*</GameVersion>", csproj)
+
+    def test_default_game_version_prefers_manifest_metadata(self) -> None:
+        data_dir = self.tmp / "data-with-version"
+        data_dir.mkdir()
+        (data_dir / "manifest.json").write_text(
+            json.dumps({"current_game_version": "1.6.2f1"}),
+            encoding="utf-8",
+        )
+        scaffolder = ProjectScaffolder(
+            self.tmp / "manifest-workspace",
+            templates_dir=ROOT / "cities2_mcp" / "templates",
+            data_dir=data_dir,
+        )
+
+        result = scaffolder.scaffold_project(
+            name="Manifest Version",
+            template="cities2-csharp",
+            target_dir=None,
+            metadata={},
+            options={},
+        )
+
+        self.assertEqual(result["game_version"], "1.6.*")
+        self.assertEqual(result["game_version_source"], "bundled_corpus_manifest")
+
+    def test_explicit_game_version_metadata_overrides_default(self) -> None:
+        result = self.scaffolder.scaffold_project(
+            name="Explicit Version",
+            template="cities2-csharp",
+            target_dir=None,
+            metadata={"game_version": "1.6.*"},
+            options={},
+        )
+
+        self.assertEqual(result["game_version"], "1.6.*")
+        self.assertEqual(result["game_version_source"], "metadata")
+
+    def test_default_game_version_falls_back_when_corpus_metadata_missing(self) -> None:
+        empty_data_dir = self.tmp / "empty-data"
+        empty_data_dir.mkdir()
+        scaffolder = ProjectScaffolder(
+            self.tmp / "fallback-workspace",
+            templates_dir=ROOT / "cities2_mcp" / "templates",
+            data_dir=empty_data_dir,
+        )
+
+        result = scaffolder.scaffold_project(
+            name="Fallback Version",
+            template="cities2-csharp",
+            target_dir=None,
+            metadata={},
+            options={},
+        )
+
+        self.assertEqual(result["game_version"], "1.5.*")
+        self.assertEqual(result["game_version_source"], "package_fallback")
 
     def test_files_created_excludes_optionally_removed_files(self) -> None:
         result = self.scaffolder.scaffold_project(
