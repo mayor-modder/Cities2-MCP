@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -151,6 +152,10 @@ class PackagingTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
+        plugin_mcp = json.loads(
+            (ROOT / "integrations" / "anthropic" / "claude-plugin" / ".mcp.json").read_text(encoding="utf-8")
+        )
+        marketplace = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
         mcpb = json.loads(
             (ROOT / "integrations" / "anthropic" / "claude-mcpb" / "manifest.json").read_text(encoding="utf-8")
         )
@@ -162,15 +167,74 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(plugin["name"], "cities2-mcp")
         self.assertEqual(plugin["version"], "0.1.7")
         self.assertNotIn("mcpServers", plugin)
-        self.assertFalse((ROOT / "integrations" / "anthropic" / "claude-plugin" / ".mcp.json").exists())
+        self.assertEqual(plugin_mcp["mcpServers"]["cities2-mcp"]["command"], "node")
+        self.assertIn("${CLAUDE_PLUGIN_ROOT}/bin/cities2-mcp-launcher.js", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
+        self.assertIn("${CLAUDE_PROJECT_DIR}", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
+        self.assertNotIn("uvx", json.dumps(plugin_mcp))
+        self.assertEqual(marketplace["name"], "cities2-mcp")
+        self.assertEqual(marketplace["plugins"][0]["source"], "./integrations/anthropic/claude-plugin")
+        self.assertEqual(marketplace["plugins"][0]["version"], "0.1.7")
         self.assertEqual(mcpb["manifest_version"], "0.4")
         self.assertEqual(mcpb["version"], "0.1.7")
         self.assertEqual(mcpb["server"]["type"], "uv")
         self.assertIn("https://github.com/mayor-modder/Cities2-MCP#privacy-policy", mcpb["privacy_policies"])
         self.assertIn("cities2-mcp==0.1.7", mcpb_pyproject["project"]["dependencies"])
         self.assertIn("## Privacy Policy", readme_text)
+        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "bin" / "cities2-mcp-launcher.js").exists())
+        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "run_server.py").exists())
+        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "cities2_mcp" / "mcp_server.py").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-knowledge" / "SKILL.md").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-modding" / "SKILL.md").exists())
+
+    def test_claude_plugin_vendored_launcher_reports_version(self) -> None:
+        plugin_root = ROOT / "integrations" / "anthropic" / "claude-plugin"
+        result = subprocess.run(
+            [
+                "node",
+                str(plugin_root / "bin" / "cities2-mcp-launcher.js"),
+                "--version",
+            ],
+            cwd=ROOT,
+            env={**os.environ, "CLAUDE_PLUGIN_ROOT": str(plugin_root)},
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.7")
+
+    def test_claude_plugin_vendored_launcher_serves_mcp(self) -> None:
+        from tests.smoke_mcp import call, rpc, rpc_ndjson
+
+        plugin_root = ROOT / "integrations" / "anthropic" / "claude-plugin"
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-plugin-") as tmp:
+            proc = subprocess.Popen(
+                [
+                    "node",
+                    str(plugin_root / "bin" / "cities2-mcp-launcher.js"),
+                    "--workspace",
+                    tmp,
+                    "--mods-dir",
+                    str(Path(tmp) / "mods"),
+                ],
+                cwd=ROOT,
+                env={**os.environ, "CLAUDE_PLUGIN_ROOT": str(plugin_root)},
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            assert proc.stdin and proc.stdout and proc.stderr
+
+            try:
+                init = rpc_ndjson(proc, 1, "initialize", {"protocolVersion": "2025-06-18"})
+                tools = rpc(proc, 2, "tools/list", {})
+                status = call(proc, 3, "source_status", {})
+
+                self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.7")
+                self.assertEqual(len(tools["result"]["tools"]), 14)
+                self.assertTrue(status["wiki"]["available"])
+            finally:
+                self._stop_proc(proc)
 
     def test_agent_asset_installer_copies_codex_and_claude_assets(self) -> None:
         with tempfile.TemporaryDirectory(prefix="cities2-mcp-assets-") as tmp:

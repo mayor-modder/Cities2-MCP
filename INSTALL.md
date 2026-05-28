@@ -338,22 +338,28 @@ The helper removes stale `cities2-game-updates` assets by default. Add
 ### Claude Code plugin
 
 The tracked Claude Code plugin source lives at
-`integrations/anthropic/claude-plugin`. It bundles the two skills only.
+`integrations/anthropic/claude-plugin`. It bundles the two skills, a
+plugin-local MCP launcher, a vendored copy of the Python package, and
+`.mcp.json`.
 
 This plugin path is best for Claude Code distribution because Anthropic plugins
-can make slash commands discoverable. It intentionally does not auto-configure
-the MCP server because the simple Claude Code MCP command path uses `uvx`, and
-`uvx` must already be installed on the user's machine. For users with `uvx`
-available, add a project-local MCP config with a trusted workspace:
+can bundle skills and MCP servers together. When the plugin is enabled, Claude
+Code starts the plugin-provided `cities2-mcp` server automatically. The plugin
+sets `--workspace` to `${CLAUDE_PROJECT_DIR}`, so workflow tools are confined
+to the current Claude Code project.
 
-```sh
-claude mcp add --scope local cities2-mcp -- uvx cities2-mcp --workspace .
+Before official listing, install through this repository's marketplace:
+
+```text
+/plugin marketplace add mayor-modder/Cities2-MCP
+/plugin install cities2-mcp@cities2-mcp
 ```
 
 Validate the plugin from the repository root:
 
 ```sh
 claude plugin validate integrations/anthropic/claude-plugin --strict
+claude plugin validate . --strict
 ```
 
 ### Claude Desktop MCPB
