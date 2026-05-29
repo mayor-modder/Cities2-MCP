@@ -1,0 +1,10 @@
+interface:
+  display_name: "Cities2 Knowledge"
+  short_description: "Answer CS2 gameplay and update questions"
+  default_prompt: "Use $cities2-knowledge to answer a Cities: Skylines II gameplay, mechanics, or patch/update question from the wiki and local Encyclopedia."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "cities2-mcp"
+      description: "Cities2-MCP local server with wiki corpus and game Encyclopedia tools"

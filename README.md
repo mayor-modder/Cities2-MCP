@@ -135,6 +135,24 @@ Reference config templates with placeholders are also available at:
 - `mcp.config.example.json` for JSON clients
 - `INSTALL.md` includes the Codex TOML shape
 
+## Codex Distribution
+
+Cities2-MCP includes a Codex plugin under `plugins/cities2-mcp/` and a repo
+marketplace at `.agents/plugins/marketplace.json`. The plugin bundles the two
+skills and a plugin-local MCP launcher, so Codex users can install one package
+for slash commands plus the local server.
+
+Codex CLI and Codex Desktop users can add this repository as a plugin
+marketplace:
+
+```powershell
+codex plugin marketplace add mayor-modder/Cities2-MCP
+```
+
+After installing/enabling **Cities2-MCP** in Codex, open a project folder and ask
+Cities: Skylines II gameplay or modding questions. The plugin scopes mod
+workflow tools to the current Codex project.
+
 ## Anthropic Distribution
 
 Cities2-MCP includes two Anthropic package shapes under

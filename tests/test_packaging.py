@@ -268,6 +268,86 @@ class PackagingTests(unittest.TestCase):
             finally:
                 self._stop_proc(proc)
 
+    def test_codex_distribution_artifacts_are_version_aligned(self) -> None:
+        plugin_root = ROOT / "plugins" / "cities2-mcp"
+        plugin = json.loads((plugin_root / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        plugin_mcp = json.loads((plugin_root / ".mcp.json").read_text(encoding="utf-8"))
+        marketplace = json.loads((ROOT / ".agents" / "plugins" / "marketplace.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(plugin["name"], "cities2-mcp")
+        self.assertEqual(plugin["interface"]["displayName"], "Cities2-MCP")
+        self.assertEqual(plugin["version"], "0.1.8")
+        self.assertEqual(plugin["skills"], "./skills/")
+        self.assertEqual(plugin["mcpServers"], "./.mcp.json")
+        self.assertEqual(plugin_mcp["mcpServers"]["cities2-mcp"]["command"], "node")
+        self.assertIn("${PLUGIN_ROOT}/bin/cities2-mcp-launcher.js", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
+        self.assertIn("--workspace", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
+        self.assertIn(".", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
+        self.assertEqual(plugin_mcp["mcpServers"]["cities2-mcp"]["cwd"], ".")
+        self.assertEqual(marketplace["name"], "cities2-mcp")
+        self.assertEqual(marketplace["plugins"][0]["name"], "cities2-mcp")
+        self.assertEqual(marketplace["plugins"][0]["source"]["source"], "local")
+        self.assertEqual(marketplace["plugins"][0]["source"]["path"], "./plugins/cities2-mcp")
+        self.assertEqual(marketplace["plugins"][0]["policy"]["installation"], "AVAILABLE")
+        self.assertEqual(marketplace["plugins"][0]["policy"]["authentication"], "ON_INSTALL")
+        self.assertTrue((plugin_root / "skills" / "cities2-knowledge" / "SKILL.md").exists())
+        self.assertTrue((plugin_root / "skills" / "cities2-modding" / "SKILL.md").exists())
+        self.assertTrue((plugin_root / "vendor" / "cities2_mcp" / "mcp_server.py").exists())
+        self.assertTrue((plugin_root / "vendor" / "cities2_mcp" / "data" / "index" / "chunks.jsonl").exists())
+
+    def test_codex_plugin_vendored_launcher_reports_version(self) -> None:
+        plugin_root = ROOT / "plugins" / "cities2-mcp"
+        result = subprocess.run(
+            [
+                "node",
+                str(plugin_root / "bin" / "cities2-mcp-launcher.js"),
+                "--version",
+            ],
+            cwd=ROOT,
+            env={**os.environ, "PLUGIN_ROOT": str(plugin_root)},
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.8")
+
+    def test_codex_plugin_vendored_launcher_serves_mcp(self) -> None:
+        from tests.smoke_mcp import call, rpc, rpc_ndjson
+
+        plugin_root = ROOT / "plugins" / "cities2-mcp"
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-codex-plugin-") as tmp:
+            proc = subprocess.Popen(
+                [
+                    "node",
+                    str(plugin_root / "bin" / "cities2-mcp-launcher.js"),
+                    "--workspace",
+                    tmp,
+                    "--mods-dir",
+                    str(Path(tmp) / "mods"),
+                ],
+                cwd=ROOT,
+                env={**os.environ, "PLUGIN_ROOT": str(plugin_root)},
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            assert proc.stdin and proc.stdout and proc.stderr
+
+            try:
+                init = rpc_ndjson(proc, 1, "initialize", {"protocolVersion": "2025-06-18"})
+                tools = rpc(proc, 2, "tools/list", {})
+                status = call(proc, 3, "source_status", {})
+                scaffold = call(proc, 4, "scaffold_project", {"name": "Codex Plugin Version", "template": "cities2-csharp"})
+
+                self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.8")
+                self.assertEqual(len(tools["result"]["tools"]), 14)
+                self.assertTrue(status["wiki"]["available"])
+                self.assertEqual(scaffold["game_version"], "1.5.*")
+                self.assertIn("game_version_source", scaffold)
+            finally:
+                self._stop_proc(proc)
+
     def test_agent_asset_installer_copies_codex_and_claude_assets(self) -> None:
         with tempfile.TemporaryDirectory(prefix="cities2-mcp-assets-") as tmp:
             home = Path(tmp)

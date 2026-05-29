@@ -257,6 +257,18 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("Add marketplace", text)
             self.assertIn("mayor-modder/Cities2-MCP", text)
 
+    def test_docs_include_codex_plugin_marketplace_path(self) -> None:
+        install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
+        readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+
+        for text in (install_text, readme_text):
+            self.assertIn("Codex plugin", text)
+            self.assertIn(".agents/plugins/marketplace.json", text)
+            self.assertIn("plugins/cities2-mcp", text)
+            self.assertIn("codex plugin marketplace add mayor-modder/Cities2-MCP", text)
+            self.assertIn("/cities2-knowledge", text)
+            self.assertIn("/cities2-modding", text)
+
     def test_agent_skills_are_packaged_and_documented(self) -> None:
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
