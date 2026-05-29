@@ -42,9 +42,9 @@ In either version of Claude, you can invoke the skills as slash commands. Try:
 ```text
 /cities2-knowledge what's new in the latest Cities: Skylines II patch?
 /cities2-modding Scaffold a small Cities: Skylines II UI mod in this project folder, then build it.
-/cities2-mod-review Review this mod before I publish it.
-/cities2-mod-debugging The mod builds but the UI button does not appear in game.
-/cities2-mod-release Check whether this mod is ready to package for distribution.
+/cities2-mod-review Review this Cities: Skylines II mod before I share it.
+/cities2-mod-debugging Debug this Cities: Skylines II mod build failure and Modding.log excerpt.
+/cities2-mod-release Check this Cities: Skylines II mod release package for upload readiness.
 ```
 
 ## Codex
@@ -85,9 +85,9 @@ Codex invokes plugin skills with `$` mentions. Use:
 ```text
 $cities2-mcp:cities2-knowledge what's new in the latest Cities: Skylines II patch?
 $cities2-mcp:cities2-modding Scaffold a small Cities: Skylines II UI mod in this project folder, then build it.
-$cities2-mcp:cities2-mod-review Review this mod before I publish it.
-$cities2-mcp:cities2-mod-debugging The mod builds but the UI button does not appear in game.
-$cities2-mcp:cities2-mod-release Check whether this mod is ready to package for distribution.
+$cities2-mcp:cities2-mod-review Review this Cities: Skylines II mod before I share it.
+$cities2-mcp:cities2-mod-debugging Debug this Cities: Skylines II mod build failure and Modding.log excerpt.
+$cities2-mcp:cities2-mod-release Check this Cities: Skylines II mod release package for upload readiness.
 ```
 
 You can also check available skills with `/skills` and type `$` to pick one.
