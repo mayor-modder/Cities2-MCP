@@ -48,17 +48,39 @@ These tools are meant for local development workflows. They can write files and 
 
 ## Agent Skills
 
-Skills live under `skills/`:
+Marketplace installs include five user-facing skills:
 
-- `skills/cities2-knowledge/SKILL.md`
-- `skills/cities2-modding/SKILL.md`
+- `cities2-knowledge`: answers gameplay, city-system, and player-facing patch/update questions.
+- `cities2-modding`: handles general modding questions and local mod project workflows.
+- `cities2-mod-review`: reviews CS2 mods for safety, maintainability, user value, packaging hygiene, and verification gaps.
+- `cities2-mod-debugging`: helps debug CS2 mod build, packaging, runtime, log, UI debugger, and in-game behavior issues.
+- `cities2-mod-release`: checks release readiness before packaging, uploading, publishing, or distributing a mod.
 
-The marketplace install includes these skills. In Codex, run `/skills` or type
-`$` to mention `$cities2-mcp:cities2-knowledge` or
-`$cities2-mcp:cities2-modding`; Claude exposes them as `/cities2-knowledge` and
-`/cities2-modding`. Gameplay and update answers should include compact source
-notes that mention the local Game Encyclopedia entries and link to the relevant
-CS2 Wiki pages when available.
+The modding quality skills use corpus-backed CS2 best practices and documented negative constraints as defaults, and they require local playtesting before distribution unless you explicitly choose to package an unverified build.
+
+The marketplace install includes these skills. In Claude:
+
+```text
+/cities2-knowledge what's new in the latest Cities: Skylines II patch?
+/cities2-modding Scaffold a small Cities: Skylines II UI mod in this project folder, then build it.
+/cities2-mod-review Review this mod before I publish it.
+/cities2-mod-debugging The mod builds but the UI button does not appear in game.
+/cities2-mod-release Check whether this mod is ready to package for distribution.
+```
+
+In Codex, run `/skills` or type `$` to mention them:
+
+```text
+$cities2-mcp:cities2-knowledge what's new in the latest Cities: Skylines II patch?
+$cities2-mcp:cities2-modding Scaffold a small Cities: Skylines II UI mod in this project folder, then build it.
+$cities2-mcp:cities2-mod-review Review this mod before I publish it.
+$cities2-mcp:cities2-mod-debugging The mod builds but the UI button does not appear in game.
+$cities2-mcp:cities2-mod-release Check whether this mod is ready to package for distribution.
+```
+
+Gameplay and update answers should include compact source notes that mention the
+local Game Encyclopedia entries and link to the relevant CS2 Wiki pages when
+available.
 
 Project templates are stored at:
 

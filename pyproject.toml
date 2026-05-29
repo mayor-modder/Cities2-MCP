@@ -47,6 +47,7 @@ packages = ["cities2_mcp"]
 
 [tool.hatch.build.targets.wheel.force-include]
 skills = "cities2_mcp/skills"
+"THIRD_PARTY_NOTICES.md" = "cities2_mcp/THIRD_PARTY_NOTICES.md"
 
 [tool.hatch.build.targets.sdist]
 include = [

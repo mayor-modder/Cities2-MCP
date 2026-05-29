@@ -221,7 +221,13 @@ class PortabilityTests(unittest.TestCase):
     def test_agent_skills_are_packaged_and_documented(self) -> None:
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
-        skill_names = ["cities2-knowledge", "cities2-modding"]
+        skill_names = [
+            "cities2-knowledge",
+            "cities2-modding",
+            "cities2-mod-review",
+            "cities2-mod-debugging",
+            "cities2-mod-release",
+        ]
 
         for skill_name in skill_names:
             skill_dir = ROOT / "skills" / skill_name
@@ -230,7 +236,7 @@ class PortabilityTests(unittest.TestCase):
 
             self.assertIn(f"name: {skill_name}", skill_text)
             self.assertIn("description:", skill_text)
-            self.assertIn("Use automatically", skill_text)
+            self.assertIn('description: "Use when', skill_text)
             self.assertIn("metadata:", skill_text)
             self.assertIn("short-description:", skill_text)
             self.assertIn("Source", skill_text)
@@ -240,12 +246,44 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn(skill_name, readme_text)
             self.assertIn(skill_name, install_text)
 
+        self.assertFalse((ROOT / "skills" / "cities2-skill-style-review").exists())
+        self.assertFalse((ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-skill-style-review").exists())
+        self.assertFalse(
+            (
+                ROOT
+                / "integrations"
+                / "anthropic"
+                / "claude-plugin"
+                / "skills"
+                / "cities2-skill-style-review"
+            ).exists()
+        )
+
         self.assertIn("### Manual Skill Copy", install_text)
         self.assertIn("compact source notes", " ".join(readme_text.split()))
         self.assertIn("patch", (ROOT / "skills" / "cities2-knowledge" / "SKILL.md").read_text(encoding="utf-8"))
         self.assertIn("uvx cities2-mcp install-agent-assets", install_text)
         self.assertIn("copy `skills/cities2-knowledge`", install_text)
         self.assertIn("does not load them from the plugin", install_text)
+
+    def test_modding_quality_skills_encode_review_debug_release_rules(self) -> None:
+        review = (ROOT / "skills" / "cities2-mod-review" / "SKILL.md").read_text(encoding="utf-8")
+        debugging = (ROOT / "skills" / "cities2-mod-debugging" / "SKILL.md").read_text(encoding="utf-8")
+        release = (ROOT / "skills" / "cities2-mod-release" / "SKILL.md").read_text(encoding="utf-8")
+        modding = (ROOT / "skills" / "cities2-modding" / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertIn("corpus-backed", review.lower())
+        self.assertIn("negative constraints", review.lower())
+        self.assertIn("best practice", review.lower())
+        self.assertIn("playtesting handoff", debugging.lower())
+        self.assertIn("Modding.log", debugging)
+        self.assertIn("localhost:9444", debugging)
+        self.assertIn("successful build is not enough", release.lower())
+        self.assertIn("local playtesting", release.lower())
+        self.assertIn("not gameplay-verified", release.lower())
+        self.assertIn("cities2-mod-review", modding)
+        self.assertIn("cities2-mod-debugging", modding)
+        self.assertIn("cities2-mod-release", modding)
 
     def test_docs_do_not_advertise_unimplemented_workspace_escape_flag(self) -> None:
         for path in (ROOT / "README.md", ROOT / "INSTALL.md"):
@@ -343,9 +381,8 @@ class PortabilityTests(unittest.TestCase):
         self.assertNotIn("scripts/workbench_cli.py", install_text)
         self.assertNotIn("PLUGIN_CREATOR_SKILL", install_text)
         self.assertNotIn("claude plugin validate", install_text)
-        self.assertNotIn("publishing", install_text.lower())
-        self.assertNotIn("publish", install_text.lower())
-        self.assertNotIn("published", install_text.lower())
+        self.assertNotIn("publish to pypi", install_text.lower())
+        self.assertNotIn("mcp registry", install_text.lower())
         self.assertNotIn("release workflow", install_text.lower())
         self.assertNotIn("trusted publisher", install_text.lower())
         self.assertNotIn("testing unreleased", install_text.lower())

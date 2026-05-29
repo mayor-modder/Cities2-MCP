@@ -15,3 +15,7 @@ claude plugin validate . --strict
 For local Desktop plugin testing, zip the contents of `claude-plugin/` so the
 archive root contains `.claude-plugin/plugin.json`, `.mcp.json`, `skills/`,
 `bin/`, and `vendor/`. Rename the archive to `.plugin` if desired.
+
+The Claude plugin includes five agent skills: `cities2-knowledge`,
+`cities2-modding`, `cities2-mod-review`, `cities2-mod-debugging`, and
+`cities2-mod-release`.

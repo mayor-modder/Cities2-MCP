@@ -23,3 +23,6 @@ may reject writes to arbitrary project folders with a workspace allowlist error.
 The bundled `cities2-modding` skill handles that case by copying the packaged
 templates into the current Codex workspace and building them with normal shell
 access.
+
+The plugin includes five agent skills: `cities2-knowledge`, `cities2-modding`,
+`cities2-mod-review`, `cities2-mod-debugging`, and `cities2-mod-release`.

@@ -1,7 +1,10 @@
 # Cities2-MCP Codex Plugin
 
-This is the Codex plugin package for Cities2-MCP. It bundles the two user-facing
-skills and a plugin-local MCP server launcher.
+This is the Codex plugin package for Cities2-MCP. It bundles five user-facing
+agent skills and a plugin-local MCP server launcher.
+
+Included skills: `cities2-knowledge`, `cities2-modding`, `cities2-mod-review`,
+`cities2-mod-debugging`, and `cities2-mod-release`.
 
 The plugin `.mcp.json` points at `bin/cities2-mcp-launcher.js`, which runs the
 vendored Python package from `vendor/cities2_mcp`. Codex currently launches the
