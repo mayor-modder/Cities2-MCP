@@ -15,6 +15,7 @@ Review the mod as a good-faith quality pass: find practical risks, missing evide
 - Use Cities2-MCP wiki/reference lookup for CS2 modding claims before treating them as a best practice.
 - Separate normative modding constraints from descriptive gameplay statements. Gameplay facts explain what the game does; modding constraints say what the mod should or must do safely.
 - If source access is partial, say what was reviewed and what remains unknown.
+- For diff, branch, or PR-style reviews, identify the reviewed range or changed files, compare against the user request or plan, inspect affected call sites, and state if no diff or requirements were available.
 
 ## Review Rubric
 

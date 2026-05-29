@@ -13,10 +13,12 @@ Debug CS2 mods with evidence, one focused fix at a time. Use corpus-backed docs 
 
 1. State the failing symptom in one sentence: build, package, launch, runtime, UI, save, or gameplay behavior.
 2. Gather the smallest useful evidence before changing code.
-3. Form one hypothesis tied to a file, API, asset, package step, or game log entry.
-4. Apply one focused fix.
-5. Re-run the narrowest relevant check and compare evidence before/after.
-6. If the symptom changes, update the hypothesis instead of stacking unrelated edits.
+3. Classify the failure category and state the likely root cause, or say what remains unknown.
+4. Form one hypothesis tied to a file, API, asset, package step, or game log entry.
+5. Apply one focused fix.
+6. Re-run the narrowest relevant check and compare evidence before/after.
+7. If the fix fails or the symptom changes, return to evidence and hypothesis instead of stacking unrelated edits.
+8. After three failed fix attempts, pause and ask whether the architecture, template choice, or modding approach should change.
 
 ## Evidence Sources
 
