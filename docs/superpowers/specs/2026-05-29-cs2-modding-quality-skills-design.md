@@ -132,8 +132,25 @@ If the user explicitly overrides, the final answer must label the result as buil
 - Add the new skills to the base `skills/` tree and both plugin distributions.
 - Keep each skill concise enough to load comfortably in agent context.
 - Prefer duplicated critical safety rules over a shared reference file that a client may fail to load.
+- Add a maintainer-local, gitignored review skill under `.codex/` that compares finished CS2 skills against the relevant Superpowers equivalents before release. This skill is a development aid only and should not be packaged or documented for end users.
 - Update tests to assert that the new skills are packaged, documented, and included in Claude/Codex plugin manifests.
 - Add at least one test assertion for the distribution gate and playtesting handoff language.
+
+## Local Skill Style Review
+
+The implementation should include a local agent skill in the repository working tree, kept out of git by the existing `.codex/` ignore rule. Its job is to review the finished CS2 skills before they are committed or released.
+
+The review skill should:
+
+- Compare `cities2-mod-debugging` against Superpowers `systematic-debugging`.
+- Compare `cities2-mod-review` against Superpowers review-oriented skills where relevant.
+- Compare `cities2-mod-release` against Superpowers finishing/release-readiness patterns where relevant.
+- Check that the CS2 skills are operational instructions, not essays.
+- Check that trigger language is specific, concise, and unlikely to overload normal context.
+- Check that safety, playtesting, and distribution-gate rules survived into each relevant skill.
+- Suggest edits, but leave final implementation choices to the maintainer.
+
+Because this reviewer is local and gitignored, it can reference installed Superpowers skill paths on the maintainer's machine. The shipped Cities2-MCP package should not depend on it.
 
 ## Success Criteria
 
@@ -143,3 +160,4 @@ If the user explicitly overrides, the final answer must label the result as buil
 - Packaging or publishing is blocked until local playtesting is confirmed or explicitly overridden.
 - Unsafe, illegal, unethical, or attribution-stripping requests are refused.
 - Forking and local modification of public mod source remains supported, with careful redistribution guidance.
+- Maintainer review of the finished skills has a local, repeatable Superpowers-style checklist without adding user-facing or packaged artifacts.
