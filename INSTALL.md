@@ -417,6 +417,41 @@ so the archive root contains `.claude-plugin/plugin.json`, `.mcp.json`,
 `skills/`, `bin/`, and `vendor/`. The archive may use either `.zip` or
 `.plugin`.
 
+### Codex plugin
+
+The tracked Codex plugin lives at `plugins/cities2-mcp`. The repo marketplace
+lives at `.agents/plugins/marketplace.json`.
+
+This is the preferred Codex distribution path because it bundles the two skills
+and a plugin-local MCP launcher. The plugin starts the vendored `cities2-mcp`
+server automatically, uses the bundled wiki corpus, and scopes mod workflow
+tools to the current Codex project folder.
+
+For Codex CLI:
+
+```sh
+codex plugin marketplace add mayor-modder/Cities2-MCP
+```
+
+Then start a new Codex session in the mod project folder and verify:
+
+```text
+What changed in the latest Cities: Skylines II patch?
+/cities2-knowledge What changed in the latest Cities: Skylines II patch?
+/cities2-modding Scaffold a small Cities: Skylines II UI mod in this project folder.
+Build and package the mod you just scaffolded.
+```
+
+For Codex Desktop, add the same repository marketplace from the Plugins UI, then
+install and enable **Cities2-MCP**. The expected slash commands are
+`/cities2-knowledge` and `/cities2-modding`.
+
+Validate the plugin from the repository root:
+
+```sh
+python <PLUGIN_CREATOR_SKILL>/scripts/validate_plugin.py plugins/cities2-mcp
+```
+
 ### Codex skills
 
 For Codex, copy the skill directories into the user's Codex skills folder:
