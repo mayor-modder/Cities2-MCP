@@ -513,10 +513,10 @@ dependencies:
 Run:
 
 ```powershell
-py -3 -m unittest tests.test_portability -v
+py -3 -m unittest tests.test_portability.PortabilityTests.test_modding_quality_skills_encode_review_debug_release_rules -v
 ```
 
-Expected: new skill content assertions pass. Packaging tests may still fail because plugin copies and installer lists are not updated yet.
+Expected: new skill content assertions pass. The full portability suite may still fail until README and INSTALL mention the new skills in Task 8. Packaging tests may still fail because plugin copies and installer lists are not updated yet.
 
 - [ ] **Step 8: Commit base skills**
 
