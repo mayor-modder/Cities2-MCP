@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "cities2-mcp": {
+      "command": "node",
+      "args": [
+        "./bin/cities2-mcp-launcher.js",
+        "--workspace",
+        "."
+      ],
+      "cwd": "."
+    }
+  }
+}

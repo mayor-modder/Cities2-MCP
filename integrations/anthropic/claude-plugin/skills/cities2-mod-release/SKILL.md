@@ -1,6 +1,6 @@
 ---
 name: cities2-mod-release
-description: "Use when preparing a Cities: Skylines II mod to package, upload, publish, distribute, or release to Paradox Mods or another public channel."
+description: "Use automatically when preparing a Cities: Skylines II mod to package, upload, publish, distribute, or release to Paradox Mods or another public channel."
 metadata:
   short-description: "Check CS2 mod release readiness"
 ---
@@ -8,6 +8,10 @@ metadata:
 # Cities2 Mod Release
 
 Use this skill before packaging, uploading, publishing, distributing, or otherwise releasing a CS2 mod. The goal is to prevent ordinary release mistakes before they reach players.
+
+## Source Evidence
+
+Use Cities2-MCP wiki/reference lookup for CS2-specific packaging, toolchain, and modding claims before treating them as release requirements. Use project files, build output, package contents, logs, screenshots, and user playtesting notes as release evidence.
 
 ## Distribution Gate
 

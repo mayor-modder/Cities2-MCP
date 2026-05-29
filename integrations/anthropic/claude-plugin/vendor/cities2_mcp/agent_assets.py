@@ -8,7 +8,13 @@ from typing import Iterable
 
 from . import package_root
 
-SKILL_NAMES = ("cities2-knowledge", "cities2-modding")
+SKILL_NAMES = (
+    "cities2-knowledge",
+    "cities2-modding",
+    "cities2-mod-review",
+    "cities2-mod-debugging",
+    "cities2-mod-release",
+)
 LEGACY_ASSET_NAMES = ("cities2-game-updates",)
 
 CLAUDE_COMMANDS = {
@@ -33,6 +39,39 @@ Use the connected `cities2-mcp` MCP server to answer this Cities: Skylines II mo
 $ARGUMENTS
 
 Follow the bundled `cities2-modding` source workflow: use wiki retrieval for modding concepts and APIs, use workflow tools only inside configured workspaces, and make any local file, build, package, or launch action explicit before doing it.
+""",
+    "cities2-mod-review": """---
+description: Review a Cities: Skylines II mod for quality, safety, packaging hygiene, and verification gaps
+argument-hint: [mod path or review focus]
+---
+
+Use the connected `cities2-mcp` MCP server and bundled `cities2-mod-review` skill to review this Cities: Skylines II mod:
+
+$ARGUMENTS
+
+Lead with findings ordered by severity. Ground CS2-specific claims in Cities2-MCP sources where possible, distinguish missing evidence from confirmed bugs, and include concrete fixes.
+""",
+    "cities2-mod-debugging": """---
+description: Debug Cities: Skylines II mod build, packaging, runtime, log, UI debugger, or in-game failures
+argument-hint: [mod path, log excerpt, or failure description]
+---
+
+Use the connected `cities2-mcp` MCP server and bundled `cities2-mod-debugging` skill to debug this Cities: Skylines II mod issue:
+
+$ARGUMENTS
+
+Collect evidence before proposing fixes, preserve logs and reproduction details, and separate build, package, runtime, UI, and local playtesting evidence.
+""",
+    "cities2-mod-release": """---
+description: Check Cities: Skylines II mod release readiness before packaging, upload, publication, or distribution
+argument-hint: [mod path or release target]
+---
+
+Use the connected `cities2-mcp` MCP server and bundled `cities2-mod-release` skill to check this Cities: Skylines II mod release:
+
+$ARGUMENTS
+
+Verify packaging hygiene, attribution, dependency notes, build evidence, local playtesting evidence, and public release risks before recommending upload or distribution.
 """,
 }
 
