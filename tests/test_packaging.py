@@ -156,13 +156,8 @@ class PackagingTests(unittest.TestCase):
             (ROOT / "integrations" / "anthropic" / "claude-plugin" / ".mcp.json").read_text(encoding="utf-8")
         )
         marketplace = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
-        mcpb = json.loads(
-            (ROOT / "integrations" / "anthropic" / "claude-mcpb" / "manifest.json").read_text(encoding="utf-8")
-        )
-        mcpb_pyproject = tomllib.loads(
-            (ROOT / "integrations" / "anthropic" / "claude-mcpb" / "pyproject.toml").read_text(encoding="utf-8")
-        )
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+        privacy_text = (ROOT / "PRIVACY.md").read_text(encoding="utf-8")
 
         self.assertEqual(plugin["name"], "cities2-mcp")
         self.assertEqual(plugin["displayName"], "Cities2-MCP")
@@ -180,40 +175,16 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(marketplace["name"], "cities2-mcp")
         self.assertEqual(marketplace["plugins"][0]["source"], "./integrations/anthropic/claude-plugin")
         self.assertEqual(marketplace["plugins"][0]["version"], "0.1.8")
-        self.assertEqual(mcpb["manifest_version"], "0.4")
-        self.assertEqual(mcpb["version"], "0.1.8")
-        self.assertEqual(mcpb["server"]["type"], "uv")
-        self.assertIn("https://github.com/mayor-modder/Cities2-MCP#privacy-policy", mcpb["privacy_policies"])
-        user_config = mcpb["user_config"]
-        self.assertIn("Optional.", user_config["trusted_workspace"]["description"])
-        self.assertEqual("Trusted mod projects folder", user_config["trusted_workspace"]["title"])
-        self.assertIn("projects underneath it", user_config["trusted_workspace"]["description"])
-        self.assertIn("standard local Mods folder", user_config["mods_dir"]["description"])
-        self.assertIn("discovers Steam installs automatically", user_config["game_dir"]["description"])
-        self.assertIn("automatic game discovery", user_config["locale_cok"]["description"])
-        self.assertNotIn("Wiki and Encyclopedia tools do not need this folder", json.dumps(user_config))
-        self.assertNotIn("cities2-mcp==0.1.8", mcpb_pyproject["project"].get("dependencies", []))
-        self.assertIn("## Privacy Policy", readme_text)
+        self.assertIn("[PRIVACY.md](PRIVACY.md)", readme_text)
+        self.assertIn("does not collect telemetry", privacy_text)
+        self.assertIn("does not share data with third parties", privacy_text)
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "bin" / "cities2-mcp-launcher.js").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "run_server.py").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "cities2_mcp" / "mcp_server.py").exists())
-        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-mcpb" / "vendor" / "cities2_mcp" / "mcp_server.py").exists())
-        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-mcpb" / "vendor" / "cities2_mcp" / "data" / "index" / "chunks.jsonl").exists())
+        legacy_desktop_extension_dir = "claude-" + "mcp" + "b"
+        self.assertFalse((ROOT / "integrations" / "anthropic" / legacy_desktop_extension_dir).exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-knowledge" / "SKILL.md").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-modding" / "SKILL.md").exists())
-
-    def test_claude_mcpb_wrapper_reports_version_from_vendored_server(self) -> None:
-        mcpb_root = ROOT / "integrations" / "anthropic" / "claude-mcpb"
-        result = subprocess.run(
-            [sys.executable, "src/server.py", "--version"],
-            cwd=mcpb_root,
-            env={**os.environ, "PYTHONPATH": ""},
-            text=True,
-            capture_output=True,
-            check=True,
-        )
-
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.8")
 
     def test_claude_plugin_vendored_launcher_reports_version(self) -> None:
         plugin_root = ROOT / "integrations" / "anthropic" / "claude-plugin"
@@ -277,6 +248,10 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(plugin["name"], "cities2-mcp")
         self.assertEqual(plugin["interface"]["displayName"], "Cities2-MCP")
         self.assertEqual(plugin["version"], "0.1.8")
+        self.assertEqual(
+            plugin["interface"]["privacyPolicyURL"],
+            "https://github.com/mayor-modder/Cities2-MCP/blob/main/PRIVACY.md",
+        )
         self.assertEqual(plugin["skills"], "./skills/")
         self.assertEqual(plugin["mcpServers"], "./.mcp.json")
         self.assertEqual(plugin_mcp["mcpServers"]["cities2-mcp"]["command"], "node")

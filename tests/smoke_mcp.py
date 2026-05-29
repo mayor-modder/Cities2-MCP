@@ -12,7 +12,6 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "server" / "mcp_server.py"
 DATA_DIR = ROOT / "data"
 PYTHON = sys.executable
 
@@ -104,7 +103,7 @@ def main() -> None:
     args = parser.parse_args()
 
     ws = Path(tempfile.mkdtemp(prefix="cities2-mcp-smoke-"))
-    command = [args.server_command] if args.server_command else [PYTHON, str(SERVER)]
+    command = [args.server_command] if args.server_command else [PYTHON, "-m", "cities2_mcp.mcp_server"]
     if not args.use_bundled_data:
         command.extend(["--data-dir", str(DATA_DIR)])
     command.extend(
@@ -118,6 +117,7 @@ def main() -> None:
 
     proc = subprocess.Popen(
         command,
+        cwd=ROOT,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

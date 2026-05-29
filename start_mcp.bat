@@ -1,2 +1,3 @@
 @echo off
-py -3 "%~dp0server\mcp_server.py" --workspace "%~dp0" %*
+set "PYTHONPATH=%~dp0;%PYTHONPATH%"
+py -3 -m cities2_mcp.mcp_server --workspace "%~dp0" %*

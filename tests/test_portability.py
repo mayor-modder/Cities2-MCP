@@ -5,10 +5,8 @@ import io
 import sys
 import unittest
 from pathlib import Path, PureWindowsPath
-from types import SimpleNamespace
 from unittest import mock
 
-from cities2_mcp import bundled_data_dir
 from cities2_mcp import mcp_server
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,83 +51,6 @@ class PortabilityTests(unittest.TestCase):
         argv = popen_mock.call_args.args[0]
         self.assertEqual(argv[0], sys.executable)
 
-    def test_cli_uses_active_interpreter(self) -> None:
-        module = load_module("workbench_cli_portability", ROOT / "scripts" / "workbench_cli.py")
-        fake_proc = _FakeProc()
-        rpc_responses = [
-            {"result": {}},
-            {"result": {"tools": [{"name": "search"}]}},
-        ]
-
-        with mock.patch.object(module.subprocess, "Popen", return_value=fake_proc) as popen_mock:
-            with mock.patch.object(module, "rpc", side_effect=rpc_responses):
-                with mock.patch.object(module, "notify", return_value=None):
-                    with mock.patch.object(sys, "argv", ["workbench_cli.py", "list-tools"]):
-                        with mock.patch("sys.stdout", new=io.StringIO()):
-                            rc = module.main()
-
-        argv = popen_mock.call_args.args[0]
-        self.assertEqual(argv[0], sys.executable)
-        self.assertEqual(rc, 0)
-
-    def test_cli_uses_current_data_dir(self) -> None:
-        module = load_module("workbench_cli_data_dir", ROOT / "scripts" / "workbench_cli.py")
-        fake_proc = _FakeProc()
-        rpc_responses = [
-            {"result": {}},
-            {"result": {"tools": [{"name": "search"}]}}
-        ]
-
-        with mock.patch.object(module.subprocess, "Popen", return_value=fake_proc) as popen_mock:
-            with mock.patch.object(module, "rpc", side_effect=rpc_responses):
-                with mock.patch.object(module, "notify", return_value=None):
-                    with mock.patch.object(sys, "argv", ["workbench_cli.py", "list-tools"]):
-                        with mock.patch("sys.stdout", new=io.StringIO()):
-                            module.main()
-
-        argv = [str(item) for item in popen_mock.call_args.args[0]]
-        self.assertIn(str(ROOT / "data"), argv)
-        self.assertNotIn(str(ROOT / "data" / "cities2-docs"), argv)
-        self.assertTrue(bundled_data_dir().exists())
-
-    def test_cli_examples_map_to_current_tool_names(self) -> None:
-        module = load_module("workbench_cli_tool_mapping", ROOT / "scripts" / "workbench_cli.py")
-
-        scaffold = module.tool_call_from_args(
-            SimpleNamespace(
-                cmd="scaffold",
-                name="My Mod",
-                template="cities2-csharp",
-                target_dir=None,
-                metadata="{}",
-                options="{}",
-            )
-        )
-        analyze = module.tool_call_from_args(
-            SimpleNamespace(
-                cmd="analyze",
-                project_dir="mods/my-mod",
-                profile="auto",
-                strict=True,
-            )
-        )
-        build = module.tool_call_from_args(
-            SimpleNamespace(
-                cmd="build",
-                project_dir="mods/my-mod",
-                profile="release",
-                steps="ui,dotnet",
-                clean=False,
-                package=False,
-                timeout_sec=300,
-            )
-        )
-
-        self.assertEqual(scaffold["name"], "scaffold_project")
-        self.assertEqual(analyze["name"], "analyze_project")
-        self.assertEqual(build["name"], "build_project")
-        self.assertEqual(build["arguments"]["steps"], ["ui", "dotnet"])
-
     def test_default_mods_dir_uses_windows_locallow_path(self) -> None:
         expected = PureWindowsPath(r"C:\Users\Test\AppData\LocalLow\Colossal Order\Cities Skylines II\Mods")
 
@@ -155,7 +76,6 @@ class PortabilityTests(unittest.TestCase):
             ROOT / "mcp.config.example.json",
             ROOT / "README.md",
             ROOT / "scripts" / "mcp_launch_wrapper.sh",
-            ROOT / "scripts" / "workbench_cli.py",
             ROOT / "cities2_mcp" / "mcp_server.py",
         ]
         for path in targets:
@@ -178,7 +98,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertNotIn("Cities2 Modding Workbench", server_text)
         self.assertIn('"cities2-mcp"', example_config)
         self.assertNotIn('"cities2-modding-workbench"', example_config)
-        self.assertIn("Current name:** `cities2-mcp`", install_text)
+        self.assertIn("current `cities2-mcp` entry", install_text)
         self.assertIn("cities2-modding-workbench", install_text)
 
     def test_mcp_initialize_describes_full_public_scope(self) -> None:
@@ -224,18 +144,19 @@ class PortabilityTests(unittest.TestCase):
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
 
-        for text in (install_text, readme_text):
-            self.assertIn("optional", text.lower())
-            self.assertIn("Microsoft.NETCore.App", text)
-            self.assertIn("6.", text)
-            self.assertIn("dotnet --list-runtimes", text)
+        self.assertIn("optional", install_text.lower())
+        self.assertIn("Microsoft.NETCore.App", install_text)
+        self.assertIn("6.", install_text)
+        self.assertIn("dotnet --list-runtimes", install_text)
+        self.assertIn("build prerequisites", readme_text.lower())
+        self.assertIn("INSTALL.md", readme_text)
 
-    def test_public_docs_describe_skills_as_slash_commands_not_mcp_prompts(self) -> None:
+    def test_public_docs_describe_agent_skills_not_mcp_prompts(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
 
         for text in (install_text, readme_text):
-            self.assertIn("slash commands", text.lower())
+            self.assertIn("agent skills", text.lower())
             self.assertIn("cities2-knowledge", text)
             self.assertIn("cities2-modding", text)
             self.assertNotIn("MCP prompt templates", text)
@@ -248,7 +169,7 @@ class PortabilityTests(unittest.TestCase):
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
 
-        for text in (install_text, readme_text):
+        for text in (install_text,):
             self.assertIn("Cowork", text)
             self.assertIn("Code", text)
             self.assertIn("Customize", text)
@@ -256,18 +177,43 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("Create Plugin", text)
             self.assertIn("Add marketplace", text)
             self.assertIn("mayor-modder/Cities2-MCP", text)
+        self.assertIn("/plugin marketplace add mayor-modder/Cities2-MCP", readme_text)
+        self.assertIn("INSTALL.md", readme_text)
 
     def test_docs_include_codex_plugin_marketplace_path(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+        openai_readme = (ROOT / "integrations" / "openai" / "README.md").read_text(encoding="utf-8")
+        codex_plugin_readme = (ROOT / "plugins" / "cities2-mcp" / "README.md").read_text(encoding="utf-8")
 
-        for text in (install_text, readme_text):
-            self.assertIn("Codex plugin", text)
-            self.assertIn(".agents/plugins/marketplace.json", text)
-            self.assertIn("plugins/cities2-mcp", text)
-            self.assertIn("codex plugin marketplace add mayor-modder/Cities2-MCP", text)
-            self.assertIn("/cities2-knowledge", text)
-            self.assertIn("/cities2-modding", text)
+        self.assertIn("codex plugin marketplace add mayor-modder/Cities2-MCP", install_text)
+        self.assertIn("/skills", install_text)
+        self.assertIn("codex plugin marketplace add mayor-modder/Cities2-MCP", readme_text)
+        self.assertIn("INSTALL.md", readme_text)
+        self.assertNotIn(".agents/plugins/marketplace.json", readme_text)
+        self.assertNotIn("plugins/cities2-mcp", readme_text)
+        for skill_name in ("cities2-knowledge", "cities2-modding"):
+            self.assertIn(f"$cities2-mcp:{skill_name}", install_text)
+            self.assertIn(f"$cities2-mcp:{skill_name}", readme_text)
+            self.assertIn(skill_name, readme_text)
+        self.assertIn("allowlist", openai_readme)
+        self.assertIn("template-copy fallback", codex_plugin_readme)
+        self.assertNotIn("MCP workspace is the current Codex project folder", openai_readme)
+        self.assertNotIn("MCP workspace is the current project folder", codex_plugin_readme)
+
+    def test_anthropic_integration_docs_treat_plugin_as_only_documented_install_path(self) -> None:
+        anthropic_readme = (ROOT / "integrations" / "anthropic" / "README.md").read_text(encoding="utf-8")
+        claude_plugin_readme = (
+            ROOT / "integrations" / "anthropic" / "claude-plugin" / "README.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("primary Claude package", anthropic_readme)
+        self.assertIn("plugin marketplace", anthropic_readme)
+        self.assertIn("/cities2-knowledge", claude_plugin_readme)
+        self.assertIn("/cities2-modding", claude_plugin_readme)
+        self.assertNotIn("/cities2-mcp:cities2-knowledge", claude_plugin_readme)
+        self.assertNotIn("Connectors Directory", anthropic_readme)
+        self.assertNotIn("correct artifact", anthropic_readme)
 
     def test_agent_skills_are_packaged_and_documented(self) -> None:
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -291,18 +237,40 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn(skill_name, readme_text)
             self.assertIn(skill_name, install_text)
 
-        self.assertIn("## 5. Install Agent Skills", install_text)
+        self.assertIn("### Manual Skill Copy", install_text)
         self.assertIn("compact source notes", readme_text)
-        self.assertIn("compact source notes", install_text)
         self.assertIn("patch", (ROOT / "skills" / "cities2-knowledge" / "SKILL.md").read_text(encoding="utf-8"))
-        self.assertIn("%USERPROFILE%\\.codex\\skills", install_text)
-        self.assertIn("Copy-Item -Recurse -Force", install_text)
-        self.assertIn("~/.codex/skills", install_text)
-        self.assertIn("New Codex sessions should list", install_text)
+        self.assertIn("uvx cities2-mcp install-agent-assets", install_text)
+        self.assertIn("copy `skills/cities2-knowledge`", install_text)
+        self.assertIn("does not load them from the plugin", install_text)
 
     def test_docs_do_not_advertise_unimplemented_workspace_escape_flag(self) -> None:
         for path in (ROOT / "README.md", ROOT / "INSTALL.md"):
             self.assertNotIn("--allow-any-workspace", path.read_text(encoding="utf-8"))
+
+    def test_modding_skill_describes_codex_workspace_fallback_honestly(self) -> None:
+        skill_paths = [
+            ROOT / "skills" / "cities2-modding" / "SKILL.md",
+            ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-modding" / "SKILL.md",
+            ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-modding" / "SKILL.md",
+        ]
+
+        for path in skill_paths:
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("plugin-bundled MCP servers", text)
+            self.assertIn("installed plugin", text)
+            self.assertIn("cache", text)
+            self.assertIn("explicit fallback", text)
+            self.assertIn("do not hand-roll", text)
+            self.assertIn("npm.cmd", text)
+            self.assertIn("do not", text)
+            self.assertIn("try bare `npm` first", text)
+            self.assertIn("Get-ChildItem", text)
+            self.assertIn("package-lock.json", text)
+            self.assertIn("Windows paths", text)
+            self.assertIn("do not", text)
+            self.assertIn("start a dev server", text)
+            self.assertNotIn("Claude Code and Codex, project-scoped plugin", text)
 
     def test_install_guide_explains_workspace_allowlist_for_mod_repos(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
@@ -311,6 +279,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("trusted parent folder", install_text)
         self.assertIn("Path must stay inside configured workspaces", install_text)
         self.assertIn("Add that mod repo", install_text)
+        self.assertIn("mod project folder", install_text)
         self.assertNotIn("// Add more", install_text)
 
     def test_install_guide_avoids_runtime_specific_question_tool_names(self) -> None:
@@ -330,29 +299,55 @@ class PortabilityTests(unittest.TestCase):
     def test_install_guide_points_claude_desktop_to_in_app_config(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
 
-        self.assertIn("edit `claude_desktop_config.json` directly", install_text)
+        self.assertIn("claude_desktop_config.json", install_text)
+        self.assertIn("directly", install_text)
         self.assertIn("Settings > Developer > Edit Config", install_text)
         self.assertIn("Claude Desktop", install_text)
 
     def test_install_guide_distinguishes_claude_surfaces_before_install(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
 
-        self.assertIn("Claude Desktop app MCP settings", install_text)
-        self.assertIn("Claude Code MCP settings", install_text)
-        self.assertIn("ask the user which Claude surface", install_text)
+        self.assertIn("Claude Desktop app settings", install_text)
+        self.assertIn("Claude Code settings", install_text)
+        self.assertIn("install or troubleshoot Cities2-MCP in each one separately", install_text)
+        self.assertNotIn("ask the user which Claude surface", install_text)
         self.assertNotIn("Claude Desktop chat app", install_text)
 
-    def test_readme_direct_cli_examples_stay_inside_default_workspace(self) -> None:
+    def test_readme_no_longer_duplicates_direct_cli_install_examples(self) -> None:
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
 
         self.assertNotIn("/path/to/project", readme_text)
-        self.assertIn("mods/my-mod", readme_text)
+        self.assertNotIn("mods/my-mod", readme_text)
+        self.assertNotIn("scripts/workbench_cli.py", readme_text)
+        self.assertNotIn("tests/smoke_mcp.py", readme_text)
 
-    def test_install_guide_uses_smoke_test_for_verification(self) -> None:
+    def test_readme_links_to_separate_privacy_policy_and_omits_migration_table(self) -> None:
+        readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+        privacy_text = (ROOT / "PRIVACY.md").read_text(encoding="utf-8")
+
+        self.assertIn("[PRIVACY.md](PRIVACY.md)", readme_text)
+        self.assertIn("does not collect telemetry", privacy_text)
+        self.assertIn("configured trusted workspace paths", privacy_text)
+        self.assertNotIn("## Privacy Policy", readme_text)
+        self.assertNotIn("## Migration From Older Tool Names", readme_text)
+        self.assertNotIn("create_mod_project", readme_text)
+        self.assertNotIn("launch_game_with_flags", readme_text)
+
+    def test_install_guide_has_no_maintainer_release_or_validation_steps(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
 
-        self.assertIn("<PYTHON_PATH> tests/smoke_mcp.py", install_text)
-        self.assertIn("scripts/workbench_cli.py list-tools", install_text)
+        self.assertNotIn("tests/smoke_mcp.py", install_text)
+        self.assertNotIn("scripts/workbench_cli.py", install_text)
+        self.assertNotIn("PLUGIN_CREATOR_SKILL", install_text)
+        self.assertNotIn("claude plugin validate", install_text)
+        self.assertNotIn("publishing", install_text.lower())
+        self.assertNotIn("publish", install_text.lower())
+        self.assertNotIn("published", install_text.lower())
+        self.assertNotIn("release workflow", install_text.lower())
+        self.assertNotIn("trusted publisher", install_text.lower())
+        self.assertNotIn("testing unreleased", install_text.lower())
+        self.assertNotIn("local checkout testing", install_text.lower())
+        self.assertNotIn("developing this repository", install_text.lower())
         self.assertNotIn("< NUL", install_text)
         self.assertNotIn("< /dev/null", install_text)
 
@@ -363,6 +358,9 @@ class PortabilityTests(unittest.TestCase):
             "get_page",
             "query_reference",
             "get_snippets",
+            "search_encyclopedia",
+            "get_encyclopedia_entry",
+            "source_status",
             "scaffold_project",
             "write_project_file",
             "list_project_tree",
