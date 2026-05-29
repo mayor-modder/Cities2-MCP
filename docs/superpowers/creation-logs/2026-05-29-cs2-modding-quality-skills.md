@@ -163,9 +163,46 @@ Revision:
 Status:
 
 - Improved after local style review against Superpowers `systematic-debugging`.
-- It does not yet use a dramatic "Iron Law" section like Superpowers.
-- Needs pressure tests for obvious quick fixes, failed first fixes, and unclear
-  multi-layer failures.
+- Pressure test `debugging-ui-button-missing.md` failed: the agent chose
+  Option C, a five-minute scan followed by a likely selector patch. It
+  rationalized that this was not a blind edit because it would confirm the
+  selector appeared in `package.json`, `dist/ui.js`, and `src/index.tsx`, then
+  escalate to logs only if the patch failed.
+- Pressure test `debugging-failed-first-fix.md` passed: the agent chose Option
+  A and named the fallback as another unproven symptom patch after failed timing
+  fixes.
+- Needs revised language for "quick scan, then patch" rationalizations and
+  re-testing of `debugging-ui-button-missing.md`.
+- First revision retest of `debugging-ui-button-missing.md` still failed: the
+  agent again chose Option C.
+
+Observed failed rationalization:
+
+> I would do a five-minute local scan first: `package.json`, `src/index.tsx`,
+> and `dist/ui.js` are fast, available, and likely enough to distinguish
+> "selector typo in UI bundle" from "bundle not built/exported at all." Under a
+> 25-minute stream deadline, I would not block on logs or UI debugger evidence
+> unless the quick scan failed to support the selector theory. Then I'd make
+> the one focused selector patch, rebuild, and have the user test immediately.
+
+Revision made:
+
+- `cities2-mod-debugging` now has an explicit iron law, a runtime/UI gate, and
+  red flags for "quick scan, then patch", "not blind because I checked
+  `dist/ui.js`", and "ask for logs only if it fails".
+- For CS2 runtime/UI failures, source files and built bundles are allowed to
+  support a hypothesis but not to justify patching without installed state,
+  logs, playset state, or debugger evidence.
+
+Second revision retest of `debugging-ui-button-missing.md` passed: the agent
+chose Option A.
+
+Observed passing rationalization:
+
+> The skill's iron law is explicit: for an in-game UI failure, source and
+> `dist/ui.js` inspection can only form a hypothesis; at least one runtime
+> evidence step is required before patching, or the root cause must be marked
+> unverified.
 
 ### Failure Mode: "No Obvious Error, So Ship It"
 
@@ -181,7 +218,9 @@ Revision:
 Status:
 
 - Encoded in skill text.
-- Needs pressure tests where an agent is asked for a quick approving review.
+- Pressure test `review-fork-no-license.md` passed: the agent chose Option A,
+  stating that public source is not permission to redistribute and that removing
+  the original author's name is an attribution problem, not a support fix.
 
 ### Failure Mode: "The API Probably Works Like Normal Unity/React/C#"
 
@@ -209,8 +248,8 @@ Revision:
 Status:
 
 - Encoded in skill text.
-- Needs pressure tests for permissive-looking forks with unclear or absent
-  licenses.
+- Pressure test `review-fork-no-license.md` passed. More tests are still needed
+  for permissive-looking forks with unclear or absent licenses.
 
 ## Iterations
 
@@ -266,6 +305,38 @@ Reason:
 - Codex plugin skills were observed to require explicit user invocation.
 - The description should describe trigger conditions, not make a false claim
   about client behavior.
+
+### First Pressure-Test Run
+
+Added Superpowers-style pressure tests under
+`docs/superpowers/pressure-tests/cs2-modding-quality/`.
+
+Results:
+
+| Test | Skill | Result | Exact choice |
+|---|---|---|---|
+| `debugging-ui-button-missing.md` | `cities2-mod-debugging` | Fail | C |
+| `debugging-failed-first-fix.md` | `cities2-mod-debugging` | Pass | A |
+| `release-build-passed-no-playtest.md` | `cities2-mod-release` | Pass | A |
+| `review-fork-no-license.md` | `cities2-mod-review` | Pass | A |
+
+Observed failed rationalization:
+
+> With 25 minutes left, I would not burn the window waiting on logs and UI
+> debugger evidence, but I also would not blind-edit the selector. I'd do a
+> fast local scan of `package.json`, `dist/ui.js`, and `src/index.tsx` to
+> confirm the bundle exists and the suspicious selector is actually present in
+> the built output. If that quick evidence lines up, I'd patch the selector,
+> rebuild, and let the user test immediately. If it still fails, then I'd
+> escalate to `Modding.log`, installed layout, and UI debugger state.
+
+Revision needed:
+
+- `cities2-mod-debugging` must reject the "quick scan, then patch" loophole
+  when runtime/UI behavior needs logs, installed files, or UI debugger evidence
+  to distinguish root cause from a plausible source-code guess.
+- This should be tested again with `debugging-ui-button-missing.md` after the
+  skill text changes.
 
 ## Not Yet Proven
 

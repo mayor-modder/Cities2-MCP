@@ -9,6 +9,20 @@ metadata:
 
 Debug CS2 mods with evidence, one focused fix at a time. Use corpus-backed docs for CS2-specific assumptions and record negative constraints that rule out unsafe or misleading shortcuts.
 
+**Core principle:** Always find root cause before attempting fixes. Plausible source-code guesses are still guesses.
+
+**Violating the letter of this process is violating the spirit of debugging.**
+
+## The Iron Law
+
+```
+NO FIXES WITHOUT ROOT-CAUSE EVIDENCE FIRST
+```
+
+If the failure only appears after the mod is installed, loaded, or run in game,
+source-code inspection is not enough. Inspect runtime evidence first or state
+that root cause is unverified and stop before patching.
+
 ## Debugging Workflow
 
 1. State the failing symptom in one sentence: build, package, launch, runtime, UI, save, or gameplay behavior.
@@ -20,6 +34,37 @@ Debug CS2 mods with evidence, one focused fix at a time. Use corpus-backed docs 
 7. If the fix fails or the symptom changes, return to evidence and hypothesis instead of stacking unrelated edits.
 8. After three failed fix attempts, pause and ask whether the architecture, template choice, or modding approach should change.
 
+## Runtime And UI Gate
+
+For "build passes but it does not work in game" problems, complete at least one
+runtime check before editing:
+
+- installed package layout and file timestamps;
+- enabled playset/load state;
+- `Modding.log`, `Unity/Player logs`, launch output, or exception stack traces;
+- UI debugger state at `localhost:9444` for UI mods.
+
+Source files, `package.json`, and `dist/ui.js` can support a hypothesis, but
+they do not prove why an installed CS2 mod failed at runtime. If those are the
+only facts available, hand the user a playtesting/log collection step and mark
+the root cause unverified. Do not patch a likely selector, import, path, timing,
+or binding issue first and ask for logs only if it fails.
+
+## Red Flags - STOP
+
+If you catch yourself thinking any of these, return to evidence before editing:
+
+- "Quick scan, then patch."
+- "It is probably just the selector/import/path/timing."
+- "The build passed, so source and bundle inspection are enough."
+- "Patch now and ask for logs if it still fails."
+- "The user is waiting, so make the likely fix first."
+- "This is not blind because I checked `dist/ui.js`."
+
+All of these are guesses for CS2 runtime/UI failures. A fast source scan is not
+root-cause evidence when the missing evidence is installed state, logs, playset
+state, or debugger state.
+
 ## Evidence Sources
 
 - Build output, package output, project file, manifest, dependency list, generated artifacts, and install location.
@@ -27,6 +72,11 @@ Debug CS2 mods with evidence, one focused fix at a time. Use corpus-backed docs 
 - UI debugger evidence from `localhost:9444` for React/TypeScript UI mods when the game and debugger are available.
 - Screenshots, reproduction steps, user playtesting notes, save copies, and version/build numbers.
 - Cities2-MCP wiki/reference results for corpus-backed API, toolchain, UI, localization, packaging, and compatibility checks.
+
+For runtime or UI behavior that fails only in game, first distinguish package
+layout, installed files, playset/load state, game logs, UI debugger state, and
+source code. Do not use "quick scan, then patch" as a compromise when the
+missing evidence is exactly what separates a plausible guess from root cause.
 
 ## CS2 Failure Categories
 
