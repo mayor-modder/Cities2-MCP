@@ -1,6 +1,6 @@
 ---
 name: cities2-modding
-description: "Use automatically for Cities: Skylines II modding, mod projects, C#/UI mods, localization, scaffold, analyze, build, package, and dry-run launch requests."
+description: "Use when working on Cities: Skylines II modding, mod projects, C#/UI mods, localization, scaffold, analyze, build, package, or dry-run launch requests."
 metadata:
   short-description: "Use CS2 docs and mod workflow tools"
 ---

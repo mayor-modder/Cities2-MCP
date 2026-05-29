@@ -1,6 +1,6 @@
 ---
 name: cities2-knowledge
-description: "Use automatically for Cities: Skylines II gameplay, city-management, mechanics, patch/update, or known-issue questions; answers use the Cities2-MCP wiki corpus and local Encyclopedia."
+description: "Use when answering Cities: Skylines II gameplay, city-management, mechanics, patch/update, or known-issue questions."
 metadata:
   short-description: "Answer CS2 gameplay and patch questions"
 ---

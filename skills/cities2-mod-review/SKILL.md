@@ -1,6 +1,6 @@
 ---
 name: cities2-mod-review
-description: "Use automatically when reviewing a Cities: Skylines II mod for safety, maintainability, user value, packaging hygiene, verification gaps, or readiness to improve."
+description: "Use when reviewing a Cities: Skylines II mod for safety, maintainability, user value, packaging hygiene, verification gaps, or readiness to improve."
 metadata:
   short-description: "Review CS2 mod quality and readiness"
 ---
@@ -40,7 +40,7 @@ Treat negative constraints as review findings when they prevent likely mistakes:
 
 ## Safety And Attribution
 
-public source does not automatically grant redistribution rights. Check the license, mod page terms, bundled assets, copied code, and derivative-work notices before recommending upload or redistribution.
+Public source does not automatically grant redistribution rights. Check the license, mod page terms, bundled assets, copied code, and derivative-work notices before recommending upload or redistribution.
 
 Do not remove attribution or license notices.
 

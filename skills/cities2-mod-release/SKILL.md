@@ -1,6 +1,6 @@
 ---
 name: cities2-mod-release
-description: "Use automatically when preparing a Cities: Skylines II mod to package, upload, publish, distribute, or release to Paradox Mods or another public channel."
+description: "Use when preparing a Cities: Skylines II mod to package, upload, publish, distribute, or release to Paradox Mods or another public channel."
 metadata:
   short-description: "Check CS2 mod release readiness"
 ---

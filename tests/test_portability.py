@@ -236,7 +236,7 @@ class PortabilityTests(unittest.TestCase):
 
             self.assertIn(f"name: {skill_name}", skill_text)
             self.assertIn("description:", skill_text)
-            self.assertIn("Use automatically", skill_text)
+            self.assertIn('description: "Use when', skill_text)
             self.assertIn("metadata:", skill_text)
             self.assertIn("short-description:", skill_text)
             self.assertIn("Source", skill_text)
