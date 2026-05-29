@@ -16,6 +16,7 @@ Responsibilities:
 
 - Identify the modding task type: conceptual docs question, scaffold, edit, build, local install for testing, package, review, or debug.
 - Use Cities2-MCP wiki retrieval before giving API, project-structure, localization, UI, settings, or toolchain advice.
+- Search for relevant corpus guidance using terms such as "best practice", "recommended", "should", and the task-specific topic before deciding what the default implementation or review standard should be.
 - Use MCP workflow tools when the target project is inside an allowed workspace.
 - Use explicit fallback behavior when a client blocks MCP workflow tools, especially Codex plugin cache allowlist cases.
 - Route review-heavy requests to `cities2-mod-review`.
@@ -30,12 +31,14 @@ Review skill for requests such as "review this mod", "is this ready?", "audit th
 Review rubric:
 
 - Safety and security: filesystem access, process execution, network calls, persistence, telemetry, credentials, path handling, destructive behavior.
-- Compatibility and maintainability: game/toolchain target, dependency footprint, project structure, reproducible build, clear separation of UI/C#/localization/settings concerns.
+- Compatibility and maintainability: game/toolchain target, dependency footprint, project structure, reproducible build, clear separation of UI/C#/localization/settings concerns, and alignment with documented CS2/Paradox best practices.
 - User value: clear purpose, non-placeholder behavior, understandable settings, useful descriptions, known limitations.
 - Packaging hygiene: README, changelog, license or attribution notes, metadata, versioning, thumbnail readiness for Paradox Mods.
 - Verification: build/analyze results, installed output, manual in-game checks, relevant logs/debuggers, unverified behavior.
 
 Output should lead with concrete findings and risk level, then actionable next steps.
+
+When relevant docs explicitly call something a "best practice" or otherwise recommend a pattern, treat that as the default expectation. Do not present deviations as wrong by default, but call them out with the tradeoff and ask before preserving or introducing them.
 
 ### `cities2-mod-debugging`
 
@@ -47,6 +50,7 @@ Workflow:
 2. Inspect relevant project files and logs before guessing.
 3. Classify the failure: missing toolchain, dependency issue, TypeScript/C# compile issue, post-processor problem, package layout, playset/install issue, runtime/game log issue, UI debugger issue, or game-version compatibility issue.
 4. Query CS2 modding docs when the failure touches documented toolchain, API, project structure, localization, UI, settings, or packaging behavior.
+   - Include targeted searches for documented best practices when the fix could choose between multiple patterns.
 5. Make one focused fix at a time.
 6. Re-run the narrowest useful verification.
 7. If the fix requires in-game observation, provide a playtesting handoff and do not claim the bug is fixed until behavior or logs support it.
@@ -64,6 +68,7 @@ Responsibilities:
 - If local playtesting has not happened, stop and provide a tailored checklist.
 - Allow an explicit user override for packaging untested builds only if the final answer clearly labels the result as not gameplay-verified.
 - Check metadata, README, changelog, license/attribution, versioning, thumbnail readiness, compatibility target, and known limitations.
+- Check relevant corpus best-practice guidance for the mod type and call out any release-relevant deviations.
 - Warn when the installed game appears newer than the bundled corpus or package metadata.
 - For derivative/forked mods, preserve attribution and do not imply redistribution rights when licensing is unclear.
 
@@ -94,6 +99,18 @@ Allowed with care:
 - Maintaining private patches for personal use.
 - Helping users understand unlicensed public source, while clearly saying that public source does not automatically grant redistribution rights.
 - Backing up, read-only inspecting, or recovering project files through documented safe workflows.
+
+## Corpus-Backed Best Practices
+
+The CS2 wiki corpus frequently documents official or community-endorsed best practices. The modding skills should prefer those corpus-backed practices over generic coding advice whenever they apply.
+
+Skill behavior:
+
+- For implementation, review, debugging, and release-readiness tasks, search the corpus for task-specific best-practice guidance before making recommendations when practical.
+- Treat documented best practices as the default path for generated code, project layout, settings, localization, packaging, and asset/mod workflows.
+- When a project deviates from a documented best practice, explain the tradeoff in plain language rather than treating the deviation as automatically invalid.
+- If the user explicitly wants to deviate, proceed when it is safe and legal, but preserve a note about the tradeoff.
+- Cite the relevant wiki page or snippet topic in the source note when best-practice guidance influenced the recommendation.
 
 ## Playtesting Handoff
 
@@ -155,6 +172,7 @@ Because this reviewer is local and gitignored, it can reference installed Superp
 ## Success Criteria
 
 - Agents using Cities2-MCP give CS2-specific modding guidance from the official/bundled docs.
+- Documented CS2/Paradox best practices from the corpus shape default recommendations and review findings.
 - Build/package/review requests include a concrete quality or release-readiness pass.
 - Debugging requests follow a disciplined CS2-specific workflow.
 - Packaging or publishing is blocked until local playtesting is confirmed or explicitly overridden.
