@@ -12,6 +12,29 @@ Antigravity plugin documentation defines a plugin as a directory with a root `pl
 
 Gemini CLI extension documentation was checked for comparison. Gemini CLI uses `gemini-extension.json`, `GEMINI.md`, `commands/`, and different manifest variables, so it should not be conflated with Antigravity's plugin format.
 
+The `obra/superpowers` repository was checked as a reference for maintaining many agent integrations from one skill set. Superpowers keeps `skills/` as a canonical root-level source, commits platform manifests at the repository root, uses version-audit metadata for manifests that repeat versions, and has sync tooling for platform mirrors that must live in another repository. It also explicitly rejects integrations that merely copy skill files without proving the harness loads the bootstrap automatically.
+
+## Maintenance Strategy
+
+Use canonical sources plus checked-in generated packages:
+
+- canonical skills stay in root `skills/`;
+- canonical Python MCP code, data, and templates stay in `cities2_mcp/`;
+- platform manifests stay small and platform-native;
+- package payloads for Claude, Codex, and Antigravity remain checked in so users can install from the repository without running a build step;
+- one sync/check command refreshes package payloads from canonical sources and fails CI when a package has drifted.
+
+Do not use symlinks for shared package contents. They are fragile across Windows, zip archives, plugin marketplaces, and GitHub source installs. Do not ask users to run manual copy steps for normal installation.
+
+Add a Python packaging helper rather than another ad hoc shell script:
+
+```sh
+python -m cities2_mcp.plugin_packages sync
+python -m cities2_mcp.plugin_packages check
+```
+
+`sync` should update the generated package contents in place. `check` should run the same generation into a temporary location or compare expected file content, then fail with a clear list of stale package paths without modifying the working tree.
+
 ## Package Layout
 
 Create a new package at `integrations/google/antigravity-plugin/`:
@@ -37,6 +60,8 @@ integrations/google/
 ```
 
 The package should mirror the Claude and Codex vendoring model: copy the Python server and corpus into `vendor/`, include a Node launcher in `bin/`, and bundle the shared skills from the repository `skills/` directory.
+
+The files in `integrations/google/antigravity-plugin/`, `integrations/anthropic/claude-plugin/`, and `plugins/cities2-mcp/` should be treated as generated installable packages, except for their platform-specific manifests and README files. The sync helper should own repeated payloads: `skills/`, `bin/cities2-mcp-launcher.js`, `vendor/run_server.py`, and `vendor/cities2_mcp/`.
 
 ## Manifest Design
 
@@ -101,6 +126,8 @@ Update root `README.md` and `INSTALL.md` so the quick install matrix includes An
 
 Extend packaging and portability tests to cover the Antigravity package:
 
+- The package sync helper updates Claude, Codex, and Antigravity payloads from canonical sources.
+- The package check helper fails if any generated package payload is stale.
 - `plugin.json` exists at the Antigravity plugin root and has `name: cities2-mcp`.
 - `mcp_config.json` exists and starts the bundled launcher with `node`.
 - The package does not use `.codex-plugin`, `.claude-plugin`, `.mcp.json`, or `gemini-extension.json` as its primary manifest.
@@ -117,4 +144,4 @@ Existing baseline failures in `tests/test_packaging.py::PackagingTests::test_age
 - Publishing to an Antigravity or Google marketplace, because the current Antigravity docs describe local/global plugin locations but not a marketplace submission format.
 - A Gemini CLI extension package.
 - Antigravity hooks, sidecars, or rules unless later implementation evidence shows they are necessary.
-- Refactoring the shared vendoring process beyond what is needed to add the third package safely.
+- Refactoring the runtime MCP server or skill content beyond what is needed to make package synchronization deterministic.
