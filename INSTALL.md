@@ -1,9 +1,16 @@
 # Install Cities2-MCP
 
-Cities2-MCP adds Cities: Skylines II knowledge and modding tools to Claude and
-Codex. The easiest install path is the plugin marketplace: add this repository
-as a marketplace, install **Cities2-MCP**, restart the client, and use the
-bundled agent skills.
+Cities2-MCP adds Cities: Skylines II knowledge and modding tools to Claude,
+Codex, and Antigravity. The easiest Claude and Codex install path is the plugin
+marketplace: add this repository as a marketplace, install **Cities2-MCP**,
+restart the client, and use the bundled agent skills. Antigravity uses a local
+or global plugin folder.
+
+Install sections: [Claude Code](INSTALL.md#install-in-claude-code),
+[Claude Desktop](INSTALL.md#install-in-claude-desktop),
+[Codex CLI](INSTALL.md#install-in-codex-cli),
+[Codex Desktop](INSTALL.md#install-in-codex-desktop), and
+[Antigravity](INSTALL.md#install-in-antigravity).
 
 ## Claude
 
@@ -97,6 +104,46 @@ installed plugin cache, so direct MCP workflow tools may be allowlist-blocked.
 The bundled `cities2-modding` skill handles this by copying the bundled template
 as an explicit fallback, building with normal Codex workspace access, and
 stopping after build verification.
+
+## Antigravity
+
+### Install in Antigravity
+
+Antigravity loads custom plugins from workspace-level or global plugin folders.
+Copy `integrations/google/antigravity-plugin` from this repository to one of
+these target paths and name the copied folder `cities2-mcp`:
+
+```text
+.agents/plugins/cities2-mcp/
+_agents/plugins/cities2-mcp/
+~/.gemini/config/plugins/cities2-mcp/
+```
+
+Use `.agents/plugins/cities2-mcp/` or `_agents/plugins/cities2-mcp/` when you
+want the plugin available only for the opened workspace. Use
+`~/.gemini/config/plugins/cities2-mcp/` when you want the plugin available
+globally across workspaces.
+
+Restart or reload Antigravity after copying the plugin so it rescans plugin
+directories. The Antigravity package uses `plugin.json`, `mcp_config.json`,
+bundled skills, and the same vendored MCP launcher as the Claude and Codex
+packages.
+
+### Using Skills in Antigravity
+
+The Antigravity plugin bundles the same skills:
+
+```text
+cities2-knowledge
+cities2-modding
+cities2-mod-review
+cities2-mod-debugging
+cities2-mod-release
+```
+
+Use the Antigravity customizations UI to confirm the plugin is loaded, then ask
+Cities: Skylines II gameplay, modding, review, debugging, or release-readiness
+questions in a workspace where the plugin is active.
 
 ## Optional Build Prerequisites
 
@@ -281,9 +328,14 @@ For packaged installs, prefer:
 uvx cities2-mcp install-agent-assets
 ```
 
-For a local checkout, copy `skills/cities2-knowledge`, `skills/cities2-modding`,
-and the three `skills/cities2-mod-*` skill directories into your client's skill
-directory only if the client does not load them from the plugin.
+For a local checkout, copy `skills/cities2-knowledge` and the other skill
+directories into your client's skill directory only if the client does not load them from the plugin:
+
+- `skills/cities2-knowledge`
+- `skills/cities2-modding`
+- `skills/cities2-mod-review`
+- `skills/cities2-mod-debugging`
+- `skills/cities2-mod-release`
 
 ## Troubleshooting
 

@@ -204,6 +204,37 @@ class PortabilityTests(unittest.TestCase):
         self.assertNotIn("MCP workspace is the current Codex project folder", openai_readme)
         self.assertNotIn("MCP workspace is the current project folder", codex_plugin_readme)
 
+    def test_docs_include_antigravity_plugin_path(self) -> None:
+        install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
+        readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+        google_readme = (ROOT / "integrations" / "google" / "README.md").read_text(encoding="utf-8")
+        antigravity_readme = (
+            ROOT / "integrations" / "google" / "antigravity-plugin" / "README.md"
+        ).read_text(encoding="utf-8")
+
+        for text in (install_text, readme_text):
+            self.assertIn("Antigravity", text)
+            self.assertIn("INSTALL.md#install-in-antigravity", text)
+        self.assertIn(".agents/plugins/cities2-mcp", install_text)
+        self.assertIn("_agents/plugins/cities2-mcp", install_text)
+        self.assertIn("~/.gemini/config/plugins/cities2-mcp", install_text)
+        self.assertIn("antigravity-plugin", google_readme)
+        self.assertIn("mcp_config.json", antigravity_readme)
+
+    def test_public_docs_do_not_advertise_gemini_cli_package(self) -> None:
+        public_text = "\n".join(
+            (
+                (ROOT / "README.md").read_text(encoding="utf-8"),
+                (ROOT / "INSTALL.md").read_text(encoding="utf-8"),
+                (ROOT / "integrations" / "google" / "README.md").read_text(encoding="utf-8"),
+                (ROOT / "integrations" / "google" / "antigravity-plugin" / "README.md").read_text(encoding="utf-8"),
+            )
+        )
+
+        self.assertNotIn("gemini-extension.json", public_text)
+        self.assertNotIn("gemini extensions install", public_text)
+        self.assertNotIn("Gemini CLI extension package", public_text)
+
     def test_anthropic_integration_docs_treat_plugin_as_only_documented_install_path(self) -> None:
         anthropic_readme = (ROOT / "integrations" / "anthropic" / "README.md").read_text(encoding="utf-8")
         claude_plugin_readme = (

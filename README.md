@@ -8,7 +8,7 @@ It gives AI agents access to a local, searchable version of the Cities: Skylines
 
 ## Quick Install
 
-Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude Desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [Codex Desktop](INSTALL.md#install-in-codex-desktop)
+Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude Desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [Codex Desktop](INSTALL.md#install-in-codex-desktop) | [Antigravity](INSTALL.md#install-in-antigravity)
 
 See [INSTALL.md](INSTALL.md) for full installation details, direct MCP config,
 workspace setup, build prerequisites, and troubleshooting.
