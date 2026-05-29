@@ -17,14 +17,25 @@ Trigger this skill for asset/mod workflows, toolchain questions, project analysi
 - Use project workflow tools only for explicit local actions inside configured workspaces.
 - Do not use the Game Encyclopedia as the primary source for modding APIs; it is gameplay-facing. It can still help explain in-game concepts a mod interacts with.
 
+## Specialized Skill Routing
+
+Use this skill as the general entry point, then load the focused skill when the task calls for it:
+
+- Use `cities2-mod-review` for review, audit, quality, readiness, maintainability, safety, user-value, or "what should I improve?" requests.
+- Use `cities2-mod-debugging` for build failures, package failures, runtime errors, game logs, UI debugger issues, or in-game mod behavior that does not work.
+- Use `cities2-mod-release` for package, publish, upload, distribute, release, Paradox Mods preparation, or public sharing requests.
+
+Local installs after a build or fix are playtesting handoff moments, not distribution. For package, publish, upload, distribute, or release requests, require the release-readiness workflow.
+
 ## Documentation Workflow
 
 1. Turn the modding question into compact keyword terms.
 2. Search with `search(query, limit=5)` and `query_reference(query, limit=5)`.
-3. Fetch the strongest wiki page with `get_page(page_id)` when snippets are not enough.
-4. Use `get_snippets(query, limit=3)` for code-oriented wiki snippets.
-5. Keep track of source page titles, URLs, and snippet topics.
-6. Answer with the relevant docs context and note uncertainty when the corpus does not cover the exact API or version.
+3. For implementation, review, debugging, or release decisions, search for task-specific corpus-backed best practices and negative constraints. Useful terms include `best practice`, `recommended`, `should`, `do not`, `should not`, `must not`, `cannot`, `can't`, and `won't`.
+4. Fetch the strongest wiki page with `get_page(page_id)` when snippets are not enough.
+5. Use `get_snippets(query, limit=3)` for code-oriented wiki snippets.
+6. Keep track of source page titles, URLs, and snippet topics.
+7. Answer with the relevant docs context and note uncertainty when the corpus does not cover the exact API or version.
 
 Example queries:
 
@@ -92,6 +103,13 @@ start a dev server or browser preview unless the user also asks to run or
 preview the UI. In Windows sessions, report Windows paths rather than WSL-style
 `/mnt/c/...` paths.
 
+When a build, install, or fix needs in-game validation, provide a playtesting
+handoff instead of saying the work is done. Name what was installed, where it was
+installed, whether the game or playset must be restarted, the exact in-game
+checks to perform, the expected success signal, the likely failure signal, and
+relevant evidence such as `Modding.log`, Unity/Player logs, UI debugger output
+at `localhost:9444`, installed files, or playset state.
+
 If a workflow tool returns a workspace/allowlist/configuration error, stop and
 help the user configure access before retrying. Phrase it as a normal setup step,
 not as a crash: "Cities2-MCP can work on that project after you add its folder,
@@ -104,6 +122,12 @@ installed game appears newer than the bundled Cities2-MCP package, tell the user
 the project was still created and recommend checking for an updated Cities2-MCP
 release before deeper modding work. If the user names a newer target game
 version than the bundled default, pass `metadata.game_version` explicitly.
+
+Do not package, publish, upload, distribute, or prepare a public release
+immediately after code changes or a build unless local playtesting has been
+confirmed. A successful build is not enough. If the user has not tested locally,
+route to `cities2-mod-release` and provide a tailored playtest checklist. If the
+user explicitly overrides the gate, label the result as not gameplay-verified.
 
 ## Answer Style
 
