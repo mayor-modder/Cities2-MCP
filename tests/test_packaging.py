@@ -183,8 +183,24 @@ class PackagingTests(unittest.TestCase):
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "cities2_mcp" / "mcp_server.py").exists())
         legacy_desktop_extension_dir = "claude-" + "mcp" + "b"
         self.assertFalse((ROOT / "integrations" / "anthropic" / legacy_desktop_extension_dir).exists())
-        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-knowledge" / "SKILL.md").exists())
-        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-modding" / "SKILL.md").exists())
+        for skill_name in (
+            "cities2-knowledge",
+            "cities2-modding",
+            "cities2-mod-review",
+            "cities2-mod-debugging",
+            "cities2-mod-release",
+        ):
+            self.assertTrue(
+                (
+                    ROOT
+                    / "integrations"
+                    / "anthropic"
+                    / "claude-plugin"
+                    / "skills"
+                    / skill_name
+                    / "SKILL.md"
+                ).exists()
+            )
 
     def test_claude_plugin_vendored_launcher_reports_version(self) -> None:
         plugin_root = ROOT / "integrations" / "anthropic" / "claude-plugin"
@@ -266,8 +282,14 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(marketplace["plugins"][0]["source"]["path"], "./plugins/cities2-mcp")
         self.assertEqual(marketplace["plugins"][0]["policy"]["installation"], "AVAILABLE")
         self.assertEqual(marketplace["plugins"][0]["policy"]["authentication"], "ON_INSTALL")
-        self.assertTrue((plugin_root / "skills" / "cities2-knowledge" / "SKILL.md").exists())
-        self.assertTrue((plugin_root / "skills" / "cities2-modding" / "SKILL.md").exists())
+        for skill_name in (
+            "cities2-knowledge",
+            "cities2-modding",
+            "cities2-mod-review",
+            "cities2-mod-debugging",
+            "cities2-mod-release",
+        ):
+            self.assertTrue((plugin_root / "skills" / skill_name / "SKILL.md").exists())
         self.assertTrue((plugin_root / "vendor" / "cities2_mcp" / "mcp_server.py").exists())
         self.assertTrue((plugin_root / "vendor" / "cities2_mcp" / "data" / "index" / "chunks.jsonl").exists())
 
@@ -335,12 +357,19 @@ class PackagingTests(unittest.TestCase):
             results = install_agent_assets(["all"], home=home)
 
             self.assertEqual({result.client for result in results}, {"codex", "claude"})
+            skill_names = (
+                "cities2-knowledge",
+                "cities2-modding",
+                "cities2-mod-review",
+                "cities2-mod-debugging",
+                "cities2-mod-release",
+            )
             for client_root in (home / ".codex" / "skills", home / ".claude" / "skills"):
-                self.assertTrue((client_root / "cities2-knowledge" / "SKILL.md").exists())
-                self.assertTrue((client_root / "cities2-modding" / "SKILL.md").exists())
+                for skill_name in skill_names:
+                    self.assertTrue((client_root / skill_name / "SKILL.md").exists())
                 self.assertFalse((client_root / "cities2-game-updates").exists())
-            self.assertTrue((home / ".claude" / "commands" / "cities2-knowledge.md").exists())
-            self.assertTrue((home / ".claude" / "commands" / "cities2-modding.md").exists())
+            for skill_name in skill_names:
+                self.assertTrue((home / ".claude" / "commands" / f"{skill_name}.md").exists())
             self.assertFalse((home / ".claude" / "commands" / "cities2-game-updates.md").exists())
 
     def test_agent_asset_installer_cli_exits_without_starting_stdio_server(self) -> None:
