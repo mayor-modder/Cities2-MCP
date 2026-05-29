@@ -529,7 +529,7 @@ class ProjectScaffolder:
                 if p.exists():
                     p.unlink()
             if include_localization:
-                warnings.append("include_localization=true ignored because include_settings=false")
+                warnings.append("Localization files were not added because settings support is disabled.")
         elif not include_localization:
             locale_path = root / "LocaleEN.cs"
             if locale_path.exists():
