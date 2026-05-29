@@ -17,6 +17,10 @@ The work created and refined a small suite of user-facing skills:
 
 ## Source Material
 
+- Superpowers by Jesse Vincent, MIT licensed: this work adapts its approach to
+  writing skills as tested process documentation, its pressure-test format, and
+  some short rule phrasing for debugging and verification. See
+  `THIRD_PARTY_NOTICES.md`.
 - Superpowers `writing-skills`: skills should be tested against observed agent
   failures, then revised to close the actual loopholes.
 - Superpowers `systematic-debugging`: debugging guidance needs explicit

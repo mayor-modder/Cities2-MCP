@@ -4,7 +4,11 @@
 
 Cities2-MCP should help users make better Cities: Skylines II mods, not merely more mods. The modding skills should raise the bar for safety, maintainability, user value, packaging hygiene, and honest verification while staying practical and friendly.
 
-This design adapts the workflow style of Superpowers into CS2-specific agent skills grounded in the bundled Paradox and Cities: Skylines II modding documentation.
+This design adapts Superpowers' MIT-licensed skill-development approach,
+including pressure-tested process documentation and some short rule phrasing,
+into CS2-specific agent skills grounded in the bundled Paradox and Cities:
+Skylines II modding documentation. See `THIRD_PARTY_NOTICES.md` for
+attribution.
 
 ## Skill Set
 
