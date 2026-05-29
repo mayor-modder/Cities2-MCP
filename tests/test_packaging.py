@@ -34,13 +34,13 @@ class PackagingTests(unittest.TestCase):
 
         project = pyproject["project"]
         self.assertEqual(project["name"], "cities2-mcp")
-        self.assertEqual(project["version"], "0.1.8")
+        self.assertEqual(project["version"], "0.1.9")
         self.assertEqual(project["scripts"]["cities2-mcp"], "cities2_mcp.mcp_server:main")
 
     def test_package_module_reports_version_and_bundled_data_dir(self) -> None:
         package = importlib.import_module("cities2_mcp")
 
-        self.assertEqual(package.__version__, "0.1.8")
+        self.assertEqual(package.__version__, "0.1.9")
         data_dir = package.bundled_data_dir()
         self.assertTrue((data_dir / "index" / "chunks.jsonl").exists())
         self.assertTrue((data_dir / "index" / "pages.jsonl").exists())
@@ -54,7 +54,7 @@ class PackagingTests(unittest.TestCase):
             check=True,
         )
 
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.8")
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
 
     def test_default_start_without_workspace_keeps_knowledge_tools_available(self) -> None:
         from tests.smoke_mcp import call, rpc, rpc_ndjson
@@ -74,7 +74,7 @@ class PackagingTests(unittest.TestCase):
             search = call(proc, 3, "search", {"query": "modding toolchain requirements", "limit": 1})
             scaffold = call(proc, 4, "scaffold_project", {"name": "No Workspace", "template": "cities2-csharp"})
 
-            self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.8")
+            self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.9")
             self.assertEqual(len(tools["result"]["tools"]), 14)
             self.assertTrue(search["ok"])
             self.assertFalse(scaffold["ok"])
@@ -117,11 +117,11 @@ class PackagingTests(unittest.TestCase):
         server_json = json.loads((ROOT / "server.json").read_text(encoding="utf-8"))
 
         self.assertEqual(server_json["name"], "io.github.mayor-modder/cities2-mcp")
-        self.assertEqual(server_json["version"], "0.1.8")
+        self.assertEqual(server_json["version"], "0.1.9")
         package = server_json["packages"][0]
         self.assertEqual(package["registryType"], "pypi")
         self.assertEqual(package["identifier"], "cities2-mcp")
-        self.assertEqual(package["version"], "0.1.8")
+        self.assertEqual(package["version"], "0.1.9")
         self.assertEqual(package["transport"]["type"], "stdio")
 
     def test_all_public_tools_have_directory_review_annotations(self) -> None:
@@ -161,7 +161,7 @@ class PackagingTests(unittest.TestCase):
 
         self.assertEqual(plugin["name"], "cities2-mcp")
         self.assertEqual(plugin["displayName"], "Cities2-MCP")
-        self.assertEqual(plugin["version"], "0.1.8")
+        self.assertEqual(plugin["version"], "0.1.9")
         self.assertIn("trusted_workspace", plugin["userConfig"])
         self.assertNotIn("mcpServers", plugin)
         self.assertEqual(plugin_mcp["mcpServers"]["cities2-mcp"]["command"], "node")
@@ -174,7 +174,7 @@ class PackagingTests(unittest.TestCase):
         self.assertNotIn("uvx", json.dumps(plugin_mcp))
         self.assertEqual(marketplace["name"], "cities2-mcp")
         self.assertEqual(marketplace["plugins"][0]["source"], "./integrations/anthropic/claude-plugin")
-        self.assertEqual(marketplace["plugins"][0]["version"], "0.1.8")
+        self.assertEqual(marketplace["plugins"][0]["version"], "0.1.9")
         self.assertIn("[PRIVACY.md](PRIVACY.md)", readme_text)
         self.assertIn("does not collect telemetry", privacy_text)
         self.assertIn("does not share data with third parties", privacy_text)
@@ -201,7 +201,7 @@ class PackagingTests(unittest.TestCase):
             check=True,
         )
 
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.8")
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
 
     def test_claude_plugin_vendored_launcher_serves_mcp(self) -> None:
         from tests.smoke_mcp import call, rpc, rpc_ndjson
@@ -231,7 +231,7 @@ class PackagingTests(unittest.TestCase):
                 status = call(proc, 3, "source_status", {})
                 scaffold = call(proc, 4, "scaffold_project", {"name": "Plugin Version", "template": "cities2-csharp"})
 
-                self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.8")
+                self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.9")
                 self.assertEqual(len(tools["result"]["tools"]), 14)
                 self.assertTrue(status["wiki"]["available"])
                 self.assertEqual(scaffold["game_version"], "1.5.*")
@@ -247,7 +247,7 @@ class PackagingTests(unittest.TestCase):
 
         self.assertEqual(plugin["name"], "cities2-mcp")
         self.assertEqual(plugin["interface"]["displayName"], "Cities2-MCP")
-        self.assertEqual(plugin["version"], "0.1.8")
+        self.assertEqual(plugin["version"], "0.1.9")
         self.assertEqual(
             plugin["interface"]["privacyPolicyURL"],
             "https://github.com/mayor-modder/Cities2-MCP/blob/main/PRIVACY.md",
@@ -286,7 +286,7 @@ class PackagingTests(unittest.TestCase):
             check=True,
         )
 
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.8")
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
 
     def test_codex_plugin_vendored_launcher_serves_mcp(self) -> None:
         from tests.smoke_mcp import call, rpc, rpc_ndjson
@@ -316,7 +316,7 @@ class PackagingTests(unittest.TestCase):
                 status = call(proc, 3, "source_status", {})
                 scaffold = call(proc, 4, "scaffold_project", {"name": "Codex Plugin Version", "template": "cities2-csharp"})
 
-                self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.8")
+                self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.9")
                 self.assertEqual(len(tools["result"]["tools"]), 14)
                 self.assertTrue(status["wiki"]["available"])
                 self.assertEqual(scaffold["game_version"], "1.5.*")

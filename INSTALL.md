@@ -153,7 +153,7 @@ build, or package local mod projects.
 To force a specific package version:
 
 ```sh
-uvx --refresh cities2-mcp==0.1.8 --version
+uvx --refresh cities2-mcp==0.1.9 --version
 ```
 
 To install standalone agent assets from the package:
