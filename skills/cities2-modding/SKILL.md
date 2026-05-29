@@ -110,10 +110,14 @@ checks to perform, the expected success signal, the likely failure signal, and
 relevant evidence such as `Modding.log`, Unity/Player logs, UI debugger output
 at `localhost:9444`, installed files, or playset state.
 
-If a workflow tool returns a workspace/allowlist/configuration error, stop and
-help the user configure access before retrying. Phrase it as a normal setup step,
-not as a crash: "Cities2-MCP can work on that project after you add its folder,
-or a shared parent folder, to Trusted mod projects folder."
+If a workflow tool returns a workspace/allowlist/configuration error, pause MCP
+workflow-tool retries and help the user configure access before trying that MCP
+tool again. Phrase it as a normal setup step, not as a crash: "Cities2-MCP can
+work on that project after you add its folder, or a shared parent folder, to
+Trusted mod projects folder." In Codex, when the plugin cache allowlist blocks
+MCP workflow tools, you may use the explicit bundled-template or normal Codex
+workspace fallback described above, while saying the MCP workflow tool was
+blocked.
 
 When scaffolding a new project, `scaffold_project` chooses a default `game_version`
 from the bundled corpus and returns `game_version`, `game_version_source`,
