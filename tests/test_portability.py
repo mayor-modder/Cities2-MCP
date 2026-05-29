@@ -177,7 +177,9 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("Create Plugin", text)
             self.assertIn("Add marketplace", text)
             self.assertIn("mayor-modder/Cities2-MCP", text)
-        self.assertIn("/plugin marketplace add mayor-modder/Cities2-MCP", readme_text)
+        self.assertIn("/plugin marketplace add mayor-modder/Cities2-MCP", install_text)
+        self.assertIn("INSTALL.md#install-in-claude-code", readme_text)
+        self.assertIn("INSTALL.md#install-in-claude-desktop", readme_text)
         self.assertIn("INSTALL.md", readme_text)
 
     def test_docs_include_codex_plugin_marketplace_path(self) -> None:
@@ -188,7 +190,8 @@ class PortabilityTests(unittest.TestCase):
 
         self.assertIn("codex plugin marketplace add mayor-modder/Cities2-MCP", install_text)
         self.assertIn("/skills", install_text)
-        self.assertIn("codex plugin marketplace add mayor-modder/Cities2-MCP", readme_text)
+        self.assertIn("INSTALL.md#install-in-codex-cli", readme_text)
+        self.assertIn("INSTALL.md#install-in-codex-desktop", readme_text)
         self.assertIn("INSTALL.md", readme_text)
         self.assertNotIn(".agents/plugins/marketplace.json", readme_text)
         self.assertNotIn("plugins/cities2-mcp", readme_text)
@@ -238,7 +241,7 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn(skill_name, install_text)
 
         self.assertIn("### Manual Skill Copy", install_text)
-        self.assertIn("compact source notes", readme_text)
+        self.assertIn("compact source notes", " ".join(readme_text.split()))
         self.assertIn("patch", (ROOT / "skills" / "cities2-knowledge" / "SKILL.md").read_text(encoding="utf-8"))
         self.assertIn("uvx cities2-mcp install-agent-assets", install_text)
         self.assertIn("copy `skills/cities2-knowledge`", install_text)
