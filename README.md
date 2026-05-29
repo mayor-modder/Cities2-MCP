@@ -4,7 +4,14 @@
 
 Cities2-MCP — a local MCP server for Cities: Skylines II game knowledge and modding tools.
 
-It gives AI assistants access to a local, searchable version of the Cities: Skylines II Wiki, plus tools for creating, inspecting, building, and packaging CS2 mod projects.
+It gives AI agents access to a local, searchable version of the Cities: Skylines II Wiki and game encyclopedia, if the game is installed. It also offers tools for creating, inspecting, building, and packaging CS2 mod projects.
+
+## Quick Install
+
+Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude Desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [Codex Desktop](INSTALL.md#install-in-codex-desktop)
+
+See [INSTALL.md](INSTALL.md) for full installation details, direct MCP config,
+workspace setup, build prerequisites, and troubleshooting.
 
 ## What It Can Do
 
@@ -13,7 +20,6 @@ It gives AI assistants access to a local, searchable version of the Cities: Skyl
 The server includes a prepared text corpus from the Cities: Skylines II Wiki. An AI assistant can:
 
 - search the wiki
-- fetch full pages by page id
 - retrieve reference-style snippets for game systems and modding topics
 - answer questions during your agent session
 
@@ -40,54 +46,25 @@ The server also includes local workflow tools for CS2 mod projects. An AI assist
 
 These tools are meant for local development workflows. They can write files and run commands, so configure workspaces deliberately.
 
-### Use Agent Skills
+## Agent Skills
 
-Cities2-MCP ships two agent skills that teach compatible agents how to query and interpret the MCP sources effectively:
+Skills live under `skills/`:
 
-- `cities2-knowledge` answers gameplay, city-system, and player-facing patch/update questions from both the bundled wiki corpus and the local game Encyclopedia.
-- `cities2-modding` answers modding questions and guides local mod project workflows.
+- `skills/cities2-knowledge/SKILL.md`
+- `skills/cities2-modding/SKILL.md`
 
-These skills are stored in `skills/`. Install or copy them into your agent's skill directory if your client supports Agent Skills. They are the recommended way to get natural answers to questions like "how do I grow office demand?" or "what changed in the latest patch?" because they tell the agent to use keyword queries, fetch full pages or entries, compare source authority, synthesize an answer, and include compact source notes naming the Game Encyclopedia entries and linked wiki pages used.
+The marketplace install includes these skills. In Codex, run `/skills` or type
+`$` to mention `$cities2-mcp:cities2-knowledge` or
+`$cities2-mcp:cities2-modding`; Claude exposes them as `/cities2-knowledge` and
+`/cities2-modding`. Gameplay and update answers should include compact source
+notes that mention the local Game Encyclopedia entries and link to the relevant
+CS2 Wiki pages when available.
 
-## Licensing
+Project templates are stored at:
 
-The MCP server code is licensed under the MIT License. The included `cities2_mcp/data` corpus is licensed under Creative Commons Attribution-ShareAlike 3.0; source attribution and transformation notes are in `cities2_mcp/data/ATTRIBUTION.md`.
-
-## Privacy
-
-Cities2-MCP runs locally and does not collect telemetry. See
-[PRIVACY.md](PRIVACY.md) for details.
-
-## Quick Install
-
-Claude:
-
-```text
-/plugin marketplace add mayor-modder/Cities2-MCP
-/plugin install cities2-mcp@cities2-mcp
-```
-
-Codex:
-
-```powershell
-codex plugin marketplace add mayor-modder/Cities2-MCP
-```
-
-Then install **Cities2-MCP** from the marketplace in the app. See
-[INSTALL.md](INSTALL.md) for Claude Desktop, Codex Desktop, direct MCP config,
-workspace setup, build prerequisites, and troubleshooting.
-
-## Included Wiki Corpus
-
-The packaged server reads the prepared corpus from `cities2_mcp/data` by default. The corpus contains page metadata and JSONL indexes used by the MCP retrieval tools.
-
-Corpus layout:
-
-- `cities2_mcp/data/LICENSE`
-- `cities2_mcp/data/ATTRIBUTION.md`
-- `cities2_mcp/data/manifest.json`
-- `cities2_mcp/data/index/pages.jsonl`
-- `cities2_mcp/data/index/chunks.jsonl`
+- `cities2_mcp/templates/cities2-csharp`
+- `cities2_mcp/templates/cities2-ui`
+- `cities2_mcp/templates/cities2-hybrid`
 
 ## MCP Tools
 
@@ -111,23 +88,23 @@ Mod project workflow:
 - `package_project(project_dir, output_dir?, package_name?, exclude_globs?)`
 - `launch_cities2(executable?, flags?, platform=auto|mac|windows|linux, dry_run=true)`
 
-## Agent Skills
+## Included Wiki Corpus
 
-Skills live under `skills/`:
+The packaged server reads the prepared corpus from `cities2_mcp/data` by default. The corpus contains page metadata and JSONL indexes used by the MCP retrieval tools.
 
-- `skills/cities2-knowledge/SKILL.md`
-- `skills/cities2-modding/SKILL.md`
+Corpus layout:
 
-The marketplace install includes these skills. In Codex, run `/skills` or type
-`$` to mention `$cities2-mcp:cities2-knowledge` or
-`$cities2-mcp:cities2-modding`; Claude exposes them as `/cities2-knowledge` and
-`/cities2-modding`. Gameplay and update answers should include compact source
-notes that mention the local Game Encyclopedia entries and link to the relevant
-CS2 Wiki pages when available.
+- `cities2_mcp/data/LICENSE`
+- `cities2_mcp/data/ATTRIBUTION.md`
+- `cities2_mcp/data/manifest.json`
+- `cities2_mcp/data/index/pages.jsonl`
+- `cities2_mcp/data/index/chunks.jsonl`
 
-Project templates are stored at:
+## Privacy
 
-- `cities2_mcp/templates/cities2-csharp`
-- `cities2_mcp/templates/cities2-ui`
-- `cities2_mcp/templates/cities2-hybrid`
+Cities2-MCP runs locally and does not collect telemetry. See
+[PRIVACY.md](PRIVACY.md) for details.
 
+## Licensing
+
+The MCP server code is licensed under the MIT License. The included `cities2_mcp/data` corpus is licensed under Creative Commons Attribution-ShareAlike 3.0; source attribution and transformation notes are in `cities2_mcp/data/ATTRIBUTION.md`.
