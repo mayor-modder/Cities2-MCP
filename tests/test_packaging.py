@@ -34,13 +34,13 @@ class PackagingTests(unittest.TestCase):
 
         project = pyproject["project"]
         self.assertEqual(project["name"], "cities2-mcp")
-        self.assertEqual(project["version"], "0.1.8")
+        self.assertEqual(project["version"], "0.1.9")
         self.assertEqual(project["scripts"]["cities2-mcp"], "cities2_mcp.mcp_server:main")
 
     def test_package_module_reports_version_and_bundled_data_dir(self) -> None:
         package = importlib.import_module("cities2_mcp")
 
-        self.assertEqual(package.__version__, "0.1.8")
+        self.assertEqual(package.__version__, "0.1.9")
         data_dir = package.bundled_data_dir()
         self.assertTrue((data_dir / "index" / "chunks.jsonl").exists())
         self.assertTrue((data_dir / "index" / "pages.jsonl").exists())
@@ -54,7 +54,7 @@ class PackagingTests(unittest.TestCase):
             check=True,
         )
 
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.8")
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
 
     def test_default_start_without_workspace_keeps_knowledge_tools_available(self) -> None:
         from tests.smoke_mcp import call, rpc, rpc_ndjson
@@ -74,7 +74,7 @@ class PackagingTests(unittest.TestCase):
             search = call(proc, 3, "search", {"query": "modding toolchain requirements", "limit": 1})
             scaffold = call(proc, 4, "scaffold_project", {"name": "No Workspace", "template": "cities2-csharp"})
 
-            self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.8")
+            self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.9")
             self.assertEqual(len(tools["result"]["tools"]), 14)
             self.assertTrue(search["ok"])
             self.assertFalse(scaffold["ok"])
@@ -117,11 +117,11 @@ class PackagingTests(unittest.TestCase):
         server_json = json.loads((ROOT / "server.json").read_text(encoding="utf-8"))
 
         self.assertEqual(server_json["name"], "io.github.mayor-modder/cities2-mcp")
-        self.assertEqual(server_json["version"], "0.1.8")
+        self.assertEqual(server_json["version"], "0.1.9")
         package = server_json["packages"][0]
         self.assertEqual(package["registryType"], "pypi")
         self.assertEqual(package["identifier"], "cities2-mcp")
-        self.assertEqual(package["version"], "0.1.8")
+        self.assertEqual(package["version"], "0.1.9")
         self.assertEqual(package["transport"]["type"], "stdio")
 
     def test_all_public_tools_have_directory_review_annotations(self) -> None:
@@ -156,17 +156,12 @@ class PackagingTests(unittest.TestCase):
             (ROOT / "integrations" / "anthropic" / "claude-plugin" / ".mcp.json").read_text(encoding="utf-8")
         )
         marketplace = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
-        mcpb = json.loads(
-            (ROOT / "integrations" / "anthropic" / "claude-mcpb" / "manifest.json").read_text(encoding="utf-8")
-        )
-        mcpb_pyproject = tomllib.loads(
-            (ROOT / "integrations" / "anthropic" / "claude-mcpb" / "pyproject.toml").read_text(encoding="utf-8")
-        )
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+        privacy_text = (ROOT / "PRIVACY.md").read_text(encoding="utf-8")
 
         self.assertEqual(plugin["name"], "cities2-mcp")
         self.assertEqual(plugin["displayName"], "Cities2-MCP")
-        self.assertEqual(plugin["version"], "0.1.8")
+        self.assertEqual(plugin["version"], "0.1.9")
         self.assertIn("trusted_workspace", plugin["userConfig"])
         self.assertNotIn("mcpServers", plugin)
         self.assertEqual(plugin_mcp["mcpServers"]["cities2-mcp"]["command"], "node")
@@ -179,41 +174,17 @@ class PackagingTests(unittest.TestCase):
         self.assertNotIn("uvx", json.dumps(plugin_mcp))
         self.assertEqual(marketplace["name"], "cities2-mcp")
         self.assertEqual(marketplace["plugins"][0]["source"], "./integrations/anthropic/claude-plugin")
-        self.assertEqual(marketplace["plugins"][0]["version"], "0.1.8")
-        self.assertEqual(mcpb["manifest_version"], "0.4")
-        self.assertEqual(mcpb["version"], "0.1.8")
-        self.assertEqual(mcpb["server"]["type"], "uv")
-        self.assertIn("https://github.com/mayor-modder/Cities2-MCP#privacy-policy", mcpb["privacy_policies"])
-        user_config = mcpb["user_config"]
-        self.assertIn("Optional.", user_config["trusted_workspace"]["description"])
-        self.assertEqual("Trusted mod projects folder", user_config["trusted_workspace"]["title"])
-        self.assertIn("projects underneath it", user_config["trusted_workspace"]["description"])
-        self.assertIn("standard local Mods folder", user_config["mods_dir"]["description"])
-        self.assertIn("discovers Steam installs automatically", user_config["game_dir"]["description"])
-        self.assertIn("automatic game discovery", user_config["locale_cok"]["description"])
-        self.assertNotIn("Wiki and Encyclopedia tools do not need this folder", json.dumps(user_config))
-        self.assertNotIn("cities2-mcp==0.1.8", mcpb_pyproject["project"].get("dependencies", []))
-        self.assertIn("## Privacy Policy", readme_text)
+        self.assertEqual(marketplace["plugins"][0]["version"], "0.1.9")
+        self.assertIn("[PRIVACY.md](PRIVACY.md)", readme_text)
+        self.assertIn("does not collect telemetry", privacy_text)
+        self.assertIn("does not share data with third parties", privacy_text)
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "bin" / "cities2-mcp-launcher.js").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "run_server.py").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "cities2_mcp" / "mcp_server.py").exists())
-        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-mcpb" / "vendor" / "cities2_mcp" / "mcp_server.py").exists())
-        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-mcpb" / "vendor" / "cities2_mcp" / "data" / "index" / "chunks.jsonl").exists())
+        legacy_desktop_extension_dir = "claude-" + "mcp" + "b"
+        self.assertFalse((ROOT / "integrations" / "anthropic" / legacy_desktop_extension_dir).exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-knowledge" / "SKILL.md").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-modding" / "SKILL.md").exists())
-
-    def test_claude_mcpb_wrapper_reports_version_from_vendored_server(self) -> None:
-        mcpb_root = ROOT / "integrations" / "anthropic" / "claude-mcpb"
-        result = subprocess.run(
-            [sys.executable, "src/server.py", "--version"],
-            cwd=mcpb_root,
-            env={**os.environ, "PYTHONPATH": ""},
-            text=True,
-            capture_output=True,
-            check=True,
-        )
-
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.8")
 
     def test_claude_plugin_vendored_launcher_reports_version(self) -> None:
         plugin_root = ROOT / "integrations" / "anthropic" / "claude-plugin"
@@ -230,7 +201,7 @@ class PackagingTests(unittest.TestCase):
             check=True,
         )
 
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.8")
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
 
     def test_claude_plugin_vendored_launcher_serves_mcp(self) -> None:
         from tests.smoke_mcp import call, rpc, rpc_ndjson
@@ -260,7 +231,7 @@ class PackagingTests(unittest.TestCase):
                 status = call(proc, 3, "source_status", {})
                 scaffold = call(proc, 4, "scaffold_project", {"name": "Plugin Version", "template": "cities2-csharp"})
 
-                self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.8")
+                self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.9")
                 self.assertEqual(len(tools["result"]["tools"]), 14)
                 self.assertTrue(status["wiki"]["available"])
                 self.assertEqual(scaffold["game_version"], "1.5.*")
@@ -276,7 +247,11 @@ class PackagingTests(unittest.TestCase):
 
         self.assertEqual(plugin["name"], "cities2-mcp")
         self.assertEqual(plugin["interface"]["displayName"], "Cities2-MCP")
-        self.assertEqual(plugin["version"], "0.1.8")
+        self.assertEqual(plugin["version"], "0.1.9")
+        self.assertEqual(
+            plugin["interface"]["privacyPolicyURL"],
+            "https://github.com/mayor-modder/Cities2-MCP/blob/main/PRIVACY.md",
+        )
         self.assertEqual(plugin["skills"], "./skills/")
         self.assertEqual(plugin["mcpServers"], "./.mcp.json")
         self.assertEqual(plugin_mcp["mcpServers"]["cities2-mcp"]["command"], "node")
@@ -311,7 +286,7 @@ class PackagingTests(unittest.TestCase):
             check=True,
         )
 
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.8")
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
 
     def test_codex_plugin_vendored_launcher_serves_mcp(self) -> None:
         from tests.smoke_mcp import call, rpc, rpc_ndjson
@@ -341,7 +316,7 @@ class PackagingTests(unittest.TestCase):
                 status = call(proc, 3, "source_status", {})
                 scaffold = call(proc, 4, "scaffold_project", {"name": "Codex Plugin Version", "template": "cities2-csharp"})
 
-                self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.8")
+                self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.9")
                 self.assertEqual(len(tools["result"]["tools"]), 14)
                 self.assertTrue(status["wiki"]["available"])
                 self.assertEqual(scaffold["game_version"], "1.5.*")

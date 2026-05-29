@@ -50,10 +50,25 @@ Before writing files, building, packaging, or launching:
      local file/command access, offer to fix the Claude Desktop setting directly:
      identify the relevant settings file or app-managed config, ask before
      editing it, back it up, and set the folder to either this project or a
-     shared parent folder. In Claude Code and Codex, project-scoped plugin
-     installs normally use the current project automatically; if it is still
-     blocked, suggest reinstalling/enabling the plugin from the desired project
-     or configuring a parent folder if the host exposes plugin settings.
+     shared parent folder. In Claude Code, project-scoped plugin installs
+     normally use the current project automatically.
+   - In Codex, plugin-bundled MCP servers may launch from the installed plugin
+     cache rather than the current session folder. If a Codex MCP workflow tool
+     is allowlist-blocked for the active project, do not describe that as a
+     successful MCP workflow-tool run. Either help the user add a project-scoped
+     MCP configuration for that workspace, or use normal Codex workspace file
+     edits/shell commands as an explicit fallback and say the MCP workflow tool
+     was blocked.
+   - If falling back after `scaffold_project` is blocked, do not hand-roll a new
+     mod template from wiki prose. Copy the bundled Cities2-MCP template files
+     from the installed package/plugin cache when available, preserving the
+     bundled structure, dependencies, and current corpus-derived game metadata.
+     If the bundled template is not reachable, ask whether to configure MCP
+     workspace access before creating files manually.
+   - Keep fallback scaffolds minimal and faithful to the requested template. Do
+     not add extra libraries, visual polish, demo dashboards, Vite configs, or a
+     `game_version`/`gameVersion` value not provided by the bundled template or
+     MCP scaffold metadata unless the user explicitly asks for them.
 2. Explain the intended local action briefly.
 3. Use the narrowest tool for the task:
    - `scaffold_project` for new mod templates.
@@ -65,6 +80,17 @@ Before writing files, building, packaging, or launching:
    - `launch_cities2` only as a dry run unless the user clearly asks to launch.
 
 If a write/build tool returns diagnostics, summarize the actionable errors first and include paths or commands that matter.
+
+On Windows PowerShell, use `npm.cmd` for both install and build commands; do not
+try bare `npm` first because execution policy can block `npm.ps1`. Use
+PowerShell-native file listing (`Get-ChildItem`) when checking template files or
+build outputs instead of assuming `rg` is installed. Verify generated outputs by
+checking file existence, size, and a short relevant snippet only; do not dump
+large generated files such as `package-lock.json` into the transcript. If the
+user asked only to scaffold and build, stop after build verification; do not
+start a dev server or browser preview unless the user also asks to run or
+preview the UI. In Windows sessions, report Windows paths rather than WSL-style
+`/mnt/c/...` paths.
 
 If a workflow tool returns a workspace/allowlist/configuration error, stop and
 help the user configure access before retrying. Phrase it as a normal setup step,

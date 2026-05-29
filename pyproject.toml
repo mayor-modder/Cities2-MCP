@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cities2-mcp"
-version = "0.1.8"
+version = "0.1.9"
 description = "Local MCP server for Cities: Skylines II game knowledge and modding workflows."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -55,7 +55,6 @@ include = [
   "tests/**",
   "scripts/**",
   "integrations/**",
-  "server/mcp_server.py",
   "README.md",
   "INSTALL.md",
   "LICENSE",
@@ -79,5 +78,4 @@ exclude = [
 select = ["E4", "E7", "E9", "F"]
 
 [tool.ruff.lint.per-file-ignores]
-"server/mcp_server.py" = ["E402"]
 "tests/test_game_encyclopedia.py" = ["E402"]

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-__version__ = "0.1.8"
+__version__ = "0.1.9"
 MCP_NAME = "io.github.mayor-modder/cities2-mcp"
 
 

@@ -1,6 +1,0 @@
-[project]
-name = "cities2-mcp-claude-mcpb"
-version = "0.1.8"
-description = "Claude Desktop MCPB wrapper for Cities2-MCP"
-requires-python = ">=3.10"
-dependencies = []

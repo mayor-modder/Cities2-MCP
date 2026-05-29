@@ -15,4 +15,11 @@ codex plugin marketplace add mayor-modder/Cities2-MCP
 ```
 
 The plugin vendors the Python server and corpus, so users do not need `uvx` for
-the Codex plugin path. The MCP workspace is the current Codex project folder.
+the Codex plugin path.
+
+Current Codex plugin behavior starts the bundled MCP server from the installed
+plugin cache. Knowledge tools work immediately, but direct MCP workflow tools
+may reject writes to arbitrary project folders with a workspace allowlist error.
+The bundled `cities2-modding` skill handles that case by copying the packaged
+templates into the current Codex workspace and building them with normal shell
+access.

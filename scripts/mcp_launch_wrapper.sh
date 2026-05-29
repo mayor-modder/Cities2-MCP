@@ -15,5 +15,7 @@ LOG_FILE="${CITIES2_MCP_LAUNCH_LOG:-/tmp/cities2-mcp-launch.log}"
   echo "CITIES2_MODS_DIR=${CITIES2_MODS_DIR:-}"
 } >> "$LOG_FILE" 2>/dev/null || true
 
-exec "$PYTHON_BIN" "$REPO_ROOT/server/mcp_server.py" \
+export PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}"
+
+exec "$PYTHON_BIN" -m cities2_mcp.mcp_server \
   --workspace "$REPO_ROOT"
