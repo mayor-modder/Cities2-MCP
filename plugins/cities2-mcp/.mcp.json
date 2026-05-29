@@ -3,7 +3,7 @@
     "cities2-mcp": {
       "command": "node",
       "args": [
-        "${PLUGIN_ROOT}/bin/cities2-mcp-launcher.js",
+        "./bin/cities2-mcp-launcher.js",
         "--workspace",
         "."
       ],
