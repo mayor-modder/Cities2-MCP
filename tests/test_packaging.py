@@ -18,6 +18,13 @@ except ModuleNotFoundError:  # pragma: no cover
     import tomli as tomllib  # type: ignore[no-redef]
 
 ROOT = Path(__file__).resolve().parents[1]
+SKILL_NAMES = (
+    "cities2-knowledge",
+    "cities2-modding",
+    "cities2-mod-review",
+    "cities2-mod-debugging",
+    "cities2-mod-release",
+)
 
 
 class PackagingTests(unittest.TestCase):
@@ -345,6 +352,56 @@ class PackagingTests(unittest.TestCase):
                 self.assertIn("game_version_source", scaffold)
             finally:
                 self._stop_proc(proc)
+
+    def test_plugin_package_check_detects_stale_payload(self) -> None:
+        from cities2_mcp import plugin_packages
+
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-plugin-sync-") as tmp:
+            root = Path(tmp)
+            self._write_plugin_sync_fixture(root)
+            package_root = Path("plugins") / "cities2-mcp"
+
+            plugin_packages.sync_packages(root, package_roots=(package_root,))
+            stale_skill = root / package_root / "skills" / "cities2-knowledge" / "SKILL.md"
+            stale_skill.write_text("stale\n", encoding="utf-8")
+
+            stale = plugin_packages.check_packages(root, package_roots=(package_root,))
+
+            self.assertIn(stale_skill, stale)
+
+    def test_plugin_package_sync_updates_stale_payload(self) -> None:
+        from cities2_mcp import plugin_packages
+
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-plugin-sync-") as tmp:
+            root = Path(tmp)
+            self._write_plugin_sync_fixture(root)
+            package_root = Path("plugins") / "cities2-mcp"
+            stale_skill = root / package_root / "skills" / "cities2-knowledge" / "SKILL.md"
+            stale_skill.parent.mkdir(parents=True, exist_ok=True)
+            stale_skill.write_text("stale\n", encoding="utf-8")
+
+            changed = plugin_packages.sync_packages(root, package_roots=(package_root,))
+            stale = plugin_packages.check_packages(root, package_roots=(package_root,))
+
+            self.assertIn(stale_skill, changed)
+            self.assertEqual(stale, ())
+            self.assertEqual(stale_skill.read_text(encoding="utf-8"), "canonical cities2-knowledge\n")
+
+    @staticmethod
+    def _write_plugin_sync_fixture(root: Path) -> None:
+        for skill_name in SKILL_NAMES:
+            skill_dir = root / "skills" / skill_name
+            skill_dir.mkdir(parents=True, exist_ok=True)
+            (skill_dir / "SKILL.md").write_text(f"canonical {skill_name}\n", encoding="utf-8")
+            (skill_dir / "agents").mkdir(parents=True, exist_ok=True)
+            (skill_dir / "agents" / "openai.yaml").write_text(f"name: {skill_name}\n", encoding="utf-8")
+
+        package_dir = root / "cities2_mcp"
+        package_dir.mkdir(parents=True, exist_ok=True)
+        (package_dir / "__init__.py").write_text("__version__ = '0.1.9'\n", encoding="utf-8")
+        (package_dir / "mcp_server.py").write_text("print('server')\n", encoding="utf-8")
+        (package_dir / "data").mkdir(parents=True, exist_ok=True)
+        (package_dir / "data" / "manifest.json").write_text("{}\n", encoding="utf-8")
 
     def test_agent_asset_installer_copies_codex_and_claude_assets(self) -> None:
         with tempfile.TemporaryDirectory(prefix="cities2-mcp-assets-") as tmp:
