@@ -42,7 +42,7 @@ Start a new Claude Code session in your mod project folder. The plugin starts
 ```
 
 ```text
-/cities2-mod-review Review this Cities: Skylines II mod before I share it.
+/cities2-mod-review Review this Cities: Skylines II mod before I install it.
 ```
 
 ```text
@@ -77,7 +77,7 @@ Codex in the same folder.
 1. Open the Codex app and choose **Plugins** from the sidebar.
 2. Next to the "Search plugins" input, click **Built by OpenAI**.
 3. Click **+ Add more**.
-4. Enter Source `mayor-modder/Cities2-MCP` and click **Add Marketplace**.
+4. Enter source `mayor-modder/Cities2-MCP` and click **Add Marketplace**.
 5. Install and enable **Cities2 MCP and Modding Toolkit**.
 6. Fully exit Codex and restart.
 
@@ -92,7 +92,7 @@ $cities2-mcp:cities2-modding Scaffold a small Cities: Skylines II UI mod in this
 ```
 
 ```text
-$cities2-mcp:cities2-mod-review Review this Cities: Skylines II mod before I share it.
+$cities2-mcp:cities2-mod-review Review this Cities: Skylines II mod before I install it.
 ```
 
 ```text
