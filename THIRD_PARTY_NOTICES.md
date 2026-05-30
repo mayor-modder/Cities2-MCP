@@ -3,7 +3,7 @@
 ## wiki-mcp retrieval code
 
 Parts of `server/retrieval` originated in `wiki-mcp` and are included in
-Cities2-MCP under the MIT License.
+the Cities2 MCP and Modding Toolkit under the MIT License.
 
 MIT License
 
@@ -29,7 +29,7 @@ SOFTWARE.
 
 ## Superpowers skill methodology and adapted wording
 
-Cities2-MCP's agent skill development notes and modding quality skills adapt
+The Cities2 MCP and Modding Toolkit's agent skill development notes and modding quality skills adapt
 ideas from Superpowers, including its skill-development methodology,
 pressure-test framing, and short rule phrasing for evidence-based debugging and
 verification. Superpowers is available at:

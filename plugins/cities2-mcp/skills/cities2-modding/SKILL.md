@@ -7,9 +7,9 @@ metadata:
 
 # Cities2 Modding
 
-Use this skill for Cities: Skylines II modding and local mod-project work through Cities2-MCP. Keep documentation retrieval separate from write/build actions.
+Use this skill for Cities: Skylines II modding and local mod-project work through the Cities2 MCP and Modding Toolkit. Keep documentation retrieval separate from write/build actions.
 
-Trigger this skill for asset/mod workflows, toolchain questions, project analysis, file edits, scaffolding, build/package/install work, or local dry-run launches, even when the user does not mention Cities2-MCP.
+Trigger this skill for asset/mod workflows, toolchain questions, project analysis, file edits, scaffolding, build/package/install work, or local dry-run launches, even when the user does not mention the toolkit.
 
 ## Source And Tool Roles
 
@@ -59,7 +59,7 @@ Before writing files, building, packaging, or launching:
    - Offer the user the practical fix: add the specific mod project folder, or
      preferably add the parent folder that contains all of their CS2 mod
      projects so future projects under it work too.
-   - In Claude Desktop, direct the user to the Cities2-MCP plugin/extension
+   - In Claude Desktop, direct the user to the toolkit plugin/extension
      settings and the `Trusted mod projects folder` option. If the agent has
      local file/command access, offer to fix the Claude Desktop setting directly:
      identify the relevant settings file or app-managed config, ask before
@@ -74,7 +74,7 @@ Before writing files, building, packaging, or launching:
      edits/shell commands as an explicit fallback and say the MCP workflow tool
      was blocked.
    - If falling back after `scaffold_project` is blocked, do not hand-roll a new
-     mod template from wiki prose. Copy the bundled Cities2-MCP template files
+     mod template from wiki prose. Copy the bundled toolkit template files
      from the installed package/plugin cache when available, preserving the
      bundled structure, dependencies, and current corpus-derived game metadata.
      If the bundled template is not reachable, ask whether to configure MCP
@@ -119,7 +119,7 @@ enable or confirm the playset/mod if needed, and then run the playtest scenario.
 
 If a workflow tool returns a workspace/allowlist/configuration error, pause MCP
 workflow-tool retries and help the user configure access before trying that MCP
-tool again. Phrase it as a normal setup step, not as a crash: "Cities2-MCP can
+tool again. Phrase it as a normal setup step, not as a crash: "The toolkit can
 work on that project after you add its folder, or a shared parent folder, to
 Trusted mod projects folder." In Codex, when the plugin cache allowlist blocks
 MCP workflow tools, you may use the explicit bundled-template or normal Codex
@@ -129,8 +129,8 @@ blocked.
 When scaffolding a new project, `scaffold_project` chooses a default `game_version`
 from the bundled corpus and returns `game_version`, `game_version_source`,
 `bundled_game_version`, and any installed-game warning. If the warning says the
-installed game appears newer than the bundled Cities2-MCP package, tell the user
-the project was still created and recommend checking for an updated Cities2-MCP
+installed game appears newer than the bundled toolkit package, tell the user
+the project was still created and recommend checking for an updated toolkit
 release before deeper modding work. If the user names a newer target game
 version than the bundled default, pass `metadata.game_version` explicitly.
 

@@ -69,7 +69,7 @@ class PortabilityTests(unittest.TestCase):
             "cs2-csharp",
             "cs2-ui",
             "cs2-hybrid",
-            "/Users/matt/",
+            "/Users/Example/",
             "/usr/bin/python3",
         ]
         targets = [
@@ -88,13 +88,15 @@ class PortabilityTests(unittest.TestCase):
         for path in (ROOT / "README.md", ROOT / "INSTALL.md"):
             self.assertNotIn("scrap", path.read_text(encoding="utf-8").lower())
 
-    def test_public_name_uses_cities2_mcp_label(self) -> None:
-        label = "Cities2-MCP — game knowledge and modding tools for Cities: Skylines II"
+    def test_public_name_uses_human_facing_toolkit_label(self) -> None:
+        label = "Cities2 MCP and Modding Toolkit — game knowledge and modding tools for Cities: Skylines II"
         server_text = (ROOT / "cities2_mcp" / "mcp_server.py").read_text(encoding="utf-8")
         example_config = (ROOT / "mcp.config.example.json").read_text(encoding="utf-8")
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
+        readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
 
         self.assertIn(label, server_text)
+        self.assertIn("# Cities2 MCP and Modding Toolkit", readme_text)
         self.assertNotIn("Cities2 Modding Workbench", server_text)
         self.assertIn('"cities2-mcp"', example_config)
         self.assertNotIn('"cities2-modding-workbench"', example_config)
@@ -434,7 +436,7 @@ class PortabilityTests(unittest.TestCase):
 
         self.assertIn("Claude Desktop app settings", install_text)
         self.assertIn("Claude Code settings", install_text)
-        self.assertIn("install or troubleshoot Cities2-MCP in each one separately", install_text)
+        self.assertIn("install or troubleshoot the toolkit in each one separately", install_text)
         self.assertNotIn("ask the user which Claude surface", install_text)
         self.assertNotIn("Claude Desktop chat app", install_text)
 

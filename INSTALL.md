@@ -1,6 +1,6 @@
-# Install Cities2-MCP
+# Install Cities2 MCP and Modding Toolkit
 
-Cities2-MCP adds Cities: Skylines II knowledge and modding tools to Claude,
+The Cities2 MCP and Modding Toolkit adds Cities: Skylines II knowledge and modding tools to Claude,
 Codex, and Antigravity. Claude and Codex install from this repository as a
 plugin marketplace. Antigravity loads this repository from its plugin folder.
 All plugin installs include the bundled agent skills.
@@ -36,7 +36,7 @@ Use Claude Desktop's plugin marketplace UI:
 3. Next to **Personal plugins**, click **+**.
 4. Choose **Create Plugin** > **Add marketplace**.
 5. Enter `mayor-modder/Cities2-MCP`.
-6. Install and enable **Cities2-MCP**.
+6. Install and enable **Cities2 MCP and Modding Toolkit**.
 
 If Claude Desktop says a project is outside the trusted workspace, add that mod
 repo or a trusted parent folder to the plugin's trusted mod projects folder,
@@ -69,7 +69,7 @@ Then start Codex in the project folder:
 codex
 ```
 
-Enter `/plugin`, install **Cities2-MCP** from the marketplace, then restart Codex
+Enter `/plugin`, install **Cities2 MCP and Modding Toolkit** from the marketplace, then restart Codex
 in the same folder.
 
 
@@ -81,7 +81,7 @@ Use the Codex app plugin UI:
 2. Next to the "Search plugins" input, click the button that says **Built by OpenAI**.
 3. In the dropdown menu that appears, click **+ Add more**.
 4. In the dialog that appears, enter the Source `mayor-modder/Cities2-MCP` and click **Add Marketplace**.
-5. Install and enable **Cities2-MCP**.
+5. Install and enable **Cities2 MCP and Modding Toolkit**.
 6. Fully exit Codex and restart.
 
 ### Using Skills in Codex
@@ -201,7 +201,7 @@ build, or package local mod projects.
 To force a specific package version:
 
 ```sh
-uvx --refresh cities2-mcp==0.1.9 --version
+uvx --refresh cities2-mcp==0.2.0 --version
 ```
 
 To install standalone agent assets from the package:
@@ -343,7 +343,7 @@ directories into your client's skill directory only if the client does not load 
 | `npm.ps1` is blocked on Windows | PowerShell execution policy blocks bare `npm` | Use `npm.cmd install` and `npm.cmd run build`. |
 | C# build says you must install or update .NET | Missing `Microsoft.NETCore.App 6.` runtime | Install the .NET 6 runtime and confirm with `dotnet --list-runtimes`. |
 | Game Encyclopedia unavailable | Cities: Skylines II is not installed, is installed in a non-standard location, or `Locale.cok` could not be found | Wiki tools still work. Set `CITIES2_GAME_DIR` or `CITIES2_LOCALE_COK` only if you need local Encyclopedia entries. |
-| Claude reports InfoLoom, save analysis, live city data, or city recovery tools as part of Cities2-MCP | Claude is also loading an older or separate Cities2-related MCP server, often from a previous local tools repo | Inspect every configured MCP server whose key, command, args, or path contains `cities2`, `skylines`, `infoloom`, `dataexport`, `saveinvestigator`, or `city_recovery`. Remove stale entries and keep only the current Cities2-MCP entry. |
+| Claude reports InfoLoom, save analysis, live city data, or city recovery tools as part of the toolkit | Claude is also loading an older or separate Cities2-related MCP server, often from a previous local tools repo | Inspect every configured MCP server whose key, command, args, or path contains `cities2`, `skylines`, `infoloom`, `dataexport`, `saveinvestigator`, or `city_recovery`. Remove stale entries and keep only the current `cities2-mcp` entry. |
 
 During manual cleanup, keep the current `cities2-mcp` entry and remove old
 entries such as `cities2-modding-workbench`, `cities2Workbench`,
@@ -351,4 +351,4 @@ entries such as `cities2-modding-workbench`, `cities2Workbench`,
 old flags.
 
 Claude Desktop app settings and Claude Code settings are separate. If you use
-both apps, install or troubleshoot Cities2-MCP in each one separately.
+both apps, install or troubleshoot the toolkit in each one separately.

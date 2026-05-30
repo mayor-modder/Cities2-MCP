@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cities2-MCP — game knowledge and modding tools for Cities: Skylines II.
+"""Cities2 MCP and Modding Toolkit — game knowledge and modding tools for Cities: Skylines II.
 
 Combines internal wiki retrieval with Cities2 mod project workflow tools.
 Transport: stdio with Content-Length framing.
@@ -36,9 +36,9 @@ from .retrieval import (
 from .retrieval import mcp_server as retrieval_impl
 
 JSON = Dict[str, Any]
-SERVER_NAME = "Cities2-MCP — game knowledge and modding tools for Cities: Skylines II"
+SERVER_NAME = "Cities2 MCP and Modding Toolkit — game knowledge and modding tools for Cities: Skylines II"
 SERVER_INSTRUCTIONS = (
-    "Cities2-MCP gives AI assistants local access to the bundled Cities: Skylines II Wiki corpus "
+    "The Cities2 MCP and Modding Toolkit gives AI assistants local access to the bundled Cities: Skylines II Wiki corpus "
     "for gameplay, systems, and modding questions. It also includes local workflow tools for CS2 "
     "mod projects: scaffolding, reading and writing project files, static analysis, building, "
     "packaging, and dry-run launching the game. Use the wiki retrieval tools for game knowledge "
@@ -481,7 +481,7 @@ def encyclopedia_tools_catalog() -> List[JSON]:
         },
         {
             "name": "source_status",
-            "description": "Report Cities2-MCP source availability for the wiki corpus and local game Encyclopedia.",
+            "description": "Report toolkit source availability for the wiki corpus and local game Encyclopedia.",
             "annotations": {
                 "title": "Check Source Status",
                 "readOnlyHint": True,
@@ -597,7 +597,7 @@ def prompt_text(name: str, question: str) -> str:
         tool_guidance += LATEST_PATCH_GUIDANCE
 
     return (
-        f"You are answering a Cities: Skylines II request through Cities2-MCP.\n\n"
+        f"You are answering a Cities: Skylines II request through the Cities2 MCP and Modding Toolkit.\n\n"
         f"Mode: /{name}\n"
         f"User question: {question}\n\n"
         f"Source workflow:\n{tool_guidance}\n\n"
@@ -1084,7 +1084,7 @@ def main() -> None:
             workflow_error = str(exc)
             debug_log(f"WorkflowManager init failed: {workflow_error}")
     else:
-        workflow_error = "Configure at least one --workspace to use Cities2-MCP workflow tools."
+        workflow_error = "Configure at least one --workspace to use toolkit workflow tools."
 
     if debug_enabled():
         if corpus is not None:

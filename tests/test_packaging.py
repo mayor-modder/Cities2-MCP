@@ -41,13 +41,13 @@ class PackagingTests(unittest.TestCase):
 
         project = pyproject["project"]
         self.assertEqual(project["name"], "cities2-mcp")
-        self.assertEqual(project["version"], "0.1.9")
+        self.assertEqual(project["version"], "0.2.0")
         self.assertEqual(project["scripts"]["cities2-mcp"], "cities2_mcp.mcp_server:main")
 
     def test_package_module_reports_version_and_bundled_data_dir(self) -> None:
         package = importlib.import_module("cities2_mcp")
 
-        self.assertEqual(package.__version__, "0.1.9")
+        self.assertEqual(package.__version__, "0.2.0")
         data_dir = package.bundled_data_dir()
         self.assertTrue((data_dir / "index" / "chunks.jsonl").exists())
         self.assertTrue((data_dir / "index" / "pages.jsonl").exists())
@@ -61,7 +61,7 @@ class PackagingTests(unittest.TestCase):
             check=True,
         )
 
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.2.0")
 
     def test_default_start_without_workspace_keeps_knowledge_tools_available(self) -> None:
         from tests.smoke_mcp import call, rpc, rpc_ndjson
@@ -81,7 +81,7 @@ class PackagingTests(unittest.TestCase):
             search = call(proc, 3, "search", {"query": "modding toolchain requirements", "limit": 1})
             scaffold = call(proc, 4, "scaffold_project", {"name": "No Workspace", "template": "cities2-csharp"})
 
-            self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.9")
+            self.assertEqual(init["result"]["serverInfo"]["version"], "0.2.0")
             self.assertEqual(len(tools["result"]["tools"]), 14)
             self.assertTrue(search["ok"])
             self.assertFalse(scaffold["ok"])
@@ -124,11 +124,12 @@ class PackagingTests(unittest.TestCase):
         server_json = json.loads((ROOT / "server.json").read_text(encoding="utf-8"))
 
         self.assertEqual(server_json["name"], "io.github.mayor-modder/cities2-mcp")
-        self.assertEqual(server_json["version"], "0.1.9")
+        self.assertEqual(server_json["title"], "Cities2 MCP and Modding Toolkit")
+        self.assertEqual(server_json["version"], "0.2.0")
         package = server_json["packages"][0]
         self.assertEqual(package["registryType"], "pypi")
         self.assertEqual(package["identifier"], "cities2-mcp")
-        self.assertEqual(package["version"], "0.1.9")
+        self.assertEqual(package["version"], "0.2.0")
         self.assertEqual(package["transport"]["type"], "stdio")
 
     def test_all_public_tools_have_directory_review_annotations(self) -> None:
@@ -167,8 +168,8 @@ class PackagingTests(unittest.TestCase):
         privacy_text = (ROOT / "PRIVACY.md").read_text(encoding="utf-8")
 
         self.assertEqual(plugin["name"], "cities2-mcp")
-        self.assertEqual(plugin["displayName"], "Cities2-MCP")
-        self.assertEqual(plugin["version"], "0.1.9")
+        self.assertEqual(plugin["displayName"], "Cities2 MCP and Modding Toolkit")
+        self.assertEqual(plugin["version"], "0.2.0")
         self.assertIn("trusted_workspace", plugin["userConfig"])
         self.assertNotIn("mcpServers", plugin)
         self.assertEqual(plugin_mcp["mcpServers"]["cities2-mcp"]["command"], "node")
@@ -181,10 +182,10 @@ class PackagingTests(unittest.TestCase):
         self.assertNotIn("uvx", json.dumps(plugin_mcp))
         self.assertEqual(marketplace["name"], "cities2-mcp")
         self.assertEqual(marketplace["plugins"][0]["source"], "./integrations/anthropic/claude-plugin")
-        self.assertEqual(marketplace["plugins"][0]["version"], "0.1.9")
+        self.assertEqual(marketplace["plugins"][0]["version"], "0.2.0")
         self.assertIn("[PRIVACY.md](PRIVACY.md)", readme_text)
         self.assertIn("does not collect telemetry", privacy_text)
-        self.assertIn("does not share data with third parties", privacy_text)
+        self.assertIn("does not collect telemetry, phone home, or send data to its authors", privacy_text)
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "bin" / "cities2-mcp-launcher.js").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "run_server.py").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "cities2_mcp" / "mcp_server.py").exists())
@@ -224,7 +225,7 @@ class PackagingTests(unittest.TestCase):
             check=True,
         )
 
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.2.0")
 
     def test_claude_plugin_vendored_launcher_serves_mcp(self) -> None:
         from tests.smoke_mcp import call, rpc, rpc_ndjson
@@ -254,7 +255,7 @@ class PackagingTests(unittest.TestCase):
                 status = call(proc, 3, "source_status", {})
                 scaffold = call(proc, 4, "scaffold_project", {"name": "Plugin Version", "template": "cities2-csharp"})
 
-                self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.9")
+                self.assertEqual(init["result"]["serverInfo"]["version"], "0.2.0")
                 self.assertEqual(len(tools["result"]["tools"]), 14)
                 self.assertTrue(status["wiki"]["available"])
                 self.assertEqual(scaffold["game_version"], "1.5.*")
@@ -269,8 +270,8 @@ class PackagingTests(unittest.TestCase):
         marketplace = json.loads((ROOT / ".agents" / "plugins" / "marketplace.json").read_text(encoding="utf-8"))
 
         self.assertEqual(plugin["name"], "cities2-mcp")
-        self.assertEqual(plugin["interface"]["displayName"], "Cities2-MCP")
-        self.assertEqual(plugin["version"], "0.1.9")
+        self.assertEqual(plugin["interface"]["displayName"], "Cities2 MCP and Modding Toolkit")
+        self.assertEqual(plugin["version"], "0.2.0")
         self.assertEqual(
             plugin["interface"]["privacyPolicyURL"],
             "https://github.com/mayor-modder/Cities2-MCP/blob/main/PRIVACY.md",
@@ -315,7 +316,7 @@ class PackagingTests(unittest.TestCase):
             check=True,
         )
 
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.2.0")
 
     def test_codex_plugin_vendored_launcher_serves_mcp(self) -> None:
         from tests.smoke_mcp import call, rpc, rpc_ndjson
@@ -345,7 +346,7 @@ class PackagingTests(unittest.TestCase):
                 status = call(proc, 3, "source_status", {})
                 scaffold = call(proc, 4, "scaffold_project", {"name": "Codex Plugin Version", "template": "cities2-csharp"})
 
-                self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.9")
+                self.assertEqual(init["result"]["serverInfo"]["version"], "0.2.0")
                 self.assertEqual(len(tools["result"]["tools"]), 14)
                 self.assertTrue(status["wiki"]["available"])
                 self.assertEqual(scaffold["game_version"], "1.5.*")
@@ -358,7 +359,8 @@ class PackagingTests(unittest.TestCase):
         plugin_mcp = json.loads((ROOT / "mcp_config.json").read_text(encoding="utf-8"))
 
         self.assertEqual(plugin["name"], "cities2-mcp")
-        self.assertEqual(plugin["version"], "0.1.9")
+        self.assertEqual(plugin["description"], "Cities: Skylines II knowledge and modding tools for AI agents.")
+        self.assertEqual(plugin["version"], "0.2.0")
         self.assertEqual(plugin_mcp["mcpServers"]["cities2-mcp"]["command"], "node")
         self.assertIn("-e", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
         self.assertIn("--", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
@@ -387,7 +389,7 @@ class PackagingTests(unittest.TestCase):
             check=True,
         )
 
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.2.0")
 
     def test_repository_root_antigravity_launcher_serves_mcp(self) -> None:
         from tests.smoke_mcp import call, rpc, rpc_ndjson
@@ -416,7 +418,7 @@ class PackagingTests(unittest.TestCase):
                 status = call(proc, 3, "source_status", {})
                 scaffold = call(proc, 4, "scaffold_project", {"name": "Antigravity Root Version", "template": "cities2-csharp"})
 
-                self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.9")
+                self.assertEqual(init["result"]["serverInfo"]["version"], "0.2.0")
                 self.assertEqual(len(tools["result"]["tools"]), 14)
                 self.assertTrue(status["wiki"]["available"])
                 self.assertEqual(scaffold["game_version"], "1.5.*")
@@ -438,7 +440,7 @@ class PackagingTests(unittest.TestCase):
                 check=True,
             )
 
-            self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
+            self.assertEqual(result.stdout.strip(), "cities2-mcp 0.2.0")
 
     def test_plugin_package_check_detects_stale_payload(self) -> None:
         from cities2_mcp import plugin_packages
@@ -485,7 +487,7 @@ class PackagingTests(unittest.TestCase):
 
         package_dir = root / "cities2_mcp"
         package_dir.mkdir(parents=True, exist_ok=True)
-        (package_dir / "__init__.py").write_text("__version__ = '0.1.9'\n", encoding="utf-8")
+        (package_dir / "__init__.py").write_text("__version__ = '0.2.0'\n", encoding="utf-8")
         (package_dir / "mcp_server.py").write_text("print('server')\n", encoding="utf-8")
         (package_dir / "data").mkdir(parents=True, exist_ok=True)
         (package_dir / "data" / "manifest.json").write_text("{}\n", encoding="utf-8")

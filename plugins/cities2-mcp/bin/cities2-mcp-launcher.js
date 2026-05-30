@@ -46,13 +46,13 @@ function serverInvocation() {
     return { args: ["-m", "cities2_mcp.mcp_server"], env };
   }
 
-  console.error(`Unable to locate Cities2-MCP server files under ${pluginRoot}.`);
+  console.error(`Unable to locate Cities2 toolkit server files under ${pluginRoot}.`);
   process.exit(1);
 }
 
 const python = findPython();
 if (!python) {
-  console.error("Cities2-MCP requires Python 3.10 or newer. Set CITIES2_MCP_PYTHON to a Python interpreter if it is not on PATH.");
+  console.error("The Cities2 toolkit requires Python 3.10 or newer. Set CITIES2_MCP_PYTHON to a Python interpreter if it is not on PATH.");
   process.exit(127);
 }
 
@@ -72,6 +72,6 @@ child.on("exit", (code, signal) => {
 });
 
 child.on("error", (error) => {
-  console.error(`Unable to start Cities2-MCP: ${error.message}`);
+  console.error(`Unable to start the Cities2 toolkit: ${error.message}`);
   process.exit(1);
 });

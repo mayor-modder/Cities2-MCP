@@ -74,7 +74,7 @@ state, or debugger state.
 - `Modding.log`, `Unity/Player logs`, game launch output, exception stack traces, and mod loader messages.
 - UI debugger evidence from `localhost:9444` for React/TypeScript UI mods when the game and debugger are available.
 - Screenshots, reproduction steps, user playtesting notes, save copies, and version/build numbers.
-- Cities2-MCP wiki/reference results for corpus-backed API, toolchain, UI, localization, packaging, and compatibility checks.
+- Toolkit wiki/reference results for corpus-backed API, toolchain, UI, localization, packaging, and compatibility checks.
 
 For runtime or UI behavior that fails only in game, first distinguish package
 layout, installed files, playset/load state, game logs, UI debugger state, and

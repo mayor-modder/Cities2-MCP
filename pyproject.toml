@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cities2-mcp"
-version = "0.1.9"
-description = "Local MCP server for Cities: Skylines II game knowledge and modding workflows."
+version = "0.2.0"
+description = "Cities: Skylines II knowledge and modding toolkit for AI agents."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"

@@ -7,9 +7,9 @@ metadata:
 
 # Cities2 Knowledge
 
-Use this skill when answering Cities: Skylines II gameplay questions with Cities2-MCP. The goal is to retrieve focused evidence from both available sources and synthesize a normal answer, not to show raw search results.
+Use this skill when answering Cities: Skylines II gameplay questions with the Cities2 MCP and Modding Toolkit. The goal is to retrieve focused evidence from both available sources and synthesize a normal answer, not to show raw search results.
 
-Trigger this skill for plain questions like "How do I grow office demand?", "What changed in the latest patch?", "Did traffic change?", "What makes citizens healthier?", "Why is housing demand low?", or "How does zoning/pollution/education/transit work?", even when the user does not mention Cities2-MCP, wiki, Encyclopedia, patch notes, or sources.
+Trigger this skill for plain questions like "How do I grow office demand?", "What changed in the latest patch?", "Did traffic change?", "What makes citizens healthier?", "Why is housing demand low?", or "How does zoning/pollution/education/transit work?", even when the user does not mention the toolkit, wiki, Encyclopedia, patch notes, or sources.
 
 ## Source Roles
 

@@ -1,10 +1,10 @@
-# Cities2-MCP
+# Cities2 MCP and Modding Toolkit
 
 <!-- mcp-name: io.github.mayor-modder/cities2-mcp -->
 
-Cities2-MCP — a local MCP server for Cities: Skylines II game knowledge and modding tools.
+Cities2 MCP and Modding Toolkit is a local MCP server and agent skill bundle for Cities: Skylines II game knowledge and modding workflows.
 
-It gives AI agents access to a local, searchable version of the Cities: Skylines II Wiki. It also lets them search the game encyclopedia, if the game is installed. This gives agents the ability to answer general knowledge questions about playing the game and offer advice on how to solve problems in your city. It also includes agent skills for creating, inspecting, building, and packaging CS2 mod projects. The modding skills are designed to ensure that mods built with this plugin conform to the best practices documented in the the wiki.
+It gives AI agents access to a local, searchable version of the Cities: Skylines II Wiki. It also lets them search the game encyclopedia, if the game is installed. This gives agents the ability to answer general knowledge questions about playing the game and offer advice on how to solve problems in your city. It also includes agent skills for creating, inspecting, building, and packaging CS2 mod projects. The modding skills are designed to ensure that mods built with this plugin conform to the best practices documented in the wiki.
 
 ## Quick Install
 
@@ -27,7 +27,7 @@ This is useful for questions about game mechanics, modding APIs, toolchain setup
 
 ### Search The Local Game Encyclopedia
 
-When Cities: Skylines II is installed locally, Cities2-MCP also tries to read the in-game Encyclopedia from the user's own game files. This source is enabled by default when the server can find `Cities2_Data/Content/Game/Locale.cok`, especially for standard Steam installs.
+When Cities: Skylines II is installed locally, the toolkit also tries to read the in-game Encyclopedia from the user's own game files. This source is enabled by default when the server can find `Cities2_Data/Content/Game/Locale.cok`, especially for standard Steam installs.
 
 The extracted Encyclopedia index is cached locally on the user's machine and rebuilt only when the source game file, detected Steam build id, locale, or extractor version changes. Extracted game text is not committed to this repository, shipped in releases, or part of the redistributed wiki corpus.
 
@@ -126,7 +126,7 @@ Corpus layout:
 
 ## Privacy
 
-Cities2-MCP runs locally and does not collect telemetry. See
+The toolkit runs locally and does not collect telemetry. See
 [PRIVACY.md](PRIVACY.md) for details.
 
 ## Licensing
