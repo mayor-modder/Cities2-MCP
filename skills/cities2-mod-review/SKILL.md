@@ -23,7 +23,7 @@ Before a large diff, branch, PR, release-readiness, or quality audit, check
 whether external review agents are available on this user's machine. Use normal
 PATH lookup, not hardcoded install paths: `command -v codex`, `command -v
 claude`, and `command -v agy` on POSIX shells, or `Get-Command codex`,
-`Get-Command claude`, and `Get-Command agy` in PowerShell.
+`Get-Command claude`, and `Get-Command agy` on Windows.
 
 Ask before running external reviewers because they may use network access,
 credentials, tokens, paid plans, or local configuration. If two or more external

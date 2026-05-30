@@ -95,9 +95,9 @@ Before writing files, building, packaging, or launching:
 
 If a write/build tool returns diagnostics, summarize the actionable errors first and include paths or commands that matter.
 
-On Windows PowerShell, use `npm.cmd` for both install and build commands; do not
+On Windows, use `npm.cmd` for both install and build commands; do not
 try bare `npm` first because execution policy can block `npm.ps1`. Use
-PowerShell-native file listing (`Get-ChildItem`) when checking template files or
+native file listing (`Get-ChildItem`) when checking template files or
 build outputs instead of assuming `rg` is installed. Verify generated outputs by
 checking file existence, size, and a short relevant snippet only; do not dump
 large generated files such as `package-lock.json` into the transcript. If the

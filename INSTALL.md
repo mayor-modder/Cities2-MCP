@@ -106,10 +106,10 @@ Use `/skills` or type `$` to browse installed Codex skills.
 
 ### Install in Antigravity
 
-Run this once in PowerShell:
+Clone the plugin into Antigravity's plugin folder:
 
-```powershell
-git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP "$env:USERPROFILE\.gemini\config\plugins\cities2-mcp"
+```sh
+git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP ~/.gemini/config/plugins/cities2-mcp
 ```
 
 Then start `agy` from your mod workspace, or restart Antigravity Desktop. Desktop and CLI read this plugin folder.
@@ -117,8 +117,8 @@ If you download the GitHub ZIP instead, extract the repository contents there so
 
 To update later:
 
-```powershell
-git -C "$env:USERPROFILE\.gemini\config\plugins\cities2-mcp" pull --ff-only
+```sh
+git -C ~/.gemini/config/plugins/cities2-mcp pull --ff-only
 ```
 
 Direct URL installs are not currently supported for this plugin.

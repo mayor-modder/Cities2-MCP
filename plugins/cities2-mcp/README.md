@@ -15,6 +15,6 @@ template-copy fallback for that case.
 
 Install from this repository marketplace:
 
-```powershell
+```sh
 codex plugin marketplace add mayor-modder/Cities2-MCP
 ```
