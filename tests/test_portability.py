@@ -306,6 +306,8 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("claude", text)
             self.assertIn("agy", text)
             self.assertIn("Ask before running external reviewers", text)
+            self.assertIn("Before opt-in, only use PATH lookup", text)
+            self.assertIn("Do not run external CLI commands, including `--help`", text)
             self.assertIn("If no external reviewer is available", text)
             self.assertIn("codex review", text)
             self.assertIn("claude ultrareview", text)

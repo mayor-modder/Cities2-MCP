@@ -32,6 +32,8 @@ two external agents. If one external reviewer is available, offer a 2-way review
 If no external reviewer is available, continue with the normal CS2 mod review
 without treating that as a problem.
 
+Before opt-in, only use PATH lookup to detect candidates. Do not run external CLI commands, including `--help`, version checks, print modes, or review modes, until the user approves the external review offer.
+
 Prefer diverse external reviewers. Use documented noninteractive review modes
 when available, checking `--help` if needed: `codex review`, `claude ultrareview`
 or `claude --print` with a review prompt, and `agy --print` or the installed
