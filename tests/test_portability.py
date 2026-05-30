@@ -307,7 +307,9 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("compact source notes", " ".join(readme_text.split()))
         self.assertIn("patch", (ROOT / "skills" / "cities2-knowledge" / "SKILL.md").read_text(encoding="utf-8"))
         self.assertIn("uvx cities2-mcp install-agent-assets", install_text)
-        self.assertIn("client supports MCP servers but not plugin skills", install_text)
+        self.assertIn("load local agent skills separately", install_text)
+        legacy_skill_wording = "client supports MCP servers" + " but not plugin skills"
+        self.assertNotIn(legacy_skill_wording, install_text)
 
     def test_modding_quality_skills_encode_review_debug_release_rules(self) -> None:
         review = (ROOT / "skills" / "cities2-mod-review" / "SKILL.md").read_text(encoding="utf-8")

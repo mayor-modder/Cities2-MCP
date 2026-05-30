@@ -136,9 +136,8 @@ Type `/cities2` and choose one of the Cities2 skills.
 
 ## Workspace Access
 
-Game knowledge and Encyclopedia lookup work immediately. Claude and Codex usually
-trust the current project automatically. Workflow tools that read, write, build,
-package, or launch local mod projects still need a trusted workspace:
+Game knowledge and Encyclopedia lookup work immediately. Mod workflow tools need
+a trusted workspace, and Claude and Codex usually use the project you opened:
 
 - In Claude Code and Codex CLI, start the client from the mod project folder.
 - If a tool reports `Path must stay inside configured workspaces`, add the mod
@@ -192,8 +191,8 @@ uvx cities2-mcp --version
 uvx --refresh cities2-mcp==0.2.0 --version
 ```
 
-If your client supports MCP servers but not plugin skills, install the bundled
-agent skills separately:
+Some clients can load local agent skills separately from MCP server settings.
+For those clients, install the bundled skills with:
 
 ```sh
 uvx cities2-mcp install-agent-assets
