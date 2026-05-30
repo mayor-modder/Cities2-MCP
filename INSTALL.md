@@ -136,8 +136,9 @@ Type `/cities2` and choose one of the Cities2 skills.
 
 ## Workspace Access
 
-Game knowledge and Encyclopedia lookup work immediately. Workflow tools that
-read, write, build, package, or launch local mod projects need a trusted workspace:
+Game knowledge and Encyclopedia lookup work immediately. Claude and Codex usually
+trust the current project automatically. Workflow tools that read, write, build,
+package, or launch local mod projects still need a trusted workspace:
 
 - In Claude Code and Codex CLI, start the client from the mod project folder.
 - If a tool reports `Path must stay inside configured workspaces`, add the mod
