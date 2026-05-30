@@ -56,7 +56,7 @@ Marketplace installs include five user-facing skills:
 - `cities2-mod-debugging`: helps debug CS2 mod build, packaging, runtime, log, UI debugger, and in-game behavior issues.
 - `cities2-mod-release`: checks release readiness before packaging, uploading, publishing, or distributing a mod.
 
-The modding quality skills use corpus-backed CS2 best practices and documented negative constraints as defaults, and they require local playtesting before distribution unless you explicitly choose to package an unverified build.
+The modding quality skills use documented CS2 best practices and negative constraints as defaults, and they require local playtesting before distribution unless you explicitly choose to package an unverified build.
 
 The marketplace install includes these skills. In Claude:
 

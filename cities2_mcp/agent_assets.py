@@ -19,7 +19,7 @@ LEGACY_ASSET_NAMES = ("cities2-game-updates",)
 
 CLAUDE_COMMANDS = {
     "cities2-knowledge": """---
-description: "Ask Cities2 MCP and Modding Toolkit about Cities: Skylines II gameplay, systems, patches, or updates"
+description: "Ask Cities2-MCP about Cities: Skylines II gameplay, systems, patches, or updates"
 argument-hint: [question]
 ---
 
@@ -30,7 +30,7 @@ $ARGUMENTS
 Follow the bundled `cities2-knowledge` source workflow: call `source_status()` first, search both the wiki corpus and local Game Encyclopedia when available, fetch full pages or entries for important claims, and end with compact source notes.
 """,
     "cities2-modding": """---
-description: "Ask Cities2 MCP and Modding Toolkit about Cities: Skylines II modding or local mod project workflows"
+description: "Ask Cities2-MCP about Cities: Skylines II modding or local mod project workflows"
 argument-hint: [question or task]
 ---
 
@@ -49,7 +49,7 @@ Use the connected `cities2-mcp` MCP server and bundled `cities2-mod-review` skil
 
 $ARGUMENTS
 
-Focus on safety, corpus-backed best practices, negative constraints, maintainability, user value, packaging hygiene, attribution, and verification gaps.
+Focus on safety, documented best practices, negative constraints, maintainability, user value, packaging hygiene, attribution, and verification gaps.
 """,
     "cities2-mod-debugging": """---
 description: "Debug a Cities: Skylines II mod build, package, runtime, log, or in-game behavior issue"
@@ -190,7 +190,7 @@ def install_agent_assets(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="cities2-mcp install-agent-assets",
-        description="Install bundled Cities2 MCP and Modding Toolkit agent skills and Claude slash commands.",
+        description="Install bundled Cities2-MCP agent skills and Claude slash commands.",
     )
     parser.add_argument(
         "--client",

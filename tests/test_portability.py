@@ -89,7 +89,7 @@ class PortabilityTests(unittest.TestCase):
             self.assertNotIn("scrap", path.read_text(encoding="utf-8").lower())
 
     def test_public_name_uses_human_facing_toolkit_label(self) -> None:
-        label = "Cities2 MCP and Modding Toolkit — game knowledge and modding tools for Cities: Skylines II"
+        label = "Cities2-MCP — game knowledge and modding tools for Cities: Skylines II"
         server_text = (ROOT / "cities2_mcp" / "mcp_server.py").read_text(encoding="utf-8")
         example_config = (ROOT / "mcp.config.example.json").read_text(encoding="utf-8")
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
@@ -315,7 +315,7 @@ class PortabilityTests(unittest.TestCase):
         release = (ROOT / "skills" / "cities2-mod-release" / "SKILL.md").read_text(encoding="utf-8")
         modding = (ROOT / "skills" / "cities2-modding" / "SKILL.md").read_text(encoding="utf-8")
 
-        self.assertIn("corpus-backed", review.lower())
+        self.assertIn("documented best practices", review.lower())
         self.assertIn("negative constraints", review.lower())
         self.assertIn("best practice", review.lower())
         self.assertIn("playtesting handoff", debugging.lower())

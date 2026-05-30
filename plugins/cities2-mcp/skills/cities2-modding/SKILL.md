@@ -7,7 +7,7 @@ metadata:
 
 # Cities2 Modding
 
-Use this skill for Cities: Skylines II modding and local mod-project work through the Cities2 MCP and Modding Toolkit. Keep documentation retrieval separate from write/build actions.
+Use this skill for Cities: Skylines II modding and local mod-project work through Cities2-MCP. Keep documentation retrieval separate from write/build actions.
 
 Trigger this skill for asset/mod workflows, toolchain questions, project analysis, file edits, scaffolding, build/package/install work, or local dry-run launches, even when the user does not mention this plugin.
 
@@ -34,7 +34,7 @@ release-readiness workflow.
 
 1. Turn the modding question into compact keyword terms.
 2. Search with `search(query, limit=5)` and `query_reference(query, limit=5)`.
-3. For implementation, review, debugging, or release decisions, search for task-specific corpus-backed best practices and negative constraints. Useful terms include `best practice`, `recommended`, `should`, `do not`, `should not`, `must not`, `cannot`, `can't`, and `won't`.
+3. For implementation, review, debugging, or release decisions, search for task-specific documented best practices and negative constraints. Useful terms include `best practice`, `recommended`, `should`, `do not`, `should not`, `must not`, `cannot`, `can't`, and `won't`.
 4. Fetch the strongest wiki page with `get_page(page_id)` when snippets are not enough.
 5. Use `get_snippets(query, limit=3)` for code-oriented wiki snippets.
 6. Keep track of source page titles, URLs, and snippet topics.

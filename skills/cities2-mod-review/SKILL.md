@@ -7,7 +7,7 @@ metadata:
 
 # Cities2 Mod Review
 
-Review the mod as a good-faith quality pass: find practical risks, missing evidence, and user-impacting gaps. Prefer corpus-backed best practices from the MCP server when judging CS2-specific APIs, packaging, UI, localization, saves, and toolchain behavior.
+Review the mod as a good-faith quality pass: find practical risks, missing evidence, and user-impacting gaps. Prefer documented best practices from the MCP server when judging CS2-specific APIs, packaging, UI, localization, saves, and toolchain behavior.
 
 ## Review Sources
 
@@ -49,7 +49,7 @@ answer, but keep them if the user wants an audit trail.
 
 Do not outsource judgment. Synthesize the results findings-first, de-duplicate
 overlap, distinguish confirmed issues from single-reviewer concerns, and validate
-external findings against the CS2 review rubric, corpus-backed standards, safety
+external findings against the CS2 review rubric, documented standards, safety
 rules, attribution rules, and available project evidence.
 
 ## Review Rubric
@@ -60,9 +60,9 @@ rules, attribution rules, and available project evidence.
 - Packaging hygiene: manifest metadata, dependencies, thumbnail, build artifacts, README, changelog, and excluded temporary files.
 - Verification gaps: build result, static analysis, smoke launch, local playtesting, logs, UI debugger evidence, and known untested areas.
 
-## Corpus-Backed Standards
+## Documented Standards
 
-Use corpus-backed best practices as defaults when the docs support them. Quote or cite compactly by page/tool result when helpful.
+Use documented best practices as defaults when the docs support them. Quote or cite compactly by page/tool result when helpful.
 
 Treat negative constraints as review findings when they prevent likely mistakes:
 
