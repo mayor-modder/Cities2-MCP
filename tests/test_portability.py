@@ -204,30 +204,26 @@ class PortabilityTests(unittest.TestCase):
         self.assertNotIn("MCP workspace is the current Codex project folder", openai_readme)
         self.assertNotIn("MCP workspace is the current project folder", codex_plugin_readme)
 
-    def test_docs_include_antigravity_plugin_path(self) -> None:
+    def test_docs_include_antigravity_install_paths(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
-        google_readme = (ROOT / "integrations" / "google" / "README.md").read_text(encoding="utf-8")
-        antigravity_readme = (
-            ROOT / "integrations" / "google" / "antigravity-plugin" / "README.md"
-        ).read_text(encoding="utf-8")
 
         for text in (install_text, readme_text):
             self.assertIn("Antigravity", text)
             self.assertIn("INSTALL.md#install-in-antigravity", text)
+            self.assertIn("/cities2", text)
+        self.assertIn("agy plugin install https://github.com/mayor-modder/Cities2-MCP", install_text)
+        self.assertIn("git clone https://github.com/mayor-modder/Cities2-MCP .agents\\plugins\\cities2-mcp", install_text)
         self.assertIn(".agents/plugins/cities2-mcp", install_text)
         self.assertIn("_agents/plugins/cities2-mcp", install_text)
-        self.assertIn("~/.gemini/config/plugins/cities2-mcp", install_text)
-        self.assertIn("antigravity-plugin", google_readme)
-        self.assertIn("mcp_config.json", antigravity_readme)
+        self.assertNotIn("integrations/google/antigravity-plugin", install_text)
+        self.assertNotIn("optional global Antigravity", install_text)
 
     def test_public_docs_do_not_advertise_gemini_cli_package(self) -> None:
         public_text = "\n".join(
             (
                 (ROOT / "README.md").read_text(encoding="utf-8"),
                 (ROOT / "INSTALL.md").read_text(encoding="utf-8"),
-                (ROOT / "integrations" / "google" / "README.md").read_text(encoding="utf-8"),
-                (ROOT / "integrations" / "google" / "antigravity-plugin" / "README.md").read_text(encoding="utf-8"),
             )
         )
 

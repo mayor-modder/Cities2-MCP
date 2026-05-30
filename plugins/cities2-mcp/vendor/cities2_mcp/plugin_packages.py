@@ -17,7 +17,6 @@ SKILL_NAMES = (
 PACKAGE_ROOTS = (
     Path("integrations/anthropic/claude-plugin"),
     Path("plugins/cities2-mcp"),
-    Path("integrations/google/antigravity-plugin"),
 )
 
 MANAGED_DIRS = ("skills", "vendor")
@@ -25,11 +24,11 @@ MANAGED_FILES = (Path("bin") / "cities2-mcp-launcher.js",)
 
 LAUNCHER_TEXT = """#!/usr/bin/env node
 
+const fs = require("node:fs");
 const { spawn, spawnSync } = require("node:child_process");
 const path = require("node:path");
 
 const pluginRoot = process.env.PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, "..");
-const serverScript = path.join(pluginRoot, "vendor", "run_server.py");
 
 function candidates() {
   const configured = process.env.CITIES2_MCP_PYTHON;
@@ -58,14 +57,32 @@ function findPython() {
   return null;
 }
 
+function serverInvocation() {
+  const vendoredScript = path.join(pluginRoot, "vendor", "run_server.py");
+  if (fs.existsSync(vendoredScript)) {
+    return { args: [vendoredScript], env: process.env };
+  }
+
+  const sourceServer = path.join(pluginRoot, "cities2_mcp", "mcp_server.py");
+  if (fs.existsSync(sourceServer)) {
+    const env = { ...process.env };
+    env.PYTHONPATH = [pluginRoot, env.PYTHONPATH].filter(Boolean).join(path.delimiter);
+    return { args: ["-m", "cities2_mcp.mcp_server"], env };
+  }
+
+  console.error(`Unable to locate Cities2-MCP server files under ${pluginRoot}.`);
+  process.exit(1);
+}
+
 const python = findPython();
 if (!python) {
   console.error("Cities2-MCP requires Python 3.10 or newer. Set CITIES2_MCP_PYTHON to a Python interpreter if it is not on PATH.");
   process.exit(127);
 }
 
-const child = spawn(python.command, [...python.args, serverScript, ...process.argv.slice(2)], {
-  env: process.env,
+const invocation = serverInvocation();
+const child = spawn(python.command, [...python.args, ...invocation.args, ...process.argv.slice(2)], {
+  env: invocation.env,
   stdio: ["inherit", "inherit", "inherit"],
   windowsHide: true,
 });

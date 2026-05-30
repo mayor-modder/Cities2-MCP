@@ -4,7 +4,7 @@
 
 **Goal:** Add Antigravity as a third installable plugin distribution while reducing drift across Claude, Codex, and Antigravity packages.
 
-**Architecture:** Keep root `skills/` and `cities2_mcp/` as canonical sources. Add `cities2_mcp.plugin_packages` with `sync` and `check` commands that own repeated package payloads: `skills/`, `bin/cities2-mcp-launcher.js`, `vendor/run_server.py`, and `vendor/cities2_mcp/`. Keep platform manifests and README files platform-native.
+**Architecture:** Keep root `skills/` and `cities2_mcp/` as canonical sources. Claude and Codex keep generated package payloads refreshed by `cities2_mcp.plugin_packages`; Antigravity uses the repository root itself as the plugin so remote URL install works directly.
 
 **Tech Stack:** Python 3.10+, stdlib `pathlib`, `shutil`, `filecmp`, `tempfile`, `argparse`, Node launcher already used by Claude/Codex plugin packages, `unittest`.
 
@@ -91,7 +91,6 @@ SKILL_NAMES = (
 PACKAGE_ROOTS = (
     Path("integrations/anthropic/claude-plugin"),
     Path("plugins/cities2-mcp"),
-    Path("integrations/google/antigravity-plugin"),
 )
 ```
 
@@ -103,65 +102,47 @@ Run: `python -m unittest tests.test_packaging.PackagingTests.test_plugin_package
 
 Expected: PASS.
 
-### Task 3: Add Antigravity Package
+### Task 3: Add Antigravity Root Plugin
 
 **Files:**
-- Create: `integrations/google/README.md`
-- Create: `integrations/google/antigravity-plugin/plugin.json`
-- Create: `integrations/google/antigravity-plugin/mcp_config.json`
-- Create: `integrations/google/antigravity-plugin/README.md`
-- Generated: `integrations/google/antigravity-plugin/bin/cities2-mcp-launcher.js`
-- Generated: `integrations/google/antigravity-plugin/skills/**`
-- Generated: `integrations/google/antigravity-plugin/vendor/**`
+- Create: `plugin.json`
+- Create: `mcp_config.json`
+- Create: `bin/cities2-mcp-launcher.js`
 - Test: `tests/test_packaging.py`
 
 - [ ] **Step 1: Write failing Antigravity tests**
 
-Add tests for manifest shape, launcher version output, MCP smoke behavior, and absence of Gemini CLI extension packaging.
+Add tests for manifest shape, launcher version output, MCP smoke behavior, workspace-cwd launch behavior, and absence of a generated `integrations/google` package payload.
 
 - [ ] **Step 2: Verify RED**
 
-Run: `python -m unittest tests.test_packaging.PackagingTests.test_antigravity_distribution_artifacts_are_version_aligned -v`
+Run: `python -m unittest tests.test_packaging.PackagingTests.test_repository_root_is_antigravity_plugin -v`
 
-Expected: FAIL because `integrations/google/antigravity-plugin/plugin.json` does not exist.
+Expected: FAIL because root `plugin.json` and `mcp_config.json` do not exist.
 
-- [ ] **Step 3: Add Antigravity manifests and docs**
+- [ ] **Step 3: Add Antigravity manifests and launcher**
 
 Add `plugin.json`:
 
 ```json
 {
-  "name": "cities2-mcp"
+  "name": "cities2-mcp",
+  "description": "Cities: Skylines II knowledge and modding tools",
+  "version": "0.1.9"
 }
 ```
 
-Add `mcp_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "cities2-mcp": {
-      "command": "node",
-      "args": [
-        "./bin/cities2-mcp-launcher.js",
-        "--workspace",
-        "."
-      ],
-      "cwd": "."
-    }
-  }
-}
-```
+Add `mcp_config.json` that starts `node`, locates the installed plugin checkout, and runs `bin/cities2-mcp-launcher.js --workspace .`.
 
 - [ ] **Step 4: Run sync**
 
 Run: `python -m cities2_mcp.plugin_packages sync`
 
-Expected: Antigravity package receives generated `bin/`, `skills/`, and `vendor/` payloads; Claude and Codex repeated payloads match canonical sources.
+Expected: Claude and Codex repeated payloads match canonical sources. Antigravity root files stay source-controlled directly.
 
 - [ ] **Step 5: Verify green**
 
-Run: `python -m unittest tests.test_packaging.PackagingTests.test_antigravity_distribution_artifacts_are_version_aligned tests.test_packaging.PackagingTests.test_antigravity_plugin_vendored_launcher_reports_version tests.test_packaging.PackagingTests.test_antigravity_plugin_vendored_launcher_serves_mcp -v`
+Run: `python -m unittest tests.test_packaging.PackagingTests.test_repository_root_is_antigravity_plugin tests.test_packaging.PackagingTests.test_antigravity_is_not_a_generated_package_payload tests.test_packaging.PackagingTests.test_repository_root_antigravity_launcher_reports_version tests.test_packaging.PackagingTests.test_repository_root_antigravity_launcher_serves_mcp tests.test_packaging.PackagingTests.test_repository_root_mcp_config_launches_from_workspace_cwd -v`
 
 Expected: PASS.
 
@@ -179,17 +160,17 @@ Add tests that root docs include Antigravity install paths and that public docs 
 
 - [ ] **Step 2: Verify RED**
 
-Run: `python -m unittest tests.test_portability.PortabilityTests.test_docs_include_antigravity_plugin_path -v`
+Run: `python -m unittest tests.test_portability.PortabilityTests.test_docs_include_antigravity_install_paths -v`
 
 Expected: FAIL because Antigravity docs are not yet linked from root docs.
 
 - [ ] **Step 3: Update docs**
 
-Add Antigravity to the quick install matrix, add install instructions for workspace and global plugin paths, and describe `python -m cities2_mcp.plugin_packages sync` / `check` as maintainer-only package refresh commands.
+Add Antigravity to the quick install matrix. Document `agy plugin install https://github.com/mayor-modder/Cities2-MCP` for CLI, `.agents/plugins/cities2-mcp` for Desktop, and `/cities2` as the quick activation check.
 
 - [ ] **Step 4: Verify docs tests**
 
-Run: `python -m unittest tests.test_portability.PortabilityTests.test_docs_include_antigravity_plugin_path tests.test_portability.PortabilityTests.test_public_docs_do_not_advertise_gemini_cli_package -v`
+Run: `python -m unittest tests.test_portability.PortabilityTests.test_docs_include_antigravity_install_paths tests.test_portability.PortabilityTests.test_public_docs_do_not_advertise_gemini_cli_package -v`
 
 Expected: PASS.
 

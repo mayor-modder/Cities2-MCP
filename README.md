@@ -78,6 +78,8 @@ $cities2-mcp:cities2-mod-debugging The mod builds but the UI button does not app
 $cities2-mcp:cities2-mod-release Check whether this mod is ready to package for distribution.
 ```
 
+In Antigravity, type `/cities2` and choose a Cities2 skill.
+
 Gameplay and update answers should include compact source notes that mention the
 local Game Encyclopedia entries and link to the relevant CS2 Wiki pages when
 available.
