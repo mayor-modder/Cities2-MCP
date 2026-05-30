@@ -2,8 +2,7 @@
 
 Cities2-MCP adds Cities: Skylines II knowledge and modding tools to Claude,
 Codex, and Antigravity. Claude and Codex install from this repository as a
-plugin marketplace. Antigravity CLI installs this repository URL directly;
-Antigravity Desktop can load the same checkout from a workspace plugin folder.
+plugin marketplace. Antigravity installs this repository URL with `agy`.
 All plugin installs include the bundled agent skills.
 
 Install sections: [Claude Code](INSTALL.md#install-in-claude-code),
@@ -107,7 +106,7 @@ stopping after build verification.
 
 ## Antigravity
 
-### Install in Antigravity CLI
+### Install in Antigravity
 
 Run:
 
@@ -115,20 +114,8 @@ Run:
 agy plugin install https://github.com/mayor-modder/Cities2-MCP
 ```
 
-Then start `agy` from your mod workspace.
-
-### Install in Antigravity Desktop
-
-Open a terminal in your mod workspace and run:
-
-```powershell
-New-Item -ItemType Directory -Force .agents\plugins
-git clone https://github.com/mayor-modder/Cities2-MCP .agents\plugins\cities2-mcp
-```
-
-Reload Antigravity Desktop after cloning. If your workspace uses
-`_agents/plugins/cities2-mcp` instead of `.agents/plugins/cities2-mcp`, use
-that folder.
+Then start `agy` from your mod workspace, or open Antigravity Desktop. The same
+install is available in both surfaces.
 
 ### Using Skills in Antigravity
 

@@ -213,9 +213,10 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("INSTALL.md#install-in-antigravity", text)
             self.assertIn("/cities2", text)
         self.assertIn("agy plugin install https://github.com/mayor-modder/Cities2-MCP", install_text)
-        self.assertIn("git clone https://github.com/mayor-modder/Cities2-MCP .agents\\plugins\\cities2-mcp", install_text)
-        self.assertIn(".agents/plugins/cities2-mcp", install_text)
-        self.assertIn("_agents/plugins/cities2-mcp", install_text)
+        self.assertIn("open Antigravity Desktop", install_text)
+        self.assertNotIn("git clone https://github.com/mayor-modder/Cities2-MCP", install_text)
+        self.assertNotIn(".agents/plugins/cities2-mcp", install_text)
+        self.assertNotIn("_agents/plugins/cities2-mcp", install_text)
         self.assertNotIn("integrations/google/antigravity-plugin", install_text)
         self.assertNotIn("optional global Antigravity", install_text)
 

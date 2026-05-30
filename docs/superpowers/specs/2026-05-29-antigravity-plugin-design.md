@@ -8,7 +8,7 @@ Gemini CLI will not get a separate extension package in this branch. Its extensi
 
 ## Source Documentation
 
-Antigravity plugin documentation defines a plugin as a directory with a root `plugin.json` file and optional `skills/`, `rules/`, `mcp_config.json`, and `hooks.json` entries. Workspace plugins are loaded from `.agents/plugins/` or `_agents/plugins/` at the workspace root, and Antigravity CLI can install a remote plugin from a GitHub URL.
+Antigravity plugin documentation defines a plugin as a directory with a root `plugin.json` file and optional `skills/`, `rules/`, `mcp_config.json`, and `hooks.json` entries. `agy plugin install` can install a remote plugin from a GitHub URL, and that install is visible to both Antigravity CLI and Antigravity Desktop.
 
 Gemini CLI extension documentation was checked for comparison. Gemini CLI uses `gemini-extension.json`, `GEMINI.md`, `commands/`, and different manifest variables, so it should not be conflated with Antigravity's plugin format.
 
@@ -90,7 +90,7 @@ Each skill should be copied from the canonical `skills/` directory. The Antigrav
 
 ## Documentation
 
-Update root `README.md` and `INSTALL.md` so the quick install matrix includes Antigravity beside Claude and Codex. Antigravity docs should describe the two verified install paths: `agy plugin install https://github.com/mayor-modder/Cities2-MCP` for CLI, and cloning this repository into `.agents/plugins/cities2-mcp` for Desktop.
+Update root `README.md` and `INSTALL.md` so the quick install matrix includes Antigravity beside Claude and Codex. Antigravity docs should describe the verified install path: `agy plugin install https://github.com/mayor-modder/Cities2-MCP`, then using either `agy` or Antigravity Desktop.
 
 ## Tests
 

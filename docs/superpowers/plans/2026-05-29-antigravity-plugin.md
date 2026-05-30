@@ -166,7 +166,7 @@ Expected: FAIL because Antigravity docs are not yet linked from root docs.
 
 - [ ] **Step 3: Update docs**
 
-Add Antigravity to the quick install matrix. Document `agy plugin install https://github.com/mayor-modder/Cities2-MCP` for CLI, `.agents/plugins/cities2-mcp` for Desktop, and `/cities2` as the quick activation check.
+Add Antigravity to the quick install matrix. Document `agy plugin install https://github.com/mayor-modder/Cities2-MCP` as the shared install for Antigravity CLI and Desktop, and `/cities2` as the quick activation check.
 
 - [ ] **Step 4: Verify docs tests**
 
