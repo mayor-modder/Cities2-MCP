@@ -9,6 +9,10 @@ metadata:
 
 Use this skill before packaging, uploading, publishing, distributing, or otherwise releasing a CS2 mod. The goal is to prevent ordinary release mistakes before they reach players.
 
+## Source Evidence
+
+Use Cities2-MCP wiki/reference lookup for CS2-specific packaging, toolchain, and modding claims before treating them as release requirements. Use project files, build output, package contents, logs, screenshots, and user playtesting notes as release evidence.
+
 ## Distribution Gate
 
 A successful build is not enough for distribution. Before public release, require local playtesting of the packaged mod in game, or an explicit user override that the release is not gameplay-verified.

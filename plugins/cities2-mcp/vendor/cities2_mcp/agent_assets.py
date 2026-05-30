@@ -8,12 +8,18 @@ from typing import Iterable
 
 from . import package_root
 
-SKILL_NAMES = ("cities2-knowledge", "cities2-modding")
+SKILL_NAMES = (
+    "cities2-knowledge",
+    "cities2-modding",
+    "cities2-mod-review",
+    "cities2-mod-debugging",
+    "cities2-mod-release",
+)
 LEGACY_ASSET_NAMES = ("cities2-game-updates",)
 
 CLAUDE_COMMANDS = {
     "cities2-knowledge": """---
-description: Ask Cities2-MCP about Cities: Skylines II gameplay, systems, patches, or updates
+description: "Ask Cities2-MCP about Cities: Skylines II gameplay, systems, patches, or updates"
 argument-hint: [question]
 ---
 
@@ -24,7 +30,7 @@ $ARGUMENTS
 Follow the bundled `cities2-knowledge` source workflow: call `source_status()` first, search both the wiki corpus and local Game Encyclopedia when available, fetch full pages or entries for important claims, and end with compact source notes.
 """,
     "cities2-modding": """---
-description: Ask Cities2-MCP about Cities: Skylines II modding or local mod project workflows
+description: "Ask Cities2-MCP about Cities: Skylines II modding or local mod project workflows"
 argument-hint: [question or task]
 ---
 
@@ -33,6 +39,39 @@ Use the connected `cities2-mcp` MCP server to answer this Cities: Skylines II mo
 $ARGUMENTS
 
 Follow the bundled `cities2-modding` source workflow: use wiki retrieval for modding concepts and APIs, use workflow tools only inside configured workspaces, and make any local file, build, package, or launch action explicit before doing it.
+""",
+    "cities2-mod-review": """---
+description: "Review a Cities: Skylines II mod for quality, safety, maintainability, and readiness"
+argument-hint: [project or review request]
+---
+
+Use the connected `cities2-mcp` MCP server and bundled `cities2-mod-review` skill to review this Cities: Skylines II mod:
+
+$ARGUMENTS
+
+Focus on safety, corpus-backed best practices, negative constraints, maintainability, user value, packaging hygiene, attribution, and verification gaps.
+""",
+    "cities2-mod-debugging": """---
+description: "Debug a Cities: Skylines II mod build, package, runtime, log, or in-game behavior issue"
+argument-hint: [bug or failure]
+---
+
+Use the connected `cities2-mcp` MCP server and bundled `cities2-mod-debugging` skill to debug this Cities: Skylines II mod issue:
+
+$ARGUMENTS
+
+Inspect project evidence, relevant docs, build output, logs, installed files, UI debugger output, and playtesting results before claiming a fix is verified.
+""",
+    "cities2-mod-release": """---
+description: "Check a Cities: Skylines II mod before packaging, publishing, uploading, or distributing it"
+argument-hint: [release request]
+---
+
+Use the connected `cities2-mcp` MCP server and bundled `cities2-mod-release` skill to check this Cities: Skylines II mod before distribution:
+
+$ARGUMENTS
+
+Require local playtesting or an explicit untested override before packaging or publishing. Label untested output as not gameplay-verified.
 """,
 }
 
