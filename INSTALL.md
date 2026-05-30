@@ -28,9 +28,6 @@ Start a new Claude Code session in your mod project folder. The plugin starts
 5. Enter `mayor-modder/Cities2-MCP`.
 6. Install and enable **Cities2 MCP and Modding Toolkit**.
 
-For mod workflow tools, set **Trusted mod projects folder** to the mod project or a trusted parent folder.
-Wiki, patch, and Encyclopedia answers do not need this folder.
-
 ### Using Skills in Claude
 
 ```text
@@ -136,22 +133,20 @@ Type `/cities2` and choose one of the Cities2 skills.
 
 ## Workspace Access
 
-Wiki search, patch answers, and Game Encyclopedia lookup work immediately.
-Workflow tools that read, write, build, package, or launch local mod projects
-need a trusted workspace:
+Game knowledge and Encyclopedia lookup work immediately. Workflow tools that
+read, write, build, package, or launch local mod projects need a trusted workspace:
 
 - In Claude Code and Codex CLI, start the client from the mod project folder.
-- In Claude Desktop, set **Trusted mod projects folder** in the plugin settings.
-- If a target path is outside the trusted workspace, the tool reports
-  `Path must stay inside configured workspaces`; add that folder or a trusted
-  parent folder and restart the client.
+- If a tool reports `Path must stay inside configured workspaces`, add the mod
+  project folder or a trusted parent folder and restart the client.
+- In Claude Desktop, that setting is called **Trusted mod projects folder**.
 
 Codex plugin MCP servers may launch from the plugin cache. If a direct workflow tool is
 allowlist-blocked, invoke `cities2-modding`; it has a bundled-template fallback.
 
 ## Optional Build Prerequisites
 
-Wiki, patch, Encyclopedia, and scaffold tools do not require the Cities: Skylines II
+Knowledge, Encyclopedia, and scaffold tools do not require the Cities: Skylines II
 modding toolchain. Builds may need:
 
 - UI-only mods need Node.js and npm.
