@@ -19,7 +19,7 @@ LEGACY_ASSET_NAMES = ("cities2-game-updates",)
 
 CLAUDE_COMMANDS = {
     "cities2-knowledge": """---
-description: Ask Cities2-MCP about Cities: Skylines II gameplay, systems, patches, or updates
+description: "Ask Cities2-MCP about Cities: Skylines II gameplay, systems, patches, or updates"
 argument-hint: [question]
 ---
 
@@ -30,7 +30,7 @@ $ARGUMENTS
 Follow the bundled `cities2-knowledge` source workflow: call `source_status()` first, search both the wiki corpus and local Game Encyclopedia when available, fetch full pages or entries for important claims, and end with compact source notes.
 """,
     "cities2-modding": """---
-description: Ask Cities2-MCP about Cities: Skylines II modding or local mod project workflows
+description: "Ask Cities2-MCP about Cities: Skylines II modding or local mod project workflows"
 argument-hint: [question or task]
 ---
 
@@ -41,37 +41,37 @@ $ARGUMENTS
 Follow the bundled `cities2-modding` source workflow: use wiki retrieval for modding concepts and APIs, use workflow tools only inside configured workspaces, and make any local file, build, package, or launch action explicit before doing it.
 """,
     "cities2-mod-review": """---
-description: Review a Cities: Skylines II mod for quality, safety, packaging hygiene, and verification gaps
-argument-hint: [mod path or review focus]
+description: "Review a Cities: Skylines II mod for quality, safety, maintainability, and readiness"
+argument-hint: [project or review request]
 ---
 
 Use the connected `cities2-mcp` MCP server and bundled `cities2-mod-review` skill to review this Cities: Skylines II mod:
 
 $ARGUMENTS
 
-Lead with findings ordered by severity. Ground CS2-specific claims in Cities2-MCP sources where possible, distinguish missing evidence from confirmed bugs, and include concrete fixes.
+Focus on safety, corpus-backed best practices, negative constraints, maintainability, user value, packaging hygiene, attribution, and verification gaps.
 """,
     "cities2-mod-debugging": """---
-description: Debug Cities: Skylines II mod build, packaging, runtime, log, UI debugger, or in-game failures
-argument-hint: [mod path, log excerpt, or failure description]
+description: "Debug a Cities: Skylines II mod build, package, runtime, log, or in-game behavior issue"
+argument-hint: [bug or failure]
 ---
 
 Use the connected `cities2-mcp` MCP server and bundled `cities2-mod-debugging` skill to debug this Cities: Skylines II mod issue:
 
 $ARGUMENTS
 
-Collect evidence before proposing fixes, preserve logs and reproduction details, and separate build, package, runtime, UI, and local playtesting evidence.
+Inspect project evidence, relevant docs, build output, logs, installed files, UI debugger output, and playtesting results before claiming a fix is verified.
 """,
     "cities2-mod-release": """---
-description: Check Cities: Skylines II mod release readiness before packaging, upload, publication, or distribution
-argument-hint: [mod path or release target]
+description: "Check a Cities: Skylines II mod before packaging, publishing, uploading, or distributing it"
+argument-hint: [release request]
 ---
 
-Use the connected `cities2-mcp` MCP server and bundled `cities2-mod-release` skill to check this Cities: Skylines II mod release:
+Use the connected `cities2-mcp` MCP server and bundled `cities2-mod-release` skill to check this Cities: Skylines II mod before distribution:
 
 $ARGUMENTS
 
-Verify packaging hygiene, attribution, dependency notes, build evidence, local playtesting evidence, and public release risks before recommending upload or distribution.
+Require local playtesting or an explicit untested override before packaging or publishing. Label untested output as not gameplay-verified.
 """,
 }
 

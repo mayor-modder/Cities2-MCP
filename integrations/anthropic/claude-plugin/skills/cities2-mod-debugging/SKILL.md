@@ -1,6 +1,6 @@
 ---
 name: cities2-mod-debugging
-description: "Use automatically when debugging Cities: Skylines II mod build failures, packaging failures, runtime errors, game logs, UI debugger issues, or mod behavior that does not work in game."
+description: "Use when debugging Cities: Skylines II mod build failures, packaging failures, runtime errors, game logs, UI debugger issues, or mod behavior that does not work in game."
 metadata:
   short-description: "Debug CS2 mod failures with evidence"
 ---

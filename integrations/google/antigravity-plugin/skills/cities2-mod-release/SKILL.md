@@ -1,6 +1,6 @@
 ---
 name: cities2-mod-release
-description: "Use automatically when preparing a Cities: Skylines II mod to package, upload, publish, distribute, or release to Paradox Mods or another public channel."
+description: "Use when preparing a Cities: Skylines II mod to package, upload, publish, distribute, or release to Paradox Mods or another public channel."
 metadata:
   short-description: "Check CS2 mod release readiness"
 ---
@@ -21,6 +21,12 @@ If the user chooses the override, label the release notes or handoff as not game
 
 For save-affecting mods, pause before release if testing used only a live save. Prefer backed-up saves, copied-save workflows, offline reproduction, and supported APIs.
 
+## Release Sources
+
+- Inspect the packaged files, manifest, build output, README, changelog, license, attribution, thumbnail, and install notes.
+- Use Cities2-MCP wiki/reference lookup for CS2-specific package, toolchain, UI, localization, and asset claims.
+- Treat user playtesting reports as release evidence only when they describe the packaged build and the game behavior they exercised.
+
 ## Release Readiness Checklist
 
 - Build and package from a clean tree or known commit.
@@ -35,7 +41,7 @@ For save-affecting mods, pause before release if testing used only a live save. 
 
 ## Derivative Mods And Attribution
 
-public source does not automatically grant redistribution rights. Before releasing copied, forked, derived, or bundled work, check the license and original mod/source terms.
+Public source does not automatically grant redistribution rights. Before releasing copied, forked, derived, or bundled work, check the license and original mod/source terms.
 
 Keep attribution, license files, copyright notices, asset credits, and required source links. Do not remove notices to make a package look original. If rights are unclear, pause and ask the user whether they have permission or want help replacing the dependency.
 

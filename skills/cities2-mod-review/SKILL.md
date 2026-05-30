@@ -1,6 +1,6 @@
 ---
 name: cities2-mod-review
-description: "Use automatically when reviewing a Cities: Skylines II mod for safety, maintainability, user value, packaging hygiene, verification gaps, or readiness to improve."
+description: "Use when reviewing a Cities: Skylines II mod for safety, maintainability, user value, packaging hygiene, verification gaps, or readiness to improve."
 metadata:
   short-description: "Review CS2 mod quality and readiness"
 ---
