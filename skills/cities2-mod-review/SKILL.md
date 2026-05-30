@@ -17,6 +17,39 @@ Review the mod as a good-faith quality pass: find practical risks, missing evide
 - If source access is partial, say what was reviewed and what remains unknown.
 - For diff, branch, or PR-style reviews, identify the reviewed range or changed files, compare against the user request or plan, inspect affected call sites, and state if no diff or requirements were available.
 
+## Multi-Agent Review Offer
+
+Before a large diff, branch, PR, release-readiness, or quality audit, check
+whether external review agents are available on this user's machine. Use normal
+PATH lookup, not hardcoded install paths: `command -v codex`, `command -v
+claude`, and `command -v agy` on POSIX shells, or `Get-Command codex`,
+`Get-Command claude`, and `Get-Command agy` in PowerShell.
+
+Ask before running external reviewers because they may use network access,
+credentials, tokens, paid plans, or local configuration. If two or more external
+reviewers are available, offer a 3-way review: this agent's internal review plus
+two external agents. If one external reviewer is available, offer a 2-way review.
+If no external reviewer is available, continue with the normal CS2 mod review
+without treating that as a problem.
+
+Prefer diverse external reviewers. Use documented noninteractive review modes
+when available, checking `--help` if needed: `codex review`, `claude ultrareview`
+or `claude --print` with a review prompt, and `agy --print` or the installed
+Antigravity print mode with a review prompt.
+
+Treat `agy`/Antigravity as file-output-first. Its `--print` stdout can be empty
+even when the model ran, and `--log-file` is an execution log for troubleshooting,
+not the final review artifact. When using `agy`, prompt it to write the final
+review to a specific temporary review file, redirect stdout to a separate fallback
+capture, and read the log only if the review file and stdout capture are missing
+or unclear. Offer to remove temporary review files after synthesizing the final
+answer, but keep them if the user wants an audit trail.
+
+Do not outsource judgment. Synthesize the results findings-first, de-duplicate
+overlap, distinguish confirmed issues from single-reviewer concerns, and validate
+external findings against the CS2 review rubric, corpus-backed standards, safety
+rules, attribution rules, and available project evidence.
+
 ## Review Rubric
 
 - User value: clear purpose, expected audience, settings/defaults, localization, and in-game discoverability.
