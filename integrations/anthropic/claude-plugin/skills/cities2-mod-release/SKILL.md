@@ -27,6 +27,8 @@ For save-affecting mods, pause before release if testing used only a live save. 
 
 - Build and package from a clean tree or known commit.
 - Confirm the packaged archive installs in the expected CS2 mod location.
+- Before install, close Cities: Skylines II before replacing the packaged build;
+  the game must be closed before local mod files are replaced.
 - Run local playtesting with the packaged build, not only the development build.
 - Inspect `Modding.log` and game logs after launch and after exercising the main feature.
 - Check manifest metadata, mod name, version, dependencies, supported game version, description, thumbnail, and tags.
