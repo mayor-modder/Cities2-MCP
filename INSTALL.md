@@ -1,9 +1,15 @@
 # Install Cities2-MCP
 
-Cities2-MCP adds Cities: Skylines II knowledge and modding tools to Claude and
-Codex. The easiest install path is the plugin marketplace: add this repository
-as a marketplace, install **Cities2-MCP**, restart the client, and use the
-bundled agent skills.
+Cities2-MCP adds Cities: Skylines II knowledge and modding tools to Claude,
+Codex, and Antigravity. Claude and Codex install from this repository as a
+plugin marketplace. Antigravity installs this repository URL with `agy`.
+All plugin installs include the bundled agent skills.
+
+Install sections: [Claude Code](INSTALL.md#install-in-claude-code),
+[Claude Desktop](INSTALL.md#install-in-claude-desktop),
+[Codex CLI](INSTALL.md#install-in-codex-cli),
+[Codex Desktop](INSTALL.md#install-in-codex-desktop), and
+[Antigravity](INSTALL.md#install-in-antigravity).
 
 ## Claude
 
@@ -42,9 +48,9 @@ In either version of Claude, you can invoke the skills as slash commands. Try:
 ```text
 /cities2-knowledge what's new in the latest Cities: Skylines II patch?
 /cities2-modding Scaffold a small Cities: Skylines II UI mod in this project folder, then build it.
-/cities2-mod-review Review this mod before I publish it.
-/cities2-mod-debugging The mod builds but the UI button does not appear in game.
-/cities2-mod-release Check whether this mod is ready to package for distribution.
+/cities2-mod-review Review this Cities: Skylines II mod before I share it.
+/cities2-mod-debugging Debug this Cities: Skylines II mod build failure and Modding.log excerpt.
+/cities2-mod-release Check this Cities: Skylines II mod release package for upload readiness.
 ```
 
 ## Codex
@@ -85,9 +91,9 @@ Codex invokes plugin skills with `$` mentions. Use:
 ```text
 $cities2-mcp:cities2-knowledge what's new in the latest Cities: Skylines II patch?
 $cities2-mcp:cities2-modding Scaffold a small Cities: Skylines II UI mod in this project folder, then build it.
-$cities2-mcp:cities2-mod-review Review this mod before I publish it.
-$cities2-mcp:cities2-mod-debugging The mod builds but the UI button does not appear in game.
-$cities2-mcp:cities2-mod-release Check whether this mod is ready to package for distribution.
+$cities2-mcp:cities2-mod-review Review this Cities: Skylines II mod before I share it.
+$cities2-mcp:cities2-mod-debugging Debug this Cities: Skylines II mod build failure and Modding.log excerpt.
+$cities2-mcp:cities2-mod-release Check this Cities: Skylines II mod release package for upload readiness.
 ```
 
 You can also check available skills with `/skills` and type `$` to pick one.
@@ -97,6 +103,29 @@ installed plugin cache, so direct MCP workflow tools may be allowlist-blocked.
 The bundled `cities2-modding` skill handles this by copying the bundled template
 as an explicit fallback, building with normal Codex workspace access, and
 stopping after build verification.
+
+## Antigravity
+
+### Install in Antigravity
+
+Run:
+
+```powershell
+agy plugin install https://github.com/mayor-modder/Cities2-MCP
+```
+
+Then start `agy` from your mod workspace, or open Antigravity Desktop. The same
+install is available in both surfaces.
+
+### Using Skills in Antigravity
+
+Type `/cities2` and choose one of the Cities2 skills.
+
+Quick test:
+
+```text
+/cities2-knowledge What is the latest Cities: Skylines II patch in the bundled sources? Include compact source notes.
+```
 
 ## Optional Build Prerequisites
 
@@ -281,9 +310,14 @@ For packaged installs, prefer:
 uvx cities2-mcp install-agent-assets
 ```
 
-For a local checkout, copy `skills/cities2-knowledge`, `skills/cities2-modding`,
-and the three `skills/cities2-mod-*` skill directories into your client's skill
-directory only if the client does not load them from the plugin.
+For a local checkout, copy `skills/cities2-knowledge` and the other skill
+directories into your client's skill directory only if the client does not load them from the plugin:
+
+- `skills/cities2-knowledge`
+- `skills/cities2-modding`
+- `skills/cities2-mod-review`
+- `skills/cities2-mod-debugging`
+- `skills/cities2-mod-release`
 
 ## Troubleshooting
 

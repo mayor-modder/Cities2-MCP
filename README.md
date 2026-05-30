@@ -8,7 +8,7 @@ It gives AI agents access to a local, searchable version of the Cities: Skylines
 
 ## Quick Install
 
-Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude Desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [Codex Desktop](INSTALL.md#install-in-codex-desktop)
+Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude Desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [Codex Desktop](INSTALL.md#install-in-codex-desktop) | [Antigravity](INSTALL.md#install-in-antigravity)
 
 See [INSTALL.md](INSTALL.md) for full installation details, direct MCP config,
 workspace setup, build prerequisites, and troubleshooting.
@@ -77,6 +77,8 @@ $cities2-mcp:cities2-mod-review Review this mod before I publish it.
 $cities2-mcp:cities2-mod-debugging The mod builds but the UI button does not appear in game.
 $cities2-mcp:cities2-mod-release Check whether this mod is ready to package for distribution.
 ```
+
+In Antigravity, type `/cities2` and choose a Cities2 skill.
 
 Gameplay and update answers should include compact source notes that mention the
 local Game Encyclopedia entries and link to the relevant CS2 Wiki pages when

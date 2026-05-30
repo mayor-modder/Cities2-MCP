@@ -204,6 +204,34 @@ class PortabilityTests(unittest.TestCase):
         self.assertNotIn("MCP workspace is the current Codex project folder", openai_readme)
         self.assertNotIn("MCP workspace is the current project folder", codex_plugin_readme)
 
+    def test_docs_include_antigravity_install_paths(self) -> None:
+        install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
+        readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+
+        for text in (install_text, readme_text):
+            self.assertIn("Antigravity", text)
+            self.assertIn("INSTALL.md#install-in-antigravity", text)
+            self.assertIn("/cities2", text)
+        self.assertIn("agy plugin install https://github.com/mayor-modder/Cities2-MCP", install_text)
+        self.assertIn("open Antigravity Desktop", install_text)
+        self.assertNotIn("git clone https://github.com/mayor-modder/Cities2-MCP", install_text)
+        self.assertNotIn(".agents/plugins/cities2-mcp", install_text)
+        self.assertNotIn("_agents/plugins/cities2-mcp", install_text)
+        self.assertNotIn("integrations/google/antigravity-plugin", install_text)
+        self.assertNotIn("optional global Antigravity", install_text)
+
+    def test_public_docs_do_not_advertise_gemini_cli_package(self) -> None:
+        public_text = "\n".join(
+            (
+                (ROOT / "README.md").read_text(encoding="utf-8"),
+                (ROOT / "INSTALL.md").read_text(encoding="utf-8"),
+            )
+        )
+
+        self.assertNotIn("gemini-extension.json", public_text)
+        self.assertNotIn("gemini extensions install", public_text)
+        self.assertNotIn("Gemini CLI extension package", public_text)
+
     def test_anthropic_integration_docs_treat_plugin_as_only_documented_install_path(self) -> None:
         anthropic_readme = (ROOT / "integrations" / "anthropic" / "README.md").read_text(encoding="utf-8")
         claude_plugin_readme = (
