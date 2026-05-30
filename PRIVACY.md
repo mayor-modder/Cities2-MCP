@@ -6,7 +6,7 @@ agents like Claude, Codex, and Antigravity. Those clients handle chat, prompts,
 and tool results according to their own privacy settings and terms.
 Local cache files remain on your machine. You or an agent you control can remove the
 package, MCP client configuration, and local Encyclopedia cache at any time.
-Privacy or security issues can be reported through the GitHub issue tracker.
+Privacy or security issues can be reported through the GitHub private vulnerability disclosure form.
 
 The MCP server reads the bundled wiki corpus from the installed package. When
 available, it can read your local Cities: Skylines II game files to build a local
