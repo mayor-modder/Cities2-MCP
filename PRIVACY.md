@@ -13,5 +13,4 @@ available, it can read the installed game's Encyclopedia data to build a local
 in-game Encyclopedia cache. If workflow tools
 are enabled with `--workspace`, it can read and write files only inside the
 configured trusted workspace paths. Build, package, and launch tools may run
-local development commands on your machine when explicitly invoked by the
-connected agent.
+local development commands on your machine when explicitly invoked by the agent.
