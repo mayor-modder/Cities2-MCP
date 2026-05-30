@@ -132,3 +132,12 @@ The MCP server runs locally and does not collect telemetry. See
 ## Licensing
 
 The MCP server code is licensed under the MIT License. The included `cities2_mcp/data` corpus is licensed under Creative Commons Attribution-ShareAlike 3.0; source attribution and transformation notes are in `cities2_mcp/data/ATTRIBUTION.md`.
+
+This project is not developed by, endorsed by, reviewed by, or approved by
+Paradox Interactive, Iceflake Studios, Colossal Order, Paradox Wikis, or any
+related company. Cities: Skylines II and related names are used referentially.
+The bundled wiki corpus contains text adapted from the Cities: Skylines II Wiki
+under CC BY-SA 3.0. Non-text wiki media is not included, and local game
+Encyclopedia text is read from your own installed game files rather than shipped
+with this package. Additional third-party notices are in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
