@@ -3,11 +3,7 @@
 The Cities2 MCP and Modding Toolkit adds Cities: Skylines II knowledge,
 patch-note help, and modding workflows to Claude, Codex, and Antigravity.
 
-Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) |
-[Claude Desktop](INSTALL.md#install-in-claude-desktop) |
-[Codex CLI](INSTALL.md#install-in-codex-cli) |
-[Codex Desktop](INSTALL.md#install-in-codex-desktop) |
-[Antigravity](INSTALL.md#install-in-antigravity)
+Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude Desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [Codex Desktop](INSTALL.md#install-in-codex-desktop) | [Antigravity](INSTALL.md#install-in-antigravity)
 
 ## Claude
 
@@ -21,8 +17,7 @@ Run these inside Claude Code:
 ```
 
 Start a new Claude Code session in your mod project folder. The plugin starts
-`cities2-mcp` for that project, so local workflow tools can scaffold, read,
-write, analyze, build, and package files there.
+`cities2-mcp` there so workflow tools can scaffold, read, write, build, and package files.
 
 ### Install in Claude Desktop
 
@@ -33,17 +28,28 @@ write, analyze, build, and package files there.
 5. Enter `mayor-modder/Cities2-MCP`.
 6. Install and enable **Cities2 MCP and Modding Toolkit**.
 
-For mod workflow tools, set **Trusted mod projects folder** to the mod project
-or a trusted parent folder that contains your mods. Wiki, patch, and
-Encyclopedia answers do not need this folder.
+For mod workflow tools, set **Trusted mod projects folder** to the mod project or a trusted parent folder.
+Wiki, patch, and Encyclopedia answers do not need this folder.
 
 ### Using Skills in Claude
 
 ```text
 /cities2-knowledge what's new in the latest Cities: Skylines II patch?
+```
+
+```text
 /cities2-modding Scaffold a small Cities: Skylines II UI mod in this project folder, then build it.
+```
+
+```text
 /cities2-mod-review Review this Cities: Skylines II mod before I share it.
+```
+
+```text
 /cities2-mod-debugging Debug this Cities: Skylines II mod build failure and Modding.log excerpt.
+```
+
+```text
 /cities2-mod-release Check this Cities: Skylines II mod release package for upload readiness.
 ```
 
@@ -77,17 +83,27 @@ Codex in the same folder.
 
 ### Using Skills in Codex
 
-Codex invokes plugin skills with `$` mentions:
-
 ```text
 $cities2-mcp:cities2-knowledge what's new in the latest Cities: Skylines II patch?
+```
+
+```text
 $cities2-mcp:cities2-modding Scaffold a small Cities: Skylines II UI mod in this project folder, then build it.
+```
+
+```text
 $cities2-mcp:cities2-mod-review Review this Cities: Skylines II mod before I share it.
+```
+
+```text
 $cities2-mcp:cities2-mod-debugging Debug this Cities: Skylines II mod build failure and Modding.log excerpt.
+```
+
+```text
 $cities2-mcp:cities2-mod-release Check this Cities: Skylines II mod release package for upload readiness.
 ```
 
-You can also check available skills with `/skills` and type `$` to pick one.
+Use `/skills` or type `$` to browse installed Codex skills.
 
 ## Antigravity
 
@@ -99,10 +115,8 @@ Run this once in PowerShell:
 git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP "$env:USERPROFILE\.gemini\config\plugins\cities2-mcp"
 ```
 
-Then start `agy` from your mod workspace, or restart Antigravity Desktop.
-Desktop and CLI read this plugin folder. If you download the GitHub ZIP instead,
-extract the repository contents to that same `cities2-mcp` folder; `plugin.json`
-should be directly inside it.
+Then start `agy` from your mod workspace, or restart Antigravity Desktop. Desktop and CLI read this plugin folder.
+If you download the GitHub ZIP instead, extract the repository contents there so `plugin.json` is directly inside it.
 
 To update later:
 
@@ -110,8 +124,7 @@ To update later:
 git -C "$env:USERPROFILE\.gemini\config\plugins\cities2-mcp" pull --ff-only
 ```
 
-Direct URL installs are not currently supported for this plugin, so use the
-folder install above.
+Direct URL installs are not currently supported for this plugin.
 
 ### Using Skills in Antigravity
 
@@ -133,15 +146,13 @@ need a trusted workspace:
   `Path must stay inside configured workspaces`; add that folder or a trusted
   parent folder and restart the client.
 
-Codex plugin MCP servers may launch from the installed plugin cache. If a direct
-MCP workflow tool is allowlist-blocked, use the `cities2-modding` skill; it can
-copy the bundled template as an explicit fallback and build with normal Codex
-workspace access.
+Codex plugin MCP servers may launch from the plugin cache. If a direct workflow tool is
+allowlist-blocked, invoke `cities2-modding`; it has a bundled-template fallback.
 
 ## Optional Build Prerequisites
 
-Wiki search, patch answers, Game Encyclopedia search, and project scaffolding do
-not require the Cities: Skylines II modding toolchain. Builds do:
+Wiki, patch, Encyclopedia, and scaffold tools do not require the Cities: Skylines II
+modding toolchain. Builds may need:
 
 - UI-only mods need Node.js and npm.
 - C# and hybrid mods need the Cities: Skylines II modding toolchain installed
@@ -149,9 +160,8 @@ not require the Cities: Skylines II modding toolchain. Builds do:
 - C# and hybrid builds also need `dotnet` on `PATH` and
   `Microsoft.NETCore.App 6.` in `dotnet --list-runtimes`.
 
-If a build prerequisite is missing, the agent should stop after the failed
-build, explain what is missing, and ask whether you want to install the
-prerequisite, keep the scaffold only, or continue with non-build edits.
+If a build prerequisite is missing, the agent should stop, explain what is missing,
+and ask whether you want to install it, keep the scaffold, or continue with edits.
 
 ## Direct MCP Command
 
@@ -173,8 +183,8 @@ client that cannot install plugins:
 }
 ```
 
-The package includes the bundled wiki data, so `--data-dir` is not needed.
-Omit `--workspace` when you only want wiki and local Encyclopedia tools.
+The package includes wiki data, so `--data-dir` is not needed. Omit `--workspace`
+when you only want wiki and local Encyclopedia tools.
 
 To check or pin the package:
 
@@ -190,12 +200,7 @@ agent skills separately:
 uvx cities2-mcp install-agent-assets
 ```
 
-For a source checkout, run from the repository root or set `PYTHONPATH` to that
-root, then launch:
-
-```sh
-python -m cities2_mcp.mcp_server --workspace <TRUSTED_MOD_PROJECT_OR_PARENT_FOLDER>
-```
+For a source checkout, run `python -m cities2_mcp.mcp_server --workspace <folder>` from the repository root.
 
 ## Troubleshooting
 
