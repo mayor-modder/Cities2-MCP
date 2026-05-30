@@ -11,7 +11,7 @@ Use this skill before packaging, uploading, publishing, distributing, or otherwi
 
 ## Source Evidence
 
-Use toolkit wiki/reference lookup for CS2-specific packaging, toolchain, and modding claims before treating them as release requirements. Use project files, build output, package contents, logs, screenshots, and user playtesting notes as release evidence.
+Use MCP server wiki/reference lookup for CS2-specific packaging, toolchain, and modding claims before treating them as release requirements. Use project files, build output, package contents, logs, screenshots, and user playtesting notes as release evidence.
 
 ## Distribution Gate
 
@@ -24,7 +24,7 @@ For save-affecting mods, pause before release if testing used only a live save. 
 ## Release Sources
 
 - Inspect the packaged files, manifest, build output, README, changelog, license, attribution, thumbnail, and install notes.
-- Use toolkit wiki/reference lookup for CS2-specific package, toolchain, UI, localization, and asset claims.
+- Use MCP server wiki/reference lookup for CS2-specific package, toolchain, UI, localization, and asset claims.
 - Treat user playtesting reports as release evidence only when they describe the packaged build and the game behavior they exercised.
 
 ## Release Readiness Checklist

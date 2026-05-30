@@ -19,7 +19,7 @@ LEGACY_ASSET_NAMES = ("cities2-game-updates",)
 
 CLAUDE_COMMANDS = {
     "cities2-knowledge": """---
-description: "Ask the Cities2 toolkit about Cities: Skylines II gameplay, systems, patches, or updates"
+description: "Ask Cities2 MCP and Modding Toolkit about Cities: Skylines II gameplay, systems, patches, or updates"
 argument-hint: [question]
 ---
 
@@ -30,7 +30,7 @@ $ARGUMENTS
 Follow the bundled `cities2-knowledge` source workflow: call `source_status()` first, search both the wiki corpus and local Game Encyclopedia when available, fetch full pages or entries for important claims, and end with compact source notes.
 """,
     "cities2-modding": """---
-description: "Ask the Cities2 toolkit about Cities: Skylines II modding or local mod project workflows"
+description: "Ask Cities2 MCP and Modding Toolkit about Cities: Skylines II modding or local mod project workflows"
 argument-hint: [question or task]
 ---
 
@@ -214,7 +214,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--keep-legacy",
         action="store_true",
-        help="Do not remove old toolkit asset names such as cities2-game-updates.",
+        help="Do not remove old agent asset names such as cities2-game-updates.",
     )
     args = parser.parse_args(argv)
 

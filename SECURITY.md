@@ -68,7 +68,7 @@ control:
   clients, .NET, Python, Node.js, or other third-party platforms
 - malicious mod code intentionally written by a user into a trusted workspace
 - risks that require a user to run arbitrary shell commands outside this server
-- prompt-injection behavior in an AI client that does not cause the toolkit to
+- prompt-injection behavior in an AI client that does not cause this project to
   violate its documented filesystem or command-execution boundaries
 - dependency reports that do not affect this project
 - denial-of-service reports based only on excessive automated traffic

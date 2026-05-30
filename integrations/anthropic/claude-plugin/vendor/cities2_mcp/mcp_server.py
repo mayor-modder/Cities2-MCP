@@ -481,7 +481,7 @@ def encyclopedia_tools_catalog() -> List[JSON]:
         },
         {
             "name": "source_status",
-            "description": "Report toolkit source availability for the wiki corpus and local game Encyclopedia.",
+            "description": "Report source availability for the wiki corpus and local game Encyclopedia.",
             "annotations": {
                 "title": "Check Source Status",
                 "readOnlyHint": True,
@@ -1084,7 +1084,7 @@ def main() -> None:
             workflow_error = str(exc)
             debug_log(f"WorkflowManager init failed: {workflow_error}")
     else:
-        workflow_error = "Configure at least one --workspace to use toolkit workflow tools."
+        workflow_error = "Configure at least one --workspace to use MCP workflow tools."
 
     if debug_enabled():
         if corpus is not None:

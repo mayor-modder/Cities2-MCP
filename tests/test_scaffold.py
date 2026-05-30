@@ -187,7 +187,7 @@ class ScaffoldTests(unittest.TestCase):
         self.assertEqual(result["installed_game_version"], "1.6.1f1")
         self.assertEqual(result["installed_game_version_source"], "test")
         self.assertEqual(result["bundled_game_version"], "1.5.9f1")
-        self.assertIn("check for an updated toolkit release", "\n".join(result["warnings"]))
+        self.assertIn("check for an updated package release", "\n".join(result["warnings"]))
 
     def test_scaffold_warns_when_installed_steam_build_is_newer_than_bundle(self) -> None:
         data_dir = self.tmp / "data-with-steam-build"

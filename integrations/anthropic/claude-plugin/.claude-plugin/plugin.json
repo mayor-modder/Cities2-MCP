@@ -20,13 +20,13 @@
     "mods_dir": {
       "type": "directory",
       "title": "Cities: Skylines II Mods folder",
-      "description": "Optional. The toolkit normally uses the standard local Mods folder; set this only if your Mods folder is somewhere else.",
+      "description": "Optional. The plugin normally uses the standard local Mods folder; set this only if your Mods folder is somewhere else.",
       "required": false
     },
     "game_dir": {
       "type": "directory",
       "title": "Cities: Skylines II install folder",
-      "description": "Optional. The toolkit normally discovers Steam installs automatically; set this only if Encyclopedia search cannot find your game.",
+      "description": "Optional. The plugin normally discovers Steam installs automatically; set this only if Encyclopedia search cannot find your game.",
       "required": false
     },
     "locale_cok": {

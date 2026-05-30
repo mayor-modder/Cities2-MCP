@@ -7,4 +7,4 @@ dependencies:
   tools:
     - type: "mcp"
       value: "cities2-mcp"
-      description: "Cities2 toolkit local server with wiki corpus and game Encyclopedia tools"
+      description: "Cities2 MCP and Modding Toolkit local server with wiki corpus and game Encyclopedia tools"

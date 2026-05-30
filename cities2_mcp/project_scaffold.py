@@ -279,9 +279,9 @@ class ProjectScaffolder:
         if not installed_evidence:
             return ""
         return (
-            f"Cities: Skylines II appears newer than this toolkit package ({installed_evidence}; "
+            f"Cities: Skylines II appears newer than this package ({installed_evidence}; "
             f"{bundled_evidence}). The project was still scaffolded with GameVersion {game_version}; "
-            "check for an updated toolkit release or pass metadata.game_version explicitly if needed."
+            "check for an updated package release or pass metadata.game_version explicitly if needed."
         )
 
     def _default_metadata(self, name: str, slug: str) -> JSON:

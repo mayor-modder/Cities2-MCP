@@ -70,13 +70,13 @@ function serverInvocation() {
     return { args: ["-m", "cities2_mcp.mcp_server"], env };
   }
 
-  console.error(`Unable to locate Cities2 toolkit server files under ${pluginRoot}.`);
+  console.error(`Unable to locate Cities2 MCP and Modding Toolkit server files under ${pluginRoot}.`);
   process.exit(1);
 }
 
 const python = findPython();
 if (!python) {
-  console.error("The Cities2 toolkit requires Python 3.10 or newer. Set CITIES2_MCP_PYTHON to a Python interpreter if it is not on PATH.");
+  console.error("Cities2 MCP and Modding Toolkit requires Python 3.10 or newer. Set CITIES2_MCP_PYTHON to a Python interpreter if it is not on PATH.");
   process.exit(127);
 }
 
@@ -96,7 +96,7 @@ child.on("exit", (code, signal) => {
 });
 
 child.on("error", (error) => {
-  console.error(`Unable to start the Cities2 toolkit: ${error.message}`);
+  console.error(`Unable to start Cities2 MCP and Modding Toolkit: ${error.message}`);
   process.exit(1);
 });
 """
@@ -237,7 +237,7 @@ def _is_ignored_payload_path(path: Path) -> bool:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m cities2_mcp.plugin_packages",
-        description="Synchronize generated Cities2 toolkit plugin package payloads.",
+        description="Synchronize generated Cities2 MCP and Modding Toolkit plugin package payloads.",
     )
     parser.add_argument("command", choices=("sync", "check"))
     parser.add_argument("--repo-root", type=Path, default=Path.cwd())

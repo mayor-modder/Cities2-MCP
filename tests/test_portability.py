@@ -436,7 +436,7 @@ class PortabilityTests(unittest.TestCase):
 
         self.assertIn("Claude Desktop app settings", install_text)
         self.assertIn("Claude Code settings", install_text)
-        self.assertIn("install or troubleshoot the toolkit in each one separately", install_text)
+        self.assertIn("install or troubleshoot the plugin in each one separately", install_text)
         self.assertNotIn("ask the user which Claude surface", install_text)
         self.assertNotIn("Claude Desktop chat app", install_text)
 

@@ -9,7 +9,7 @@ can read and write files only inside the configured trusted workspace paths.
 Build, package, and launch tools may run local development commands on your
 machine when explicitly invoked by the connected agent.
 
-The toolkit does not collect telemetry, phone home, or send data to its authors.
+This plugin does not collect telemetry, phone home, or send data to its authors.
 It only returns information to the MCP client you choose to connect it to. That
 client handles chat, prompts, and tool results according to its own privacy
 settings and terms. Local cache files remain on your machine. You can remove the

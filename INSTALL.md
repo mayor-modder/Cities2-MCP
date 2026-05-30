@@ -343,7 +343,7 @@ directories into your client's skill directory only if the client does not load 
 | `npm.ps1` is blocked on Windows | PowerShell execution policy blocks bare `npm` | Use `npm.cmd install` and `npm.cmd run build`. |
 | C# build says you must install or update .NET | Missing `Microsoft.NETCore.App 6.` runtime | Install the .NET 6 runtime and confirm with `dotnet --list-runtimes`. |
 | Game Encyclopedia unavailable | Cities: Skylines II is not installed, is installed in a non-standard location, or `Locale.cok` could not be found | Wiki tools still work. Set `CITIES2_GAME_DIR` or `CITIES2_LOCALE_COK` only if you need local Encyclopedia entries. |
-| Claude reports InfoLoom, save analysis, live city data, or city recovery tools as part of the toolkit | Claude is also loading an older or separate Cities2-related MCP server, often from a previous local tools repo | Inspect every configured MCP server whose key, command, args, or path contains `cities2`, `skylines`, `infoloom`, `dataexport`, `saveinvestigator`, or `city_recovery`. Remove stale entries and keep only the current `cities2-mcp` entry. |
+| Claude reports InfoLoom, save analysis, live city data, or city recovery tools as part of this plugin | Claude is also loading an older or separate Cities2-related MCP server, often from a previous local tools repo | Inspect every configured MCP server whose key, command, args, or path contains `cities2`, `skylines`, `infoloom`, `dataexport`, `saveinvestigator`, or `city_recovery`. Remove stale entries and keep only the current `cities2-mcp` entry. |
 
 During manual cleanup, keep the current `cities2-mcp` entry and remove old
 entries such as `cities2-modding-workbench`, `cities2Workbench`,
@@ -351,4 +351,4 @@ entries such as `cities2-modding-workbench`, `cities2Workbench`,
 old flags.
 
 Claude Desktop app settings and Claude Code settings are separate. If you use
-both apps, install or troubleshoot the toolkit in each one separately.
+both apps, install or troubleshoot the plugin in each one separately.

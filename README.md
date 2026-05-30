@@ -27,7 +27,7 @@ This is useful for questions about game mechanics, modding APIs, toolchain setup
 
 ### Search The Local Game Encyclopedia
 
-When Cities: Skylines II is installed locally, the toolkit also tries to read the in-game Encyclopedia from the user's own game files. This source is enabled by default when the server can find `Cities2_Data/Content/Game/Locale.cok`, especially for standard Steam installs.
+When Cities: Skylines II is installed locally, the MCP server also tries to read the in-game Encyclopedia from the user's own game files. This source is enabled by default when the server can find `Cities2_Data/Content/Game/Locale.cok`, especially for standard Steam installs.
 
 The extracted Encyclopedia index is cached locally on the user's machine and rebuilt only when the source game file, detected Steam build id, locale, or extractor version changes. Extracted game text is not committed to this repository, shipped in releases, or part of the redistributed wiki corpus.
 
@@ -126,7 +126,7 @@ Corpus layout:
 
 ## Privacy
 
-The toolkit runs locally and does not collect telemetry. See
+The MCP server runs locally and does not collect telemetry. See
 [PRIVACY.md](PRIVACY.md) for details.
 
 ## Licensing
