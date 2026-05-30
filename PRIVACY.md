@@ -1,8 +1,6 @@
 # Privacy Policy
 
-The Cities2 MCP and Modding Toolkit runs locally on your machine. It does not collect telemetry, send usage data to its authors, or require an account.
-
-The server reads the bundled wiki corpus from the installed package. When
+The MCP server reads the bundled wiki corpus from the installed package. When
 available, it can read your local Cities: Skylines II game files to build a local
 in-game Encyclopedia cache. If workflow tools are enabled with `--workspace`, it
 can read and write files only inside the configured trusted workspace paths.
