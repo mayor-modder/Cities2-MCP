@@ -11,7 +11,16 @@ The plugin gives Antigravity:
 - `cities2-mod-release`
 - the `cities2-mcp` MCP server, started from `mcp_config.json`
 
-The plugin `mcp_config.json` points at `bin/cities2-mcp-launcher.js`, which runs the vendored Python package from `vendor/cities2_mcp`.
+The plugin `mcp_config.json` uses a small Node bootstrap to locate the installed plugin directory, then runs `bin/cities2-mcp-launcher.js`, which starts the vendored Python package from `vendor/cities2_mcp`.
+
+The bootstrap checks these locations:
+
+- `CITIES2_MCP_PLUGIN_ROOT`
+- `ANTIGRAVITY_PLUGIN_ROOT`
+- `.agents/plugins/cities2-mcp/` in the active workspace
+- `_agents/plugins/cities2-mcp/` in the active workspace
+- `~/.gemini/antigravity-cli/plugins/cities2-mcp/`
+- `~/.gemini/config/plugins/cities2-mcp/`
 
 Install as a workspace plugin by copying this package to one of these paths in the opened workspace:
 

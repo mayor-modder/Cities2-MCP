@@ -361,7 +361,13 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(plugin["name"], "cities2-mcp")
         self.assertNotIn("mcpServers", plugin)
         self.assertEqual(plugin_mcp["mcpServers"]["cities2-mcp"]["command"], "node")
-        self.assertIn("./bin/cities2-mcp-launcher.js", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
+        self.assertIn("-e", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
+        self.assertIn("--", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
+        bootstrap = plugin_mcp["mcpServers"]["cities2-mcp"]["args"][1]
+        self.assertIn("CITIES2_MCP_PLUGIN_ROOT", bootstrap)
+        self.assertIn(".gemini", bootstrap)
+        self.assertIn("antigravity-cli", bootstrap)
+        self.assertIn("bin','cities2-mcp-launcher.js", bootstrap)
         self.assertIn("--workspace", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
         self.assertIn(".", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
         self.assertEqual(plugin_mcp["mcpServers"]["cities2-mcp"]["cwd"], ".")
@@ -427,6 +433,23 @@ class PackagingTests(unittest.TestCase):
                 self.assertIn("game_version_source", scaffold)
             finally:
                 self._stop_proc(proc)
+
+    def test_antigravity_mcp_config_launches_from_workspace_cwd(self) -> None:
+        plugin_root = ROOT / "integrations" / "google" / "antigravity-plugin"
+        plugin_mcp = json.loads((plugin_root / "mcp_config.json").read_text(encoding="utf-8"))
+        server = plugin_mcp["mcpServers"]["cities2-mcp"]
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-antigravity-workspace-") as tmp:
+            workspace = Path(tmp)
+            result = subprocess.run(
+                [server["command"], *server["args"], "--version"],
+                cwd=workspace,
+                env={**os.environ, "CITIES2_MCP_PLUGIN_ROOT": str(plugin_root)},
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+
+            self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
 
     def test_plugin_package_check_detects_stale_payload(self) -> None:
         from cities2_mcp import plugin_packages
