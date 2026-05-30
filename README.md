@@ -4,7 +4,7 @@
 
 Cities2-MCP — a local MCP server for Cities: Skylines II game knowledge and modding tools.
 
-It gives AI agents access to a local, searchable version of the Cities: Skylines II Wiki and game encyclopedia, if the game is installed. It also offers tools for creating, inspecting, building, and packaging CS2 mod projects.
+It gives AI agents access to a local, searchable version of the Cities: Skylines II Wiki, as well as the game encyclopedia, if the game is installed. It also offers tools for creating, inspecting, building, and packaging CS2 mod projects.
 
 ## Quick Install
 
