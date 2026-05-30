@@ -9,8 +9,8 @@ package, MCP client configuration, and local Encyclopedia cache at any time.
 Privacy or security issues can be reported through the GitHub private vulnerability disclosure form.
 
 The MCP server reads the bundled wiki text from the installed package. When
-available, it can read the installed game's Encyclopedia data, not save files,
-to build a local in-game Encyclopedia cache. If workflow tools
+available, it can read the installed game's Encyclopedia data to build a local
+in-game Encyclopedia cache. If workflow tools
 are enabled with `--workspace`, it can read and write files only inside the
 configured trusted workspace paths. Build, package, and launch tools may run
 local development commands on your machine when explicitly invoked by the
