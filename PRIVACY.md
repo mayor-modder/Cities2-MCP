@@ -8,7 +8,7 @@ Local cache files remain on your machine. You or an agent you control can remove
 package, MCP client configuration, and local Encyclopedia cache at any time.
 Privacy or security issues can be reported through the GitHub private vulnerability disclosure form.
 
-The MCP server reads the bundled wiki corpus from the installed package. When
+The MCP server reads the bundled wiki text from the installed package. When
 available, it can read your local Cities: Skylines II game files to build a local
 in-game Encyclopedia cache. If workflow tools are enabled with `--workspace`, it
 can read and write files only inside the configured trusted workspace paths.
