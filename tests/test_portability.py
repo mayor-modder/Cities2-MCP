@@ -100,8 +100,8 @@ class PortabilityTests(unittest.TestCase):
         self.assertNotIn("Cities2 Modding Workbench", server_text)
         self.assertIn('"cities2-mcp"', example_config)
         self.assertNotIn('"cities2-modding-workbench"', example_config)
-        self.assertIn("current `cities2-mcp` entry", install_text)
-        self.assertIn("cities2-modding-workbench", install_text)
+        self.assertNotIn("current `cities2-mcp` entry", install_text)
+        self.assertNotIn("cities2-modding-workbench", install_text)
 
     def test_mcp_initialize_describes_full_public_scope(self) -> None:
         response = mcp_server.handle_request(
@@ -218,7 +218,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn(r"$env:USERPROFILE\.gemini\config\plugins\cities2-mcp", install_text)
         self.assertIn("Desktop and CLI read this plugin folder", install_text)
         self.assertIn("plugin.json", install_text)
-        self.assertIn("Do not use `agy plugin install https://github.com/mayor-modder/Cities2-MCP`", install_text)
+        self.assertIn("Direct URL installs are not currently supported", install_text)
         self.assertNotIn("agy plugin install https://github.com/mayor-modder/Cities2-MCP\n```", install_text)
         self.assertNotIn(".agents/plugins/cities2-mcp", install_text)
         self.assertNotIn("_agents/plugins/cities2-mcp", install_text)
@@ -302,12 +302,10 @@ class PortabilityTests(unittest.TestCase):
             ).exists()
         )
 
-        self.assertIn("### Manual Skill Copy", install_text)
         self.assertIn("compact source notes", " ".join(readme_text.split()))
         self.assertIn("patch", (ROOT / "skills" / "cities2-knowledge" / "SKILL.md").read_text(encoding="utf-8"))
         self.assertIn("uvx cities2-mcp install-agent-assets", install_text)
-        self.assertIn("copy `skills/cities2-knowledge`", install_text)
-        self.assertIn("does not load them from the plugin", install_text)
+        self.assertIn("client supports MCP servers but not plugin skills", install_text)
 
     def test_modding_quality_skills_encode_review_debug_release_rules(self) -> None:
         review = (ROOT / "skills" / "cities2-mod-review" / "SKILL.md").read_text(encoding="utf-8")
@@ -402,10 +400,9 @@ class PortabilityTests(unittest.TestCase):
     def test_install_guide_explains_workspace_allowlist_for_mod_repos(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
 
-        self.assertIn("WORKSPACE_ROOTS", install_text)
+        self.assertIn("trusted workspace", install_text)
         self.assertIn("trusted parent folder", install_text)
         self.assertIn("Path must stay inside configured workspaces", install_text)
-        self.assertIn("Add that mod repo", install_text)
         self.assertIn("mod project folder", install_text)
         self.assertNotIn("// Add more", install_text)
 
@@ -417,26 +414,26 @@ class PortabilityTests(unittest.TestCase):
     def test_install_guide_uses_current_claude_code_mcp_locations(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
 
-        self.assertIn("~/.claude.json", install_text)
-        self.assertIn(".mcp.json", install_text)
+        self.assertIn("/plugin marketplace add mayor-modder/Cities2-MCP", install_text)
         self.assertNotIn(".claude/settings.local.json", install_text)
-        self.assertIn("here-string", install_text)
-        self.assertIn("claude mcp add-json cities2-mcp $json --scope user", install_text)
+        self.assertNotIn("~/.claude.json", install_text)
+        self.assertNotIn(".mcp.json", install_text)
+        self.assertNotIn("claude mcp add-json", install_text)
 
     def test_install_guide_points_claude_desktop_to_in_app_config(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
 
-        self.assertIn("claude_desktop_config.json", install_text)
-        self.assertIn("directly", install_text)
-        self.assertIn("Settings > Developer > Edit Config", install_text)
         self.assertIn("Claude Desktop", install_text)
+        self.assertIn("Personal plugins", install_text)
+        self.assertIn("Trusted mod projects folder", install_text)
+        self.assertNotIn("claude_desktop_config.json", install_text)
+        self.assertNotIn("Settings > Developer > Edit Config", install_text)
 
     def test_install_guide_distinguishes_claude_surfaces_before_install(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
 
-        self.assertIn("Claude Desktop app settings", install_text)
-        self.assertIn("Claude Code settings", install_text)
-        self.assertIn("install or troubleshoot the plugin in each one separately", install_text)
+        self.assertIn("### Install in Claude Code", install_text)
+        self.assertIn("### Install in Claude Desktop", install_text)
         self.assertNotIn("ask the user which Claude surface", install_text)
         self.assertNotIn("Claude Desktop chat app", install_text)
 
@@ -477,27 +474,10 @@ class PortabilityTests(unittest.TestCase):
         self.assertNotIn("< NUL", install_text)
         self.assertNotIn("< /dev/null", install_text)
 
-    def test_install_guide_lists_expected_public_tools_and_stale_config_cleanup(self) -> None:
+    def test_install_guide_is_concise_and_omits_personal_legacy_cleanup(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
-        expected_tools = [
-            "search",
-            "get_page",
-            "query_reference",
-            "get_snippets",
-            "search_encyclopedia",
-            "get_encyclopedia_entry",
-            "source_status",
-            "scaffold_project",
-            "write_project_file",
-            "list_project_tree",
-            "build_project",
-            "analyze_project",
-            "package_project",
-            "launch_cities2",
-        ]
 
-        for tool_name in expected_tools:
-            self.assertIn(f"`{tool_name}`", install_text)
+        self.assertLess(len(install_text.splitlines()), 220)
         for stale_token in (
             "InfoLoom",
             "save analysis",
@@ -505,8 +485,11 @@ class PortabilityTests(unittest.TestCase):
             "city recovery",
             "dataexport",
             "saveinvestigator",
+            "older or separate",
+            "previous local tools repo",
+            "manual cleanup",
         ):
-            self.assertIn(stale_token, install_text)
+            self.assertNotIn(stale_token, install_text)
 
     def test_retrieval_layer_is_internal_not_a_submodule(self) -> None:
         server_text = (ROOT / "cities2_mcp" / "mcp_server.py").read_text(encoding="utf-8")
