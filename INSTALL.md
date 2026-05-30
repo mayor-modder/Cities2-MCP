@@ -13,6 +13,9 @@ Run these inside Claude Code:
 
 ```text
 /plugin marketplace add mayor-modder/Cities2-MCP
+```
+
+```text
 /plugin install cities2-mcp@cities2-mcp
 ```
 
