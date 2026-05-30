@@ -3,6 +3,7 @@
 - Do not delete protected files. This includes system metadata files like `.DS_Store` and any other files the user has not explicitly asked to remove.
 - Do not merge PRs, tag releases, publish packages, delete branches, or perform other irreversible repo/release actions while a user-stated validation gate is still pending. Casual approval is enough only when it directly responds to that action and no earlier stated gate remains unresolved. If the user has said they want to test, review, or verify something first, stop after preparatory work and report that the gate is still pending.
 - `rg`/ripgrep is optional tooling, not a requirement. In other workspaces, prefer it only when it is available and successfully runs; if it is missing, blocked, or fails, immediately fall back instead of stopping.
+- If fallback searches were noticeably slower because `rg` was missing or blocked, mention ripgrep as an optional local install in the final note at most once. Do not interrupt the task to suggest it or repeat the suggestion across sessions.
 - Recommended search fallbacks:
   - PowerShell file list: `Get-ChildItem -Recurse -File`
   - PowerShell text search: `Get-ChildItem -Recurse -File | Select-String -Pattern "term"`
