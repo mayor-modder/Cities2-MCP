@@ -276,6 +276,16 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn(f"${skill_name}", metadata_text)
             self.assertIn(skill_name, readme_text)
             self.assertIn(skill_name, install_text)
+            for distributed_root in (
+                ROOT / "plugins" / "cities2-mcp" / "skills",
+                ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills",
+            ):
+                distributed_text = (distributed_root / skill_name / "SKILL.md").read_text(encoding="utf-8")
+                self.assertEqual(
+                    skill_text,
+                    distributed_text,
+                    f"{skill_name} drifted from {distributed_root}",
+                )
 
         self.assertFalse((ROOT / "skills" / "cities2-skill-style-review").exists())
         self.assertFalse((ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-skill-style-review").exists())
@@ -309,9 +319,18 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("playtesting handoff", debugging.lower())
         self.assertIn("Modding.log", debugging)
         self.assertIn("localhost:9444", debugging)
+        self.assertIn("after applying a fix", debugging.lower())
+        self.assertIn("build or install", debugging.lower())
+        self.assertIn("playtesting steps", debugging.lower())
+        self.assertIn("close Cities: Skylines II", debugging)
+        self.assertIn("must be closed", debugging)
         self.assertIn("successful build is not enough", release.lower())
         self.assertIn("local playtesting", release.lower())
         self.assertIn("not gameplay-verified", release.lower())
+        self.assertIn("close Cities: Skylines II", release)
+        self.assertIn("must be closed", modding)
+        self.assertIn("local playtest artifact", modding)
+        self.assertIn("Do not block packaging or installing a local", modding)
         self.assertIn("cities2-mod-review", modding)
         self.assertIn("cities2-mod-debugging", modding)
         self.assertIn("cities2-mod-release", modding)

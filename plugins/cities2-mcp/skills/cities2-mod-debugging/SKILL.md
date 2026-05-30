@@ -31,8 +31,11 @@ that root cause is unverified and stop before patching.
 4. Form one hypothesis tied to a file, API, asset, package step, or game log entry.
 5. Apply one focused fix.
 6. Re-run the narrowest relevant check and compare evidence before/after.
-7. If the fix fails or the symptom changes, return to evidence and hypothesis instead of stacking unrelated edits.
-8. After three failed fix attempts, pause and ask whether the architecture, template choice, or modding approach should change.
+7. After applying a fix for runtime, UI, save, or gameplay behavior, either run
+   the relevant build or install check or tell the user exactly why it could
+   not run. Then provide playtesting steps without waiting for the user to ask.
+8. If the fix fails or the symptom changes, return to evidence and hypothesis instead of stacking unrelated edits.
+9. After three failed fix attempts, pause and ask whether the architecture, template choice, or modding approach should change.
 
 ## Runtime And UI Gate
 
@@ -89,6 +92,17 @@ missing evidence is exactly what separates a plausible guess from root cause.
 ## Playtesting Handoff
 
 Treat user playtesting as a debugging continuation, not a finished verification step. A playtesting handoff should include the exact build/package, scenario to try, expected behavior, what logs to collect, and what screenshots or debugger state would help.
+
+After applying a fix for an in-game symptom, do not stop at the code change.
+If build or install commands are available, run the appropriate check before
+handoff. If they are unavailable, name the missing prerequisite. Always include
+playtesting steps for the user: which build/package to test, whether to restart
+the game or playset, the exact scenario to exercise, the expected result, and
+which logs or debugger evidence to bring back.
+
+Cities: Skylines II must be closed before installing or replacing a local mod
+build. If the game is running, do not install over it. Tell the user to close Cities: Skylines II first. Then install or replace the build, launch the game,
+confirm the mod/playset is enabled if needed, and run the playtest scenario.
 
 When available, ask for `Modding.log`, `Unity/Player logs`, `localhost:9444` debugger evidence, and clear reproduction steps. If the user cannot gather logs, use their observations but mark the remaining uncertainty.
 

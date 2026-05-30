@@ -23,9 +23,12 @@ Use this skill as the general entry point, then load the focused skill when the 
 
 - Use `cities2-mod-review` for review, audit, quality, readiness, maintainability, safety, user-value, or "what should I improve?" requests.
 - Use `cities2-mod-debugging` for build failures, package failures, runtime errors, game logs, UI debugger issues, or in-game mod behavior that does not work.
-- Use `cities2-mod-release` for package, publish, upload, distribute, release, Paradox Mods preparation, or public sharing requests.
+- Use `cities2-mod-release` for public package, publish, upload, distribute, release, Paradox Mods preparation, or public sharing requests.
 
-Local installs after a build or fix are playtesting handoff moments, not distribution. For package, publish, upload, distribute, or release requests, require the release-readiness workflow.
+Local package/install steps after a build or fix are allowed when their purpose
+is playtesting. Treat them as playtesting handoff moments, not distribution. For
+public package, publish, upload, distribute, or release requests, require the
+release-readiness workflow.
 
 ## Documentation Workflow
 
@@ -110,6 +113,10 @@ checks to perform, the expected success signal, the likely failure signal, and
 relevant evidence such as `Modding.log`, Unity/Player logs, UI debugger output
 at `localhost:9444`, installed files, or playset state.
 
+Cities: Skylines II must be closed before installing or replacing a local mod
+build. If the game is running, stop and tell the user to close Cities: Skylines II before install. After install, tell the user to launch the game,
+enable or confirm the playset/mod if needed, and then run the playtest scenario.
+
 If a workflow tool returns a workspace/allowlist/configuration error, pause MCP
 workflow-tool retries and help the user configure access before trying that MCP
 tool again. Phrase it as a normal setup step, not as a crash: "Cities2-MCP can
@@ -127,9 +134,11 @@ the project was still created and recommend checking for an updated Cities2-MCP
 release before deeper modding work. If the user names a newer target game
 version than the bundled default, pass `metadata.game_version` explicitly.
 
-Do not package, publish, upload, distribute, or prepare a public release
-immediately after code changes or a build unless local playtesting has been
-confirmed. A successful build is not enough. If the user has not tested locally,
+Do not publish, upload, distribute, or prepare a public release immediately
+after code changes or a build unless local playtesting has been confirmed. A
+successful build is not enough. Do not block packaging or installing a local
+build whose purpose is playtesting; label it as a local playtest artifact, not a
+distribution release. If the user has not tested locally before public release,
 route to `cities2-mod-release` and provide a tailored playtest checklist. If the
 user explicitly overrides the gate, label the result as not gameplay-verified.
 
