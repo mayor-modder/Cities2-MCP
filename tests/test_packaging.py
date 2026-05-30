@@ -371,6 +371,7 @@ class PackagingTests(unittest.TestCase):
 
     def test_antigravity_is_not_a_generated_package_payload(self) -> None:
         self.assertFalse((ROOT / "integrations" / "google").exists())
+        self.assertFalse((ROOT / "gemini-extension.json").exists())
 
     def test_repository_root_antigravity_launcher_reports_version(self) -> None:
         result = subprocess.run(
