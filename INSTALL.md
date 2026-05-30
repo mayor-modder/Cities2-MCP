@@ -57,13 +57,13 @@ Start a new Claude Code session in your mod project folder. The plugin starts
 
 ### Install in Codex CLI
 
-Add this repository as a Codex plugin marketplace:
+In your system terminal, add this repository as a Codex plugin marketplace:
 
 ```sh
 codex plugin marketplace add mayor-modder/Cities2-MCP
 ```
 
-Then start Codex in your project folder:
+Then start Codex from your project folder:
 
 ```sh
 codex
