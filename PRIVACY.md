@@ -4,7 +4,7 @@ Cities2 MCP and Modding Toolkit runs locally on your machine and doesn't send an
 It only modifies the way agents respond when you send messages to third party
 agents like Claude, Codex, and Antigravity. Those clients handle chat, prompts,
 and tool results according to their own privacy settings and terms.
-Local cache files remain on your machine. You or your agent can remove the
+Local cache files remain on your machine. You or an agent you control can remove the
 package, MCP client configuration, and local Encyclopedia cache at any time.
 Privacy or security issues can be reported through the GitHub issue tracker.
 
