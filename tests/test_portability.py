@@ -332,6 +332,40 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("cities2-mod-debugging", modding)
         self.assertIn("cities2-mod-release", modding)
 
+    def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
+        skill_paths = [
+            ROOT / "skills" / "cities2-mod-review" / "SKILL.md",
+            ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-mod-review" / "SKILL.md",
+            ROOT
+            / "integrations"
+            / "anthropic"
+            / "claude-plugin"
+            / "skills"
+            / "cities2-mod-review"
+            / "SKILL.md",
+        ]
+
+        for path in skill_paths:
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("Multi-Agent Review Offer", text)
+            self.assertIn("command -v codex", text)
+            self.assertIn("Get-Command codex", text)
+            self.assertIn("claude", text)
+            self.assertIn("agy", text)
+            self.assertIn("Ask before running external reviewers", text)
+            self.assertIn("Before opt-in, only use PATH lookup", text)
+            self.assertIn("Do not run external CLI commands, including `--help`", text)
+            self.assertIn("If no external reviewer is available", text)
+            self.assertIn("codex review", text)
+            self.assertIn("claude ultrareview", text)
+            self.assertIn("agy --print", text)
+            self.assertIn("file-output-first", text)
+            self.assertIn("--log-file", text)
+            self.assertIn("not the final review artifact", text)
+            self.assertIn("Offer to remove temporary review files", text)
+            self.assertIn("Do not outsource judgment", text)
+            self.assertNotIn("C:\\Users\\matt", text)
+
     def test_docs_do_not_advertise_unimplemented_workspace_escape_flag(self) -> None:
         for path in (ROOT / "README.md", ROOT / "INSTALL.md"):
             self.assertNotIn("--allow-any-workspace", path.read_text(encoding="utf-8"))
