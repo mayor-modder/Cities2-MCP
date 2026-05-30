@@ -1,7 +1,7 @@
 # Install Cities2 MCP and Modding Toolkit
 
-The Cities2 MCP and Modding Toolkit adds Cities: Skylines II knowledge,
-patch-note help, and modding workflows to Claude, Codex, and Antigravity.
+The Cities2 MCP and Modding Toolkit adds Cities: Skylines II knowledge and
+modding workflows to Claude, Codex, and Antigravity.
 
 Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude Desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [Codex Desktop](INSTALL.md#install-in-codex-desktop) | [Antigravity](INSTALL.md#install-in-antigravity)
 
