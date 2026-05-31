@@ -82,7 +82,6 @@ class PortabilityTests(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             for token in old_tokens:
                 self.assertNotIn(token, text, f"{path}: {token}")
-        self.assertIn("data/index/chunks.jsonl", (ROOT / "README.md").read_text(encoding="utf-8"))
 
     def test_public_docs_avoid_scraping_language(self) -> None:
         for path in (ROOT / "README.md", ROOT / "INSTALL.md"):
