@@ -199,8 +199,8 @@ class PortabilityTests(unittest.TestCase):
         self.assertNotIn("plugins/cities2-mcp", readme_text)
         for skill_name in ("cities2-knowledge", "cities2-modding"):
             self.assertIn(f"$cities2-mcp:{skill_name}", install_text)
-            self.assertIn(f"$cities2-mcp:{skill_name}", readme_text)
             self.assertIn(skill_name, readme_text)
+            self.assertIn(f"skills/{skill_name}/SKILL.md", readme_text)
         self.assertIn("allowlist", openai_readme)
         self.assertIn("template-copy fallback", codex_plugin_readme)
         self.assertNotIn("MCP workspace is the current Codex project folder", openai_readme)
@@ -213,7 +213,8 @@ class PortabilityTests(unittest.TestCase):
         for text in (install_text, readme_text):
             self.assertIn("Google Antigravity", text)
             self.assertIn("INSTALL.md#install-in-google-antigravity", text)
-            self.assertIn("/cities2", text)
+        self.assertIn("/cities2", install_text)
+        self.assertNotIn("type `/cities2`", readme_text)
         self.assertIn("git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP", install_text)
         self.assertIn(r"$env:USERPROFILE\.gemini\config\plugins\cities2-mcp", install_text)
         self.assertIn("plugins\\cities2-mcp", install_text)
@@ -283,6 +284,7 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("cities2-mcp", metadata_text)
             self.assertIn(f"${skill_name}", metadata_text)
             self.assertIn(skill_name, readme_text)
+            self.assertIn(f"skills/{skill_name}/SKILL.md", readme_text)
             for distributed_root in (
                 ROOT / "plugins" / "cities2-mcp" / "skills",
                 ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills",
@@ -307,7 +309,10 @@ class PortabilityTests(unittest.TestCase):
             ).exists()
         )
 
-        self.assertIn("compact source notes", " ".join(readme_text.split()))
+        self.assertIn(
+            "compact source note",
+            (ROOT / "skills" / "cities2-knowledge" / "SKILL.md").read_text(encoding="utf-8"),
+        )
         for skill_name in ("cities2-knowledge", "cities2-modding", "cities2-mod-review"):
             self.assertIn(skill_name, install_text)
         self.assertIn("patch", (ROOT / "skills" / "cities2-knowledge" / "SKILL.md").read_text(encoding="utf-8"))

@@ -50,67 +50,13 @@ These tools are meant for local development workflows. They can write files and 
 
 It includes five user-facing skills:
 
-- `cities2-knowledge`: answers gameplay, city-system, and player-facing patch/update questions.
-- `cities2-modding`: handles general modding questions and local mod project workflows.
-- `cities2-mod-review`: reviews CS2 mods for safety, maintainability, user value, packaging hygiene, and verification gaps.
-- `cities2-mod-debugging`: helps debug CS2 mod build, packaging, runtime, log, UI debugger, and in-game behavior issues.
-- `cities2-mod-release`: checks release readiness before packaging, uploading, publishing, or distributing a mod.
+- [`cities2-knowledge`](skills/cities2-knowledge/SKILL.md): answers gameplay, city-system, and player-facing patch/update questions.
+- [`cities2-modding`](skills/cities2-modding/SKILL.md): handles general modding questions and local mod project workflows.
+- [`cities2-mod-review`](skills/cities2-mod-review/SKILL.md): reviews CS2 mods for safety, maintainability, user value, packaging hygiene, and verification gaps.
+- [`cities2-mod-debugging`](skills/cities2-mod-debugging/SKILL.md): helps debug CS2 mod build, packaging, runtime, log, UI debugger, and in-game behavior issues.
+- [`cities2-mod-release`](skills/cities2-mod-release/SKILL.md): checks whether a mod is ready to share.
 
-The modding quality skills use documented CS2 best practices and negative constraints as defaults, and they require local playtesting before distribution unless you explicitly choose to package an unverified build.
-
-The plugin includes these skills. In Claude:
-
-```text
-/cities2-knowledge what's new in the latest Cities: Skylines II patch?
-/cities2-modding Scaffold a small Cities: Skylines II UI mod in this project folder, then build it.
-/cities2-mod-review Review this mod before I publish it.
-/cities2-mod-debugging The mod builds but the UI button does not appear in game.
-/cities2-mod-release Check whether this mod is ready to package for distribution.
-```
-
-In Codex, run `/skills` or type `$` to mention them:
-
-```text
-$cities2-mcp:cities2-knowledge what's new in the latest Cities: Skylines II patch?
-$cities2-mcp:cities2-modding Scaffold a small Cities: Skylines II UI mod in this project folder, then build it.
-$cities2-mcp:cities2-mod-review Review this mod before I publish it.
-$cities2-mcp:cities2-mod-debugging The mod builds but the UI button does not appear in game.
-$cities2-mcp:cities2-mod-release Check whether this mod is ready to package for distribution.
-```
-
-In Antigravity, type `/cities2` and choose a Cities2 skill.
-
-Gameplay and update answers should include compact source notes that mention the
-local Game Encyclopedia entries and link to the relevant CS2 Wiki pages when
-available.
-
-Project templates are stored at:
-
-- `cities2_mcp/templates/cities2-csharp`
-- `cities2_mcp/templates/cities2-ui`
-- `cities2_mcp/templates/cities2-hybrid`
-
-## MCP tools
-
-Game and modding knowledge:
-
-- `search(query, limit=5)`
-- `get_page(page_id)`
-- `query_reference(query, limit=5)`
-- `get_snippets(query, limit=3)`
-- `search_encyclopedia(query, limit=5)`
-- `get_encyclopedia_entry(entry_id)`
-- `source_status()`
-
-Mod project workflow:
-
-- `scaffold_project(name, template, target_dir?, metadata?, options?)`
-- `write_project_file(project_dir, relative_path, content, mode=create|replace|upsert)`
-- `list_project_tree(project_dir, glob="**/*", include_hidden=false, max_files=2000)`
-- `build_project(project_dir, profile=debug|release, steps?, clean=false, package=false, timeout_sec=300)`
-- `analyze_project(project_dir, profile=auto|cities2-csharp|cities2-ui|cities2-hybrid, strict=true)`
-- `package_project(project_dir, output_dir?, package_name?, exclude_globs?)`
-- `launch_cities2(executable?, flags?, platform=auto|mac|windows|linux, dry_run=true)`
+The modding quality skills use documented CS2 best practices and negative constraints as defaults, and they do not present a mod as ready to share until it has been locally playtested.
 
 ## Included wiki text
 
