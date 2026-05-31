@@ -9,8 +9,7 @@ verification. Superpowers is available at:
 
 https://github.com/obra/superpowers
 
-Superpowers is included here under the MIT License for adapted documentation
-phrases and methodology references.
+The adapted Superpowers material is used under the MIT License.
 
 MIT License
 
