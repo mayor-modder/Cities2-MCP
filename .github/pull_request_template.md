@@ -22,9 +22,8 @@
 
 # Safety and privacy
 
-- [ ] No personal paths, tokens, MCP client configs, local game files, Encyclopedia cache files, or private tool output are committed.
+- [ ] No personal paths, tokens, MCP client configs, local game files, encyclopedia cache files, or private tool output are committed.
 - [ ] File reads, writes, and workflow tools stay inside intended project or workspace boundaries.
 - [ ] Security-sensitive details are reported privately rather than disclosed in this PR.
 
 # Notes for reviewers
-

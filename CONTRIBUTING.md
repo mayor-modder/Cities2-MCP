@@ -34,7 +34,7 @@ command it recommends, review the resulting diff, and run the check again.
 Do not commit:
 
 - local MCP client config with machine-specific paths
-- extracted game Encyclopedia cache files
+- extracted game encyclopedia cache files
 - `Locale.cok` or other local game files
 - built packages, virtual environments, dependency folders, or temporary smoke
   test workspaces

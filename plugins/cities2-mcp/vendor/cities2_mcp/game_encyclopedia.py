@@ -17,8 +17,8 @@ JSON = Dict[str, Any]
 APP_ID = "949230"
 EXTRACTOR_VERSION = "2"
 GAME_ENCYCLOPEDIA_WARNING = (
-    "Game Encyclopedia not found. Wiki search is still available. "
-    "Set CITIES2_GAME_DIR or CITIES2_LOCALE_COK to enable local game Encyclopedia search."
+    "Game encyclopedia not found. Wiki search is still available. "
+    "Set CITIES2_GAME_DIR or CITIES2_LOCALE_COK to enable local game encyclopedia search."
 )
 RELATIVE_LOCALE_COK = Path("Cities2_Data") / "Content" / "Game" / "Locale.cok"
 _GLOSSARY_PREFIX = "Glossary."
@@ -558,7 +558,7 @@ class GameEncyclopediaSource:
         payload = source_status_payload(self.discovery, cache_status=self.cache_status, entry_count=len(self.entries))
         payload["available"] = self.available
         if not self.available and not payload.get("warning"):
-            payload["warning"] = "Game Encyclopedia was found, but no glossary entries could be loaded."
+            payload["warning"] = "Game encyclopedia was found, but no glossary entries could be loaded."
         return payload
 
     def search(self, query: str, *, limit: int = 5) -> List[JSON]:
