@@ -95,18 +95,22 @@ Use `/skills` or type `$` to browse installed Codex skills.
 
 Clone the plugin into Antigravity's plugin folder:
 
-```sh
-git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP ~/.gemini/config/plugins/cities2-mcp
+```powershell
+$repo = Join-Path $env:TEMP "Cities2-MCP"
+$plugin = "$env:USERPROFILE\.gemini\config\plugins\cities2-mcp"
+Remove-Item -Recurse -Force $repo,$plugin -ErrorAction SilentlyContinue
+git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP $repo
+New-Item -ItemType Directory -Force (Split-Path $plugin) | Out-Null
+Copy-Item -Recurse (Join-Path $repo "plugins\cities2-mcp") $plugin
 ```
 
-Then start `agy` from your mod workspace, or restart Antigravity Desktop. Desktop and CLI read this plugin folder.
-If you download the GitHub ZIP instead, extract the repository contents there so `plugin.json` is directly inside it.
+Then start `agy` from your mod workspace, or restart Antigravity Desktop.
+Desktop and CLI read this plugin folder.
 
-To update later:
+If you download the GitHub ZIP instead, copy the extracted `plugins/cities2-mcp`
+folder to the Antigravity plugin folder. `plugin.json` should be directly inside it.
 
-```sh
-git -C ~/.gemini/config/plugins/cities2-mcp pull --ff-only
-```
+To update later, rerun the same install commands.
 
 Direct URL installs are not currently supported for this plugin.
 
