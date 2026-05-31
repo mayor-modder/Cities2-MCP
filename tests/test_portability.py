@@ -193,7 +193,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("codex plugin marketplace add mayor-modder/Cities2-MCP", install_text)
         self.assertIn("/skills", install_text)
         self.assertIn("INSTALL.md#install-in-codex-cli", readme_text)
-        self.assertIn("INSTALL.md#install-in-codex-app", readme_text)
+        self.assertIn("INSTALL.md#install-in-the-codex-app", readme_text)
         self.assertIn("INSTALL.md", readme_text)
         self.assertNotIn(".agents/plugins/marketplace.json", readme_text)
         self.assertNotIn("plugins/cities2-mcp", readme_text)

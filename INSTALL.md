@@ -3,7 +3,7 @@
 The Cities2 MCP and Modding Toolkit adds Cities: Skylines II knowledge and
 modding workflows to Claude, the Codex app, and Google Antigravity.
 
-Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [Codex app](INSTALL.md#install-in-codex-app) | [Google Antigravity](INSTALL.md#install-in-google-antigravity)
+Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [the Codex app](INSTALL.md#install-in-the-codex-app) | [Google Antigravity](INSTALL.md#install-in-google-antigravity)
 
 ## Claude
 
@@ -64,7 +64,7 @@ codex
 Enter `/plugin`, install **Cities2 MCP and Modding Toolkit**, then restart
 Codex in the same folder.
 
-### Install in Codex app
+### Install in the Codex app
 
 1. Open the Codex app and choose **Plugins** from the sidebar.
 2. Next to the "Search plugins" input, click **Built by OpenAI**.
