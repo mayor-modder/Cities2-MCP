@@ -111,21 +111,25 @@ stopping after build verification.
 Run this once in PowerShell:
 
 ```powershell
-$repo = Join-Path $env:TEMP "Cities2-MCP"
+$repo = Join-Path ([System.IO.Path]::GetTempPath()) ("Cities2-MCP-" + [guid]::NewGuid())
 $plugin = "$env:USERPROFILE\.gemini\config\plugins\cities2-mcp"
-Remove-Item -Recurse -Force $repo,$plugin -ErrorAction SilentlyContinue
+if (Test-Path -LiteralPath $plugin) {
+    Write-Error "Cities2-MCP already exists at $plugin. Move or replace that one folder before reinstalling."
+    exit 1
+}
 git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP $repo
 New-Item -ItemType Directory -Force (Split-Path $plugin) | Out-Null
-Copy-Item -Recurse (Join-Path $repo "plugins\cities2-mcp") $plugin
+Copy-Item -Recurse -LiteralPath (Join-Path $repo "plugins\cities2-mcp") -Destination $plugin
 ```
 
-Then start `agy` from your mod workspace, or restart Antigravity Desktop.
-Desktop and CLI read this plugin folder.
+Then restart Antigravity Desktop, or open Antigravity CLI with `agy` from your
+mod workspace. Both apps read plugins from this folder.
 
 If you download the GitHub ZIP instead, copy the extracted `plugins/cities2-mcp`
 folder to the Antigravity plugin folder. `plugin.json` should be directly inside it.
 
-To update later, rerun the same install commands.
+To update later, replace only the existing `cities2-mcp` plugin folder. Do not
+clear the parent Antigravity `plugins` folder.
 
 Do not use `agy plugin install https://github.com/mayor-modder/Cities2-MCP` for
 this repo. Current `agy` URL installs expect the older Gemini extension format,
