@@ -1,0 +1,37 @@
+name: Documentation issue
+description: Report confusing, missing, or outdated documentation.
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page or file
+      description: Which page, section, or file needs attention?
+      placeholder: "README.md, INSTALL.md, PRIVACY.md, a skill, or a plugin listing"
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: What is confusing or outdated?
+      description: Describe the mismatch, missing step, unclear wording, or outdated information.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+      description: If you know the wording or structure you expected, include it here.
+  - type: dropdown
+    id: client
+    attributes:
+      label: Relevant client
+      options:
+        - Not client-specific
+        - Claude Code
+        - Claude desktop
+        - Codex CLI
+        - Codex app
+        - Google Antigravity
+        - Other or not sure
