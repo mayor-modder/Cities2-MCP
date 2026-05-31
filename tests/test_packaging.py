@@ -167,7 +167,7 @@ class PackagingTests(unittest.TestCase):
         privacy_text = (ROOT / "PRIVACY.md").read_text(encoding="utf-8")
 
         self.assertEqual(plugin["name"], "cities2-mcp")
-        self.assertEqual(plugin["displayName"], "Cities2-MCP")
+        self.assertEqual(plugin["displayName"], "Cities2 MCP and Modding Toolkit")
         self.assertEqual(plugin["version"], "0.1.9")
         self.assertIn("trusted_workspace", plugin["userConfig"])
         self.assertNotIn("mcpServers", plugin)
@@ -184,7 +184,8 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(marketplace["plugins"][0]["version"], "0.1.9")
         self.assertIn("[PRIVACY.md](PRIVACY.md)", readme_text)
         self.assertIn("does not collect telemetry", privacy_text)
-        self.assertIn("does not share data with third parties", privacy_text)
+        self.assertIn("doesn't send any data to the cloud", privacy_text)
+        self.assertIn("does not collect telemetry, phone home, or send data to its authors", privacy_text)
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "bin" / "cities2-mcp-launcher.js").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "run_server.py").exists())
         self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "cities2_mcp" / "mcp_server.py").exists())
@@ -269,7 +270,7 @@ class PackagingTests(unittest.TestCase):
         marketplace = json.loads((ROOT / ".agents" / "plugins" / "marketplace.json").read_text(encoding="utf-8"))
 
         self.assertEqual(plugin["name"], "cities2-mcp")
-        self.assertEqual(plugin["interface"]["displayName"], "Cities2-MCP")
+        self.assertEqual(plugin["interface"]["displayName"], "Cities2 MCP and Modding Toolkit")
         self.assertEqual(plugin["version"], "0.1.9")
         self.assertEqual(
             plugin["interface"]["privacyPolicyURL"],

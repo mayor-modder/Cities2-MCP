@@ -1,6 +1,6 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+## Supported versions
 
 Security fixes are applied to the default branch first. When practical, fixes are
 also included in the latest public release.
@@ -11,7 +11,7 @@ also included in the latest public release.
 | Latest public release | Yes |
 | Older releases | Best effort |
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
 Please do not open a public issue with exploit details.
 
@@ -40,11 +40,12 @@ want credit.
 
 ## Scope
 
-Cities2-MCP is a local MCP server for Cities: Skylines II knowledge and modding
-workflows. It includes Python MCP server code, bundled wiki retrieval data,
-Agent Skills, mod project templates, local game Encyclopedia extraction, and
-workflow tools that can read, write, build, package, and dry-run launch local
-mod projects.
+Cities2 MCP and Modding Toolkit is a local MCP server for Cities: Skylines II
+knowledge and modding workflows. It includes Python MCP server code, bundled
+wiki retrieval data, agent skills, mod project templates, local game
+Encyclopedia extraction, plugin manifests, launchers, packaged client
+integration payloads, and workflow tools that can read, write, build, package,
+and dry-run launch local mod projects.
 
 Reports are especially useful when they involve:
 
@@ -61,24 +62,26 @@ Reports are especially useful when they involve:
 - denial of service caused by malformed corpus, encyclopedia, project, or
   template inputs
 
-The following are usually out of scope unless they bypass a Cities2-MCP security
+The following are usually out of scope unless they bypass a documented security
 control:
 
 - vulnerabilities in Cities: Skylines II, Unity, Paradox Mods, GitHub, MCP
   clients, .NET, Python, Node.js, or other third-party platforms
 - malicious mod code intentionally written by a user into a trusted workspace
 - risks that require a user to run arbitrary shell commands outside this server
-- prompt-injection behavior in an AI client that does not cause Cities2-MCP to
+- prompt-injection behavior in an AI client that does not cause this project to
   violate its documented filesystem or command-execution boundaries
 - dependency reports that do not affect this project
 - denial-of-service reports based only on excessive automated traffic
 
-## Safe Configuration Notes
+## Safe configuration notes
 
-- Configure `--workspace` roots narrowly. Only include repositories or parent
-  folders you trust the MCP workflow tools to read, write, build, and package.
-- Treat build and package tools as local development actions. They may execute
-  project toolchains and should only be used on trusted projects.
+- Configure trusted workspace roots narrowly, whether through `--workspace` or
+  your client/plugin settings. Only include repositories or parent folders you
+  trust the MCP workflow tools to read, write, build, and package.
+- Treat build, package, analyze, and launch helpers as local development
+  actions. They may execute project toolchains or inspect project files and
+  should only be used on trusted projects.
 - Do not commit locally extracted game Encyclopedia text, user save data,
   generated caches, or personal paths.
 - Review generated mod files before publishing or distributing them.

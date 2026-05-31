@@ -1,6 +1,6 @@
-# Cities2-MCP Codex Plugin
+# Cities2 MCP and Modding Toolkit Codex plugin
 
-This is the Codex plugin package for Cities2-MCP. It bundles five user-facing
+This is the Codex plugin package for Cities2 MCP and Modding Toolkit. It bundles five user-facing
 agent skills and a plugin-local MCP server launcher.
 
 Included skills: `cities2-knowledge`, `cities2-modding`, `cities2-mod-review`,
@@ -15,6 +15,6 @@ template-copy fallback for that case.
 
 Install from this repository marketplace:
 
-```powershell
+```sh
 codex plugin marketplace add mayor-modder/Cities2-MCP
 ```

@@ -7,7 +7,7 @@ metadata:
 
 # Cities2 Mod Debugging
 
-Debug CS2 mods with evidence, one focused fix at a time. Use corpus-backed docs for CS2-specific assumptions and record negative constraints that rule out unsafe or misleading shortcuts.
+Debug CS2 mods with evidence, one focused fix at a time. Use MCP-backed docs for CS2-specific assumptions and record negative constraints that rule out unsafe or misleading shortcuts.
 
 **Core principle:** Always find root cause before attempting fixes. Plausible source-code guesses are still guesses.
 
@@ -74,7 +74,7 @@ state, or debugger state.
 - `Modding.log`, `Unity/Player logs`, game launch output, exception stack traces, and mod loader messages.
 - UI debugger evidence from `localhost:9444` for React/TypeScript UI mods when the game and debugger are available.
 - Screenshots, reproduction steps, user playtesting notes, save copies, and version/build numbers.
-- Cities2-MCP wiki/reference results for corpus-backed API, toolchain, UI, localization, packaging, and compatibility checks.
+- MCP server wiki/reference results for API, toolchain, UI, localization, packaging, and compatibility checks.
 
 For runtime or UI behavior that fails only in game, first distinguish package
 layout, installed files, playset/load state, game logs, UI debugger state, and

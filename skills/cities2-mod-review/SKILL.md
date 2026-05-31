@@ -7,12 +7,12 @@ metadata:
 
 # Cities2 Mod Review
 
-Review the mod as a good-faith quality pass: find practical risks, missing evidence, and user-impacting gaps. Prefer corpus-backed best practices from Cities2-MCP when judging CS2-specific APIs, packaging, UI, localization, saves, and toolchain behavior.
+Review the mod as a good-faith quality pass: find practical risks, missing evidence, and user-impacting gaps. Prefer documented best practices from the MCP server when judging CS2-specific APIs, packaging, UI, localization, saves, and toolchain behavior.
 
 ## Review Sources
 
 - Inspect the mod files, build/package config, README/release notes, logs, screenshots, and test notes when available.
-- Use Cities2-MCP wiki/reference lookup for CS2 modding claims before treating them as a best practice.
+- Use MCP server wiki/reference lookup for CS2 modding claims before treating them as a best practice.
 - Separate normative modding constraints from descriptive gameplay statements. Gameplay facts explain what the game does; modding constraints say what the mod should or must do safely.
 - If source access is partial, say what was reviewed and what remains unknown.
 - For diff, branch, or PR-style reviews, identify the reviewed range or changed files, compare against the user request or plan, inspect affected call sites, and state if no diff or requirements were available.
@@ -23,7 +23,7 @@ Before a large diff, branch, PR, release-readiness, or quality audit, check
 whether external review agents are available on this user's machine. Use normal
 PATH lookup, not hardcoded install paths: `command -v codex`, `command -v
 claude`, and `command -v agy` on POSIX shells, or `Get-Command codex`,
-`Get-Command claude`, and `Get-Command agy` in PowerShell.
+`Get-Command claude`, and `Get-Command agy` on Windows.
 
 Ask before running external reviewers because they may use network access,
 credentials, tokens, paid plans, or local configuration. If two or more external
@@ -49,7 +49,7 @@ answer, but keep them if the user wants an audit trail.
 
 Do not outsource judgment. Synthesize the results findings-first, de-duplicate
 overlap, distinguish confirmed issues from single-reviewer concerns, and validate
-external findings against the CS2 review rubric, corpus-backed standards, safety
+external findings against the CS2 review rubric, documented standards, safety
 rules, attribution rules, and available project evidence.
 
 ## Review Rubric
@@ -60,9 +60,9 @@ rules, attribution rules, and available project evidence.
 - Packaging hygiene: manifest metadata, dependencies, thumbnail, build artifacts, README, changelog, and excluded temporary files.
 - Verification gaps: build result, static analysis, smoke launch, local playtesting, logs, UI debugger evidence, and known untested areas.
 
-## Corpus-Backed Standards
+## Documented Standards
 
-Use corpus-backed best practices as defaults when the docs support them. Quote or cite compactly by page/tool result when helpful.
+Use documented best practices as defaults when the docs support them. Quote or cite compactly by page/tool result when helpful.
 
 Treat negative constraints as review findings when they prevent likely mistakes:
 
