@@ -40,7 +40,7 @@ body:
     attributes:
       label: Version
       description: If you know it, include the installed plugin or package version.
-      placeholder: "0.2.0"
+      placeholder: "0.1.9"
   - type: dropdown
     id: operating-system
     attributes:
