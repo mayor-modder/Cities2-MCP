@@ -33,7 +33,7 @@
         },
         {
           "name": "CITIES2_LOCALE_COK",
-          "description": "Optional path to Locale.cok when the in-game Encyclopedia file should be selected directly.",
+          "description": "Optional path to Locale.cok when the in-game encyclopedia file should be selected directly.",
           "isRequired": false,
           "format": "string",
           "isSecret": false

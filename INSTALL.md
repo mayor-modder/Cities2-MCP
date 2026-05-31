@@ -140,7 +140,7 @@ Type `/cities2` and choose one of the Cities2 skills.
 
 ## Workspace access
 
-Game knowledge and Encyclopedia lookup work immediately. Mod workflow tools need
+Game knowledge and encyclopedia lookup work immediately. Mod workflow tools need
 a trusted workspace, and Claude and Codex usually use the project you opened:
 
 - In Claude Code and Codex CLI, start the client from the mod project folder.
@@ -155,7 +155,7 @@ Project builds execute trusted workspace code through `npm`, `dotnet`, and packa
 
 ## Optional build prerequisites
 
-Knowledge, Encyclopedia, and scaffold tools do not require the Cities: Skylines II
+Knowledge, encyclopedia, and scaffold tools do not require the Cities: Skylines II
 modding toolchain. Builds may need:
 
 - UI-only mods need Node.js and npm.
@@ -188,7 +188,7 @@ client that cannot install plugins:
 ```
 
 The package includes wiki data, so `--data-dir` is not needed. Omit `--workspace`
-when you only want wiki and local Encyclopedia tools.
+when you only want wiki and local encyclopedia tools.
 
 To check or pin the package:
 
@@ -215,4 +215,4 @@ For a source checkout, run `python -m cities2_mcp.mcp_server --workspace <folder
 | Codex workflow tools are allowlist-blocked | Invoke `$cities2-mcp:cities2-modding`; the skill can use the bundled-template fallback inside the current Codex workspace. |
 | `npm.ps1` is blocked on Windows | Use `npm.cmd install` and `npm.cmd run build`. |
 | C# build says .NET is missing | Install the .NET 6 runtime and confirm with `dotnet --list-runtimes`. |
-| Game Encyclopedia unavailable | Wiki tools still work. Set `CITIES2_GAME_DIR` or `CITIES2_LOCALE_COK` only if the game is installed somewhere unusual. |
+| Game encyclopedia unavailable | Wiki tools still work. Set `CITIES2_GAME_DIR` or `CITIES2_LOCALE_COK` only if the game is installed somewhere unusual. |

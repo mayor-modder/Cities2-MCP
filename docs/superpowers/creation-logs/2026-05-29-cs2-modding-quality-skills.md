@@ -228,7 +228,7 @@ Revision:
 
 - `cities2-modding` tells agents to use CS2 wiki retrieval for APIs, toolchain
   setup, templates, localization, UI mods, and package rules.
-- It explicitly says the local Game Encyclopedia is not the primary source for
+- It explicitly says the local game encyclopedia is not the primary source for
   modding APIs.
 
 Status:

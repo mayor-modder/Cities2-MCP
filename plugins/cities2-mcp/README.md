@@ -8,7 +8,7 @@ Included skills: `cities2-knowledge`, `cities2-modding`, `cities2-mod-review`,
 
 The plugin `.mcp.json` points at `bin/cities2-mcp-launcher.js`, which runs the
 vendored Python package from `vendor/cities2_mcp`. Codex currently launches the
-server from the installed plugin cache, so wiki and Encyclopedia tools work
+server from the installed plugin cache, so wiki and encyclopedia tools work
 immediately, while direct MCP workflow tools may be allowlist-blocked for the
 project you opened. The bundled `cities2-modding` skill includes an explicit
 template-copy fallback for that case.
