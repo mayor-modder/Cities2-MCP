@@ -13,6 +13,11 @@ Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude d
 See [INSTALL.md](INSTALL.md) for full installation details, direct MCP config,
 workspace setup, build prerequisites, and troubleshooting.
 
+Testing status: plugin installs and baseline workflows are being tested across
+Claude, Codex, and Google Antigravity, and several skill-behavior fixes are
+still open. See the
+[open issues](https://github.com/mayor-modder/Cities2-MCP/issues).
+
 ## What it can do
 
 ### Search game and modding information
