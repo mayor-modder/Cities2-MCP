@@ -59,9 +59,9 @@ Before writing files, building, packaging, or launching:
    - Offer the user the practical fix: add the specific mod project folder, or
      preferably add the parent folder that contains all of their CS2 mod
      projects so future projects under it work too.
-   - In Claude Desktop, direct the user to the plugin/extension
+   - In Claude desktop, direct the user to the plugin/extension
      settings and the `Trusted mod projects folder` option. If the agent has
-     local file/command access, offer to fix the Claude Desktop setting directly:
+     local file/command access, offer to fix the Claude desktop setting directly:
      identify the relevant settings file or app-managed config, ask before
      editing it, back it up, and set the folder to either this project or a
      shared parent folder. In Claude Code, project-scoped plugin installs

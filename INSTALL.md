@@ -1,9 +1,9 @@
 # Install Cities2 MCP and Modding Toolkit
 
 The Cities2 MCP and Modding Toolkit adds Cities: Skylines II knowledge and
-modding workflows to Claude, Codex, and Antigravity.
+modding workflows to Claude, the Codex app, and Google Antigravity.
 
-Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude Desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [Codex Desktop](INSTALL.md#install-in-codex-desktop) | [Antigravity](INSTALL.md#install-in-antigravity)
+Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [Codex app](INSTALL.md#install-in-codex-app) | [Google Antigravity](INSTALL.md#install-in-google-antigravity)
 
 ## Claude
 
@@ -64,7 +64,7 @@ codex
 Enter `/plugin`, install **Cities2 MCP and Modding Toolkit**, then restart
 Codex in the same folder.
 
-### Install in Codex Desktop
+### Install in Codex app
 
 1. Open the Codex app and choose **Plugins** from the sidebar.
 2. Next to the "Search plugins" input, click **Built by OpenAI**.
@@ -89,23 +89,23 @@ $cities2-mcp:cities2-mod-review Review this Cities: Skylines II mod before I ins
 
 Use `/skills` or type `$` to browse installed Codex skills.
 
-## Antigravity
+## Google Antigravity
 
-### Install in Antigravity
+### Install in Google Antigravity
 
-Clone the plugin into Antigravity's plugin folder:
+Clone the plugin into Google Antigravity's plugin folder:
 
-```powershell
-$repo = Join-Path $env:TEMP "Cities2-MCP"
-$plugin = "$env:USERPROFILE\.gemini\config\plugins\cities2-mcp"
-Remove-Item -Recurse -Force $repo,$plugin -ErrorAction SilentlyContinue
-git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP $repo
-New-Item -ItemType Directory -Force (Split-Path $plugin) | Out-Null
-Copy-Item -Recurse (Join-Path $repo "plugins\cities2-mcp") $plugin
+```sh
+tmp="${TMPDIR:-/tmp}/Cities2-MCP"
+plugin="$HOME/.gemini/config/plugins/cities2-mcp"
+rm -rf "$tmp" "$plugin"
+git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP "$tmp"
+mkdir -p "$(dirname "$plugin")"
+cp -R "$tmp/plugins/cities2-mcp" "$plugin"
 ```
 
-Then start `agy` from your mod workspace, or restart Antigravity Desktop.
-Desktop and CLI read this plugin folder.
+Then start `agy` from your mod workspace, or restart the Google Antigravity app. Both use this plugin folder.
+This installs to `~/.gemini/config/plugins/cities2-mcp`.
 
 If you download the GitHub ZIP instead, copy the extracted `plugins/cities2-mcp`
 folder to the Antigravity plugin folder. `plugin.json` should be directly inside it.
@@ -114,7 +114,7 @@ To update later, rerun the same install commands.
 
 Direct URL installs are not currently supported for this plugin.
 
-### Using Skills in Antigravity
+### Using Skills in Google Antigravity
 
 Type `/cities2` and choose one of the Cities2 skills.
 
@@ -138,7 +138,7 @@ a trusted workspace, and Claude and Codex usually use the project you opened:
 - In Claude Code and Codex CLI, start the client from the mod project folder.
 - If a tool reports `Path must stay inside configured workspaces`, add the mod
   project folder or a trusted parent folder and restart the client.
-- In Claude Desktop, that setting is called **Trusted mod projects folder**.
+- In Claude desktop, that setting is called **Trusted mod projects folder**.
 
 Codex plugin MCP servers may launch from the plugin cache. If a direct workflow tool is
 allowlist-blocked, invoke `cities2-modding`; it has a bundled-template fallback.

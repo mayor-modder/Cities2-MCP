@@ -40,10 +40,10 @@ body:
       multiple: true
       options:
         - Claude Code
-        - Claude Desktop
+        - Claude desktop
         - Codex CLI
-        - Codex Desktop
-        - Antigravity
+        - Codex app
+        - Google Antigravity
         - Other or not sure
   - type: textarea
     id: safety
