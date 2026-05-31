@@ -1,0 +1,57 @@
+name: Feature request
+description: Suggest an improvement to Cities2-MCP, skills, or documentation.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. If the request involves a security concern, please use GitHub's private vulnerability reporting form instead:
+        https://github.com/mayor-modder/Cities2-MCP/security/advisories/new
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to do, and where does the current experience fall short?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: What would a good version of this look like?
+    validations:
+      required: true
+  - type: checkboxes
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - label: Installation or marketplace plugin
+        - label: Knowledge, wiki text, patch notes, or Encyclopedia lookup
+        - label: Agent skills or slash commands
+        - label: Mod scaffold, build, package, launch, or review workflow
+        - label: Documentation
+        - label: Other
+  - type: dropdown
+    id: clients
+    attributes:
+      label: Relevant clients
+      multiple: true
+      options:
+        - Claude Code
+        - Claude Desktop
+        - Codex CLI
+        - Codex Desktop
+        - Antigravity
+        - Other or not sure
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety or best-practice impact
+      description: If this affects mod quality, security, packaging, or playtesting, describe the impact.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or workarounds
+      description: If you have found another way to do this, note it here.
