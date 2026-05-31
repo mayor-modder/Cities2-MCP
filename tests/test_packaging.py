@@ -353,9 +353,10 @@ class PackagingTests(unittest.TestCase):
             finally:
                 self._stop_proc(proc)
 
-    def test_repository_root_is_antigravity_plugin(self) -> None:
-        plugin = json.loads((ROOT / "plugin.json").read_text(encoding="utf-8"))
-        plugin_mcp = json.loads((ROOT / "mcp_config.json").read_text(encoding="utf-8"))
+    def test_codex_plugin_package_is_antigravity_plugin(self) -> None:
+        plugin_root = ROOT / "plugins" / "cities2-mcp"
+        plugin = json.loads((plugin_root / "plugin.json").read_text(encoding="utf-8"))
+        plugin_mcp = json.loads((plugin_root / "mcp_config.json").read_text(encoding="utf-8"))
 
         self.assertEqual(plugin["name"], "cities2-mcp")
         self.assertEqual(plugin["version"], "0.1.9")
@@ -365,74 +366,28 @@ class PackagingTests(unittest.TestCase):
         bootstrap = plugin_mcp["mcpServers"]["cities2-mcp"]["args"][1]
         self.assertIn("antigravity-cli", bootstrap)
         self.assertIn("bin','cities2-mcp-launcher.js", bootstrap)
-        self.assertTrue((ROOT / "bin" / "cities2-mcp-launcher.js").exists())
+        self.assertFalse((ROOT / "plugin.json").exists())
+        self.assertFalse((ROOT / "mcp_config.json").exists())
+        self.assertFalse((ROOT / "start_mcp.bat").exists())
+        self.assertFalse((ROOT / "bin" / "cities2-mcp-launcher.js").exists())
+        self.assertTrue((plugin_root / "bin" / "cities2-mcp-launcher.js").exists())
         for skill_name in SKILL_NAMES:
-            self.assertTrue((ROOT / "skills" / skill_name / "SKILL.md").exists())
+            self.assertTrue((plugin_root / "skills" / skill_name / "SKILL.md").exists())
 
     def test_antigravity_is_not_a_generated_package_payload(self) -> None:
         self.assertFalse((ROOT / "integrations" / "google").exists())
         self.assertFalse((ROOT / "gemini-extension.json").exists())
 
-    def test_repository_root_antigravity_launcher_reports_version(self) -> None:
-        result = subprocess.run(
-            [
-                "node",
-                str(ROOT / "bin" / "cities2-mcp-launcher.js"),
-                "--version",
-            ],
-            cwd=ROOT,
-            env={**os.environ, "PLUGIN_ROOT": str(ROOT)},
-            text=True,
-            capture_output=True,
-            check=True,
-        )
-
-        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
-
-    def test_repository_root_antigravity_launcher_serves_mcp(self) -> None:
-        from tests.smoke_mcp import call, rpc, rpc_ndjson
-
-        with tempfile.TemporaryDirectory(prefix="cities2-mcp-root-antigravity-plugin-") as tmp:
-            proc = subprocess.Popen(
-                [
-                    "node",
-                    str(ROOT / "bin" / "cities2-mcp-launcher.js"),
-                    "--workspace",
-                    tmp,
-                    "--mods-dir",
-                    str(Path(tmp) / "mods"),
-                ],
-                cwd=ROOT,
-                env={**os.environ, "PLUGIN_ROOT": str(ROOT)},
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            assert proc.stdin and proc.stdout and proc.stderr
-
-            try:
-                init = rpc_ndjson(proc, 1, "initialize", {"protocolVersion": "2025-06-18"})
-                tools = rpc(proc, 2, "tools/list", {})
-                status = call(proc, 3, "source_status", {})
-                scaffold = call(proc, 4, "scaffold_project", {"name": "Antigravity Root Version", "template": "cities2-csharp"})
-
-                self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.9")
-                self.assertEqual(len(tools["result"]["tools"]), 14)
-                self.assertTrue(status["wiki"]["available"])
-                self.assertEqual(scaffold["game_version"], "1.5.*")
-                self.assertIn("game_version_source", scaffold)
-            finally:
-                self._stop_proc(proc)
-
-    def test_repository_root_mcp_config_launches_from_workspace_cwd(self) -> None:
-        plugin_mcp = json.loads((ROOT / "mcp_config.json").read_text(encoding="utf-8"))
+    def test_antigravity_plugin_mcp_config_launches_from_workspace_cwd(self) -> None:
+        plugin_root = ROOT / "plugins" / "cities2-mcp"
+        plugin_mcp = json.loads((plugin_root / "mcp_config.json").read_text(encoding="utf-8"))
         server = plugin_mcp["mcpServers"]["cities2-mcp"]
         with tempfile.TemporaryDirectory(prefix="cities2-mcp-root-antigravity-workspace-") as tmp:
             workspace = Path(tmp)
             result = subprocess.run(
                 [server["command"], *server["args"], "--version"],
                 cwd=workspace,
-                env={**os.environ, "CITIES2_MCP_PLUGIN_ROOT": str(ROOT)},
+                env={**os.environ, "CITIES2_MCP_PLUGIN_ROOT": str(plugin_root)},
                 text=True,
                 capture_output=True,
                 check=True,

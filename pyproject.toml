@@ -62,8 +62,7 @@ include = [
   "THIRD_PARTY_NOTICES.md",
   "SECURITY.md",
   "server.json",
-  "mcp.config.example.json",
-  "start_mcp.bat"
+  "mcp.config.example.json"
 ]
 
 [tool.ruff]

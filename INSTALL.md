@@ -111,20 +111,21 @@ stopping after build verification.
 Run this once in PowerShell:
 
 ```powershell
-git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP "$env:USERPROFILE\.gemini\config\plugins\cities2-mcp"
+$repo = Join-Path $env:TEMP "Cities2-MCP"
+$plugin = "$env:USERPROFILE\.gemini\config\plugins\cities2-mcp"
+Remove-Item -Recurse -Force $repo,$plugin -ErrorAction SilentlyContinue
+git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP $repo
+New-Item -ItemType Directory -Force (Split-Path $plugin) | Out-Null
+Copy-Item -Recurse (Join-Path $repo "plugins\cities2-mcp") $plugin
 ```
 
 Then start `agy` from your mod workspace, or restart Antigravity Desktop.
 Desktop and CLI read this plugin folder.
 
-If you download the GitHub ZIP instead, extract the repository contents to that
-same `cities2-mcp` folder. `plugin.json` should be directly inside it.
+If you download the GitHub ZIP instead, copy the extracted `plugins/cities2-mcp`
+folder to the Antigravity plugin folder. `plugin.json` should be directly inside it.
 
-To update later:
-
-```powershell
-git -C "$env:USERPROFILE\.gemini\config\plugins\cities2-mcp" pull --ff-only
-```
+To update later, rerun the same install commands.
 
 Do not use `agy plugin install https://github.com/mayor-modder/Cities2-MCP` for
 this repo. Current `agy` URL installs expect the older Gemini extension format,
