@@ -232,7 +232,7 @@ class BuildRunner:
                 rel_dir = current.relative_to(root).as_posix()
                 if rel_dir == ".":
                     rel_dir = ""
-                self._reject_outside_reparse_points(root, current, dirnames)
+                self._prune_unsafe_directories(root, current, dirnames)
                 dirnames[:] = [
                     dirname
                     for dirname in dirnames
@@ -277,14 +277,17 @@ class BuildRunner:
         return name
 
     @staticmethod
-    def _reject_outside_reparse_points(root: Path, current: Path, dirnames: List[str]) -> None:
+    def _prune_unsafe_directories(root: Path, current: Path, dirnames: List[str]) -> None:
         for dirname in list(dirnames):
             path = current / dirname
-            if not path.is_symlink():
-                continue
             rel = path.relative_to(root).as_posix()
-            if not ProjectScaffolder.is_within_path(path.resolve(), root):
-                raise ValueError(f"package directory resolves outside project root: {rel}")
+            if path.is_symlink():
+                dirnames.remove(dirname)
+                if not ProjectScaffolder.is_within_path(path.resolve(), root):
+                    raise ValueError(f"package directory resolves outside project root: {rel}")
+                continue
+            if ProjectScaffolder.is_reparse_point(path):
+                dirnames.remove(dirname)
 
     def build_project(
         self,

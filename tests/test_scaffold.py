@@ -3,10 +3,12 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import subprocess
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 from cities2_mcp.build_runner import BuildRunner
 from cities2_mcp.project_scaffold import ProjectScaffolder
@@ -422,6 +424,17 @@ class ScaffoldTests(unittest.TestCase):
         except (OSError, NotImplementedError) as exc:
             self.skipTest(f"symlink creation is not available in this environment: {exc}")
 
+    def _junction_or_skip(self, link: Path, target: Path) -> None:
+        if os.name != "nt":
+            self.skipTest("Windows junction coverage only applies on Windows")
+        result = subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(link), str(target)],
+            text=True,
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            self.skipTest(f"junction creation is not available in this environment: {result.stderr or result.stdout}")
+
     def test_package_project_rejects_outside_symlink_file(self) -> None:
         result = self.scaffolder.scaffold_project(
             name="Package Link File",
@@ -464,6 +477,32 @@ class ScaffoldTests(unittest.TestCase):
                 package_name=None,
                 exclude_globs=None,
             )
+
+    def test_package_project_prunes_outside_junction_before_descent(self) -> None:
+        result = self.scaffolder.scaffold_project(
+            name="Package Junction",
+            template="cities2-ui",
+            target_dir=None,
+            metadata={},
+            options={},
+        )
+        project_dir = Path(result["project_dir"])
+        outside = self.tmp / "outside-junction"
+        outside.mkdir()
+        (outside / "secret.txt").write_text("outside secret", encoding="utf-8")
+        self._junction_or_skip(project_dir / "junction-outside", outside)
+
+        package = BuildRunner(self.scaffolder).package_project(
+            project_dir=str(project_dir),
+            output_dir=None,
+            package_name=None,
+            exclude_globs=None,
+        )
+
+        with zipfile.ZipFile(package["package_path"]) as zf:
+            names = set(zf.namelist())
+
+        self.assertNotIn("junction-outside/secret.txt", names)
 
     def test_package_project_rejects_hardlinked_file(self) -> None:
         result = self.scaffolder.scaffold_project(
@@ -520,6 +559,33 @@ class ScaffoldTests(unittest.TestCase):
                 glob=str(self.tmp / "*.txt"),
             )
 
+    def test_list_project_tree_prunes_outside_junction_before_descent(self) -> None:
+        result = self.scaffolder.scaffold_project(
+            name="Tree Junction",
+            template="cities2-ui",
+            target_dir=None,
+            metadata={},
+            options={},
+        )
+        project_dir = Path(result["project_dir"])
+        outside = self.tmp / "outside-tree-junction"
+        outside.mkdir()
+        (outside / "secret.txt").write_text("outside secret", encoding="utf-8")
+        self._junction_or_skip(project_dir / "junction-outside", outside)
+
+        original_is_file = Path.is_file
+
+        def fail_if_junction_child(path: Path) -> bool:
+            if "junction-outside" in path.parts:
+                raise AssertionError(f"list_project_tree descended into junction child: {path}")
+            return original_is_file(path)
+
+        with mock.patch.object(Path, "is_file", fail_if_junction_child):
+            payload = self.scaffolder.list_project_tree(project_dir=result["project_dir"])
+        rels = {item["relative"].replace("\\", "/") for item in payload["files"]}
+
+        self.assertNotIn("junction-outside/secret.txt", rels)
+
     def test_scaffold_escapes_metadata_in_code_and_xml_templates(self) -> None:
         result = self.scaffolder.scaffold_project(
             name="Metadata Escape",
@@ -552,6 +618,19 @@ class ScaffoldTests(unittest.TestCase):
                 metadata={"root_namespace": 'Bad.Namespace; System.IO.File.Delete("x")'},
                 options={},
             )
+
+    def test_scaffold_allows_dotted_root_namespace_metadata(self) -> None:
+        result = self.scaffolder.scaffold_project(
+            name="Dotted Namespace",
+            template="cities2-csharp",
+            target_dir=None,
+            metadata={"root_namespace": "Company.ModName"},
+            options={},
+        )
+        project_dir = Path(result["project_dir"])
+        mod_cs = (project_dir / "Mod.cs").read_text(encoding="utf-8")
+
+        self.assertIn("namespace Company.ModName;", mod_cs)
 
     def test_build_runner_adds_common_windows_tool_dirs_to_subprocess_path(self) -> None:
         program_files = self.tmp / "Program Files"

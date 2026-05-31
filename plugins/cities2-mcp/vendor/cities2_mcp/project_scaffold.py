@@ -3,13 +3,16 @@ from __future__ import annotations
 import json
 import os
 import re
+import stat
 from html import escape
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Dict, List, Optional, Sequence
 
 JSON = Dict[str, Any]
 FALLBACK_GAME_VERSION_PATTERN = "1.5.*"
-IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+IDENTIFIER_SEGMENT_RE = r"[A-Za-z_][A-Za-z0-9_]*"
+IDENTIFIER_RE = re.compile(f"^{IDENTIFIER_SEGMENT_RE}$")
+NAMESPACE_RE = re.compile(f"^{IDENTIFIER_SEGMENT_RE}(?:\\.{IDENTIFIER_SEGMENT_RE})*$")
 PROJECT_SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 
@@ -83,6 +86,41 @@ class ProjectScaffolder:
         if ".." in posix.parts or ".." in windows.parts:
             raise ValueError(f"{field_name} must not contain parent directory traversal")
         return value
+
+    @staticmethod
+    def is_reparse_point(path: Path) -> bool:
+        is_junction = getattr(path, "is_junction", None)
+        if callable(is_junction) and is_junction():
+            return True
+        try:
+            attributes = getattr(path.lstat(), "st_file_attributes", 0)
+        except OSError:
+            return False
+        return bool(attributes & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0))
+
+    @staticmethod
+    def _relative_glob_matches(relative: str, pattern: str) -> bool:
+        rel_path = PurePosixPath(relative)
+        if pattern == "**/*":
+            return True
+        if pattern.startswith("**/") and rel_path.match(pattern[3:]):
+            return True
+        return rel_path.match(pattern)
+
+    @classmethod
+    def _walk_project_files(cls, root: Path) -> List[Path]:
+        files: List[Path] = []
+        stack = [root]
+        while stack:
+            current = stack.pop()
+            for child in sorted(current.iterdir()):
+                if cls.is_reparse_point(child):
+                    continue
+                if child.is_dir():
+                    stack.append(child)
+                elif child.is_file():
+                    files.append(child)
+        return files
 
     @staticmethod
     def slug(name: str) -> str:
@@ -333,6 +371,13 @@ class ProjectScaffolder:
         return text
 
     @staticmethod
+    def _validate_namespace(value: object, *, field_name: str) -> str:
+        text = str(value or "").strip()
+        if not NAMESPACE_RE.fullmatch(text):
+            raise ValueError(f"{field_name} must be a valid C# namespace")
+        return text
+
+    @staticmethod
     def _validate_project_slug(value: object) -> str:
         text = str(value or "").strip()
         if not PROJECT_SLUG_RE.fullmatch(text):
@@ -351,7 +396,7 @@ class ProjectScaffolder:
     def _normalize_metadata(cls, metadata: JSON) -> JSON:
         normalized = dict(metadata)
         normalized["project_slug"] = cls._validate_project_slug(normalized.get("project_slug", ""))
-        normalized["root_namespace"] = cls._validate_identifier(
+        normalized["root_namespace"] = cls._validate_namespace(
             normalized.get("root_namespace", ""),
             field_name="root_namespace",
         )
@@ -666,13 +711,14 @@ class ProjectScaffolder:
 
         files: List[JSON] = []
         safe_glob = self.validate_relative_glob(glob)
-        for p in sorted(root.glob(safe_glob)):
-            if not p.is_file():
-                continue
+        for p in self._walk_project_files(root):
             resolved = p.resolve()
             if not self.is_within_path(resolved, root):
                 continue
             rel = resolved.relative_to(root)
+            rel_str = rel.as_posix()
+            if not self._relative_glob_matches(rel_str, safe_glob):
+                continue
             if not include_hidden and any(part.startswith(".") for part in rel.parts):
                 continue
             files.append(
