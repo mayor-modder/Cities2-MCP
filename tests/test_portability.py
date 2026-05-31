@@ -507,7 +507,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertFalse((ROOT / ".gitmodules").exists())
         self.assertTrue((ROOT / "cities2_mcp" / "retrieval" / "mcp_server.py").exists())
         self.assertFalse((ROOT / "cities2_mcp" / "retrieval" / "LICENSE.wiki-mcp").exists())
-        self.assertIn("wiki-mcp contributors", notices)
+        self.assertNotIn("wiki-mcp contributors", notices)
         self.assertFalse((ROOT / "vendor" / "wiki-mcp").exists())
         self.assertNotIn("vendor/wiki-mcp", server_text)
         self.assertNotIn("wiki_mcp_server", server_text)
