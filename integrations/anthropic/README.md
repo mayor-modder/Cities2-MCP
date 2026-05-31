@@ -1,9 +1,9 @@
-# Anthropic Distribution
+# Anthropic distribution
 
 `claude-plugin/` is the primary Claude package. It bundles the Claude slash
 commands, a plugin-local MCP launcher, and a vendored copy of the Python package
 and wiki corpus. Installing it from the Claude plugin marketplace starts the MCP
-server automatically in Claude Code and Claude Desktop.
+server automatically in Claude Code and Claude desktop.
 
 Validate the plugin from the repository root:
 

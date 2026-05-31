@@ -28,10 +28,10 @@ body:
       multiple: true
       options:
         - Claude Code
-        - Claude Desktop
+        - Claude desktop
         - Codex CLI
-        - Codex Desktop
-        - Antigravity
+        - Codex app
+        - Google Antigravity
         - Other or not sure
     validations:
       required: true
@@ -40,7 +40,7 @@ body:
     attributes:
       label: Version
       description: If you know it, include the installed plugin or package version.
-      placeholder: "0.2.0"
+      placeholder: "0.1.9"
   - type: dropdown
     id: operating-system
     attributes:

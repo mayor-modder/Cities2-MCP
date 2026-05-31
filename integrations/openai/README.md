@@ -1,6 +1,6 @@
-# OpenAI Codex Distribution
+# OpenAI Codex distribution
 
-Cities2-MCP publishes a Codex plugin through this repository's plugin
+Cities2 MCP and Modding Toolkit publishes a Codex plugin through this repository's plugin
 marketplace:
 
 - `.agents/plugins/marketplace.json` is the Codex marketplace catalog.

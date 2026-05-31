@@ -49,7 +49,7 @@ Use the connected `cities2-mcp` MCP server and bundled `cities2-mod-review` skil
 
 $ARGUMENTS
 
-Focus on safety, corpus-backed best practices, negative constraints, maintainability, user value, packaging hygiene, attribution, and verification gaps.
+Focus on safety, documented best practices, negative constraints, maintainability, user value, packaging hygiene, attribution, and verification gaps.
 """,
     "cities2-mod-debugging": """---
 description: "Debug a Cities: Skylines II mod build, package, runtime, log, or in-game behavior issue"
@@ -214,7 +214,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--keep-legacy",
         action="store_true",
-        help="Do not remove old Cities2-MCP asset names such as cities2-game-updates.",
+        help="Do not remove old agent asset names such as cities2-game-updates.",
     )
     args = parser.parse_args(argv)
 

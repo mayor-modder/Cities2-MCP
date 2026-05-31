@@ -9,7 +9,7 @@ metadata:
 
 Use this skill for Cities: Skylines II modding and local mod-project work through Cities2-MCP. Keep documentation retrieval separate from write/build actions.
 
-Trigger this skill for asset/mod workflows, toolchain questions, project analysis, file edits, scaffolding, build/package/install work, or local dry-run launches, even when the user does not mention Cities2-MCP.
+Trigger this skill for asset/mod workflows, toolchain questions, project analysis, file edits, scaffolding, build/package/install work, or local dry-run launches, even when the user does not mention this plugin.
 
 ## Source And Tool Roles
 
@@ -34,7 +34,7 @@ release-readiness workflow.
 
 1. Turn the modding question into compact keyword terms.
 2. Search with `search(query, limit=5)` and `query_reference(query, limit=5)`.
-3. For implementation, review, debugging, or release decisions, search for task-specific corpus-backed best practices and negative constraints. Useful terms include `best practice`, `recommended`, `should`, `do not`, `should not`, `must not`, `cannot`, `can't`, and `won't`.
+3. For implementation, review, debugging, or release decisions, search for task-specific documented best practices and negative constraints. Useful terms include `best practice`, `recommended`, `should`, `do not`, `should not`, `must not`, `cannot`, `can't`, and `won't`.
 4. Fetch the strongest wiki page with `get_page(page_id)` when snippets are not enough.
 5. Use `get_snippets(query, limit=3)` for code-oriented wiki snippets.
 6. Keep track of source page titles, URLs, and snippet topics.
@@ -59,9 +59,9 @@ Before writing files, building, packaging, or launching:
    - Offer the user the practical fix: add the specific mod project folder, or
      preferably add the parent folder that contains all of their CS2 mod
      projects so future projects under it work too.
-   - In Claude Desktop, direct the user to the Cities2-MCP plugin/extension
+   - In Claude desktop, direct the user to the plugin/extension
      settings and the `Trusted mod projects folder` option. If the agent has
-     local file/command access, offer to fix the Claude Desktop setting directly:
+     local file/command access, offer to fix the Claude desktop setting directly:
      identify the relevant settings file or app-managed config, ask before
      editing it, back it up, and set the folder to either this project or a
      shared parent folder. In Claude Code, project-scoped plugin installs
@@ -74,7 +74,7 @@ Before writing files, building, packaging, or launching:
      edits/shell commands as an explicit fallback and say the MCP workflow tool
      was blocked.
    - If falling back after `scaffold_project` is blocked, do not hand-roll a new
-     mod template from wiki prose. Copy the bundled Cities2-MCP template files
+     mod template from wiki prose. Copy the bundled template files
      from the installed package/plugin cache when available, preserving the
      bundled structure, dependencies, and current corpus-derived game metadata.
      If the bundled template is not reachable, ask whether to configure MCP
@@ -95,9 +95,9 @@ Before writing files, building, packaging, or launching:
 
 If a write/build tool returns diagnostics, summarize the actionable errors first and include paths or commands that matter.
 
-On Windows PowerShell, use `npm.cmd` for both install and build commands; do not
+On Windows, use `npm.cmd` for both install and build commands; do not
 try bare `npm` first because execution policy can block `npm.ps1`. Use
-PowerShell-native file listing (`Get-ChildItem`) when checking template files or
+native file listing (`Get-ChildItem`) when checking template files or
 build outputs instead of assuming `rg` is installed. Verify generated outputs by
 checking file existence, size, and a short relevant snippet only; do not dump
 large generated files such as `package-lock.json` into the transcript. If the
@@ -119,7 +119,7 @@ enable or confirm the playset/mod if needed, and then run the playtest scenario.
 
 If a workflow tool returns a workspace/allowlist/configuration error, pause MCP
 workflow-tool retries and help the user configure access before trying that MCP
-tool again. Phrase it as a normal setup step, not as a crash: "Cities2-MCP can
+tool again. Phrase it as a normal setup step, not as a crash: "This plugin can
 work on that project after you add its folder, or a shared parent folder, to
 Trusted mod projects folder." In Codex, when the plugin cache allowlist blocks
 MCP workflow tools, you may use the explicit bundled-template or normal Codex
@@ -129,8 +129,8 @@ blocked.
 When scaffolding a new project, `scaffold_project` chooses a default `game_version`
 from the bundled corpus and returns `game_version`, `game_version_source`,
 `bundled_game_version`, and any installed-game warning. If the warning says the
-installed game appears newer than the bundled Cities2-MCP package, tell the user
-the project was still created and recommend checking for an updated Cities2-MCP
+installed game appears newer than the bundled package, tell the user
+the project was still created and recommend checking for an updated package
 release before deeper modding work. If the user names a newer target game
 version than the bundled default, pass `metadata.game_version` explicitly.
 

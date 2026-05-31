@@ -69,7 +69,7 @@ class PortabilityTests(unittest.TestCase):
             "cs2-csharp",
             "cs2-ui",
             "cs2-hybrid",
-            "/Users/matt/",
+            "/Users/Example/",
             "/usr/bin/python3",
         ]
         targets = [
@@ -88,18 +88,20 @@ class PortabilityTests(unittest.TestCase):
         for path in (ROOT / "README.md", ROOT / "INSTALL.md"):
             self.assertNotIn("scrap", path.read_text(encoding="utf-8").lower())
 
-    def test_public_name_uses_cities2_mcp_label(self) -> None:
+    def test_public_name_uses_human_facing_toolkit_label(self) -> None:
         label = "Cities2-MCP — game knowledge and modding tools for Cities: Skylines II"
         server_text = (ROOT / "cities2_mcp" / "mcp_server.py").read_text(encoding="utf-8")
         example_config = (ROOT / "mcp.config.example.json").read_text(encoding="utf-8")
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
+        readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
 
         self.assertIn(label, server_text)
+        self.assertIn("# Cities2 MCP and Modding Toolkit", readme_text)
         self.assertNotIn("Cities2 Modding Workbench", server_text)
         self.assertIn('"cities2-mcp"', example_config)
         self.assertNotIn('"cities2-modding-workbench"', example_config)
-        self.assertIn("current `cities2-mcp` entry", install_text)
-        self.assertIn("cities2-modding-workbench", install_text)
+        self.assertNotIn("current `cities2-mcp` entry", install_text)
+        self.assertNotIn("cities2-modding-workbench", install_text)
 
     def test_mcp_initialize_describes_full_public_scope(self) -> None:
         response = mcp_server.handle_request(
@@ -191,14 +193,14 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("codex plugin marketplace add mayor-modder/Cities2-MCP", install_text)
         self.assertIn("/skills", install_text)
         self.assertIn("INSTALL.md#install-in-codex-cli", readme_text)
-        self.assertIn("INSTALL.md#install-in-codex-desktop", readme_text)
+        self.assertIn("INSTALL.md#install-in-the-codex-app", readme_text)
         self.assertIn("INSTALL.md", readme_text)
         self.assertNotIn(".agents/plugins/marketplace.json", readme_text)
         self.assertNotIn("plugins/cities2-mcp", readme_text)
         for skill_name in ("cities2-knowledge", "cities2-modding"):
             self.assertIn(f"$cities2-mcp:{skill_name}", install_text)
-            self.assertIn(f"$cities2-mcp:{skill_name}", readme_text)
             self.assertIn(skill_name, readme_text)
+            self.assertIn(f"skills/{skill_name}/SKILL.md", readme_text)
         self.assertIn("allowlist", openai_readme)
         self.assertIn("template-copy fallback", codex_plugin_readme)
         self.assertNotIn("MCP workspace is the current Codex project folder", openai_readme)
@@ -209,9 +211,10 @@ class PortabilityTests(unittest.TestCase):
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
 
         for text in (install_text, readme_text):
-            self.assertIn("Antigravity", text)
-            self.assertIn("INSTALL.md#install-in-antigravity", text)
-            self.assertIn("/cities2", text)
+            self.assertIn("Google Antigravity", text)
+            self.assertIn("INSTALL.md#install-in-google-antigravity", text)
+        self.assertIn("/cities2", install_text)
+        self.assertNotIn("type `/cities2`", readme_text)
         self.assertIn("git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP", install_text)
         self.assertIn(r"$env:USERPROFILE\.gemini\config\plugins\cities2-mcp", install_text)
         self.assertIn("plugins\\cities2-mcp", install_text)
@@ -220,7 +223,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("Move or replace that one folder before reinstalling", install_text)
         self.assertIn("replace only the existing `cities2-mcp` plugin folder", install_text)
         self.assertIn("clear the parent Antigravity `plugins` folder", install_text)
-        self.assertIn("Do not use `agy plugin install https://github.com/mayor-modder/Cities2-MCP`", install_text)
+        self.assertIn("Direct URL installs are not currently supported", install_text)
         self.assertNotIn("agy plugin install https://github.com/mayor-modder/Cities2-MCP\n```", install_text)
         self.assertNotIn("rm -rf", install_text)
         self.assertNotIn("Remove-Item -Recurse -Force", install_text)
@@ -281,7 +284,7 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("cities2-mcp", metadata_text)
             self.assertIn(f"${skill_name}", metadata_text)
             self.assertIn(skill_name, readme_text)
-            self.assertIn(skill_name, install_text)
+            self.assertIn(f"skills/{skill_name}/SKILL.md", readme_text)
             for distributed_root in (
                 ROOT / "plugins" / "cities2-mcp" / "skills",
                 ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills",
@@ -306,12 +309,17 @@ class PortabilityTests(unittest.TestCase):
             ).exists()
         )
 
-        self.assertIn("### Manual Skill Copy", install_text)
-        self.assertIn("compact source notes", " ".join(readme_text.split()))
+        self.assertIn(
+            "compact source note",
+            (ROOT / "skills" / "cities2-knowledge" / "SKILL.md").read_text(encoding="utf-8"),
+        )
+        for skill_name in ("cities2-knowledge", "cities2-modding", "cities2-mod-review"):
+            self.assertIn(skill_name, install_text)
         self.assertIn("patch", (ROOT / "skills" / "cities2-knowledge" / "SKILL.md").read_text(encoding="utf-8"))
         self.assertIn("uvx cities2-mcp install-agent-assets", install_text)
-        self.assertIn("copy `skills/cities2-knowledge`", install_text)
-        self.assertIn("does not load them from the plugin", install_text)
+        self.assertIn("load local agent skills separately", install_text)
+        legacy_skill_wording = "client supports MCP servers" + " but not plugin skills"
+        self.assertNotIn(legacy_skill_wording, install_text)
 
     def test_modding_quality_skills_encode_review_debug_release_rules(self) -> None:
         review = (ROOT / "skills" / "cities2-mod-review" / "SKILL.md").read_text(encoding="utf-8")
@@ -319,7 +327,7 @@ class PortabilityTests(unittest.TestCase):
         release = (ROOT / "skills" / "cities2-mod-release" / "SKILL.md").read_text(encoding="utf-8")
         modding = (ROOT / "skills" / "cities2-modding" / "SKILL.md").read_text(encoding="utf-8")
 
-        self.assertIn("corpus-backed", review.lower())
+        self.assertIn("documented best practices", review.lower())
         self.assertIn("negative constraints", review.lower())
         self.assertIn("best practice", review.lower())
         self.assertIn("playtesting handoff", debugging.lower())
@@ -406,10 +414,9 @@ class PortabilityTests(unittest.TestCase):
     def test_install_guide_explains_workspace_allowlist_for_mod_repos(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
 
-        self.assertIn("WORKSPACE_ROOTS", install_text)
+        self.assertIn("trusted workspace", install_text)
         self.assertIn("trusted parent folder", install_text)
         self.assertIn("Path must stay inside configured workspaces", install_text)
-        self.assertIn("Add that mod repo", install_text)
         self.assertIn("mod project folder", install_text)
         self.assertNotIn("// Add more", install_text)
 
@@ -421,26 +428,26 @@ class PortabilityTests(unittest.TestCase):
     def test_install_guide_uses_current_claude_code_mcp_locations(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
 
-        self.assertIn("~/.claude.json", install_text)
-        self.assertIn(".mcp.json", install_text)
+        self.assertIn("/plugin marketplace add mayor-modder/Cities2-MCP", install_text)
         self.assertNotIn(".claude/settings.local.json", install_text)
-        self.assertIn("here-string", install_text)
-        self.assertIn("claude mcp add-json cities2-mcp $json --scope user", install_text)
+        self.assertNotIn("~/.claude.json", install_text)
+        self.assertNotIn(".mcp.json", install_text)
+        self.assertNotIn("claude mcp add-json", install_text)
 
     def test_install_guide_points_claude_desktop_to_in_app_config(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
 
-        self.assertIn("claude_desktop_config.json", install_text)
-        self.assertIn("directly", install_text)
-        self.assertIn("Settings > Developer > Edit Config", install_text)
-        self.assertIn("Claude Desktop", install_text)
+        self.assertIn("Claude desktop", install_text)
+        self.assertIn("Personal plugins", install_text)
+        self.assertIn("Trusted mod projects folder", install_text)
+        self.assertNotIn("claude_desktop_config.json", install_text)
+        self.assertNotIn("Settings > Developer > Edit Config", install_text)
 
     def test_install_guide_distinguishes_claude_surfaces_before_install(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
 
-        self.assertIn("Claude Desktop app settings", install_text)
-        self.assertIn("Claude Code settings", install_text)
-        self.assertIn("install or troubleshoot Cities2-MCP in each one separately", install_text)
+        self.assertIn("### Install in Claude Code", install_text)
+        self.assertIn("### Install in Claude desktop", install_text)
         self.assertNotIn("ask the user which Claude surface", install_text)
         self.assertNotIn("Claude Desktop chat app", install_text)
 
@@ -459,7 +466,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("[PRIVACY.md](PRIVACY.md)", readme_text)
         self.assertIn("does not collect telemetry", privacy_text)
         self.assertIn("configured trusted workspace paths", privacy_text)
-        self.assertNotIn("## Privacy Policy", readme_text)
+        self.assertNotIn("## Privacy policy", readme_text)
         self.assertNotIn("## Migration From Older Tool Names", readme_text)
         self.assertNotIn("create_mod_project", readme_text)
         self.assertNotIn("launch_game_with_flags", readme_text)
@@ -481,27 +488,10 @@ class PortabilityTests(unittest.TestCase):
         self.assertNotIn("< NUL", install_text)
         self.assertNotIn("< /dev/null", install_text)
 
-    def test_install_guide_lists_expected_public_tools_and_stale_config_cleanup(self) -> None:
+    def test_install_guide_is_concise_and_omits_personal_legacy_cleanup(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
-        expected_tools = [
-            "search",
-            "get_page",
-            "query_reference",
-            "get_snippets",
-            "search_encyclopedia",
-            "get_encyclopedia_entry",
-            "source_status",
-            "scaffold_project",
-            "write_project_file",
-            "list_project_tree",
-            "build_project",
-            "analyze_project",
-            "package_project",
-            "launch_cities2",
-        ]
 
-        for tool_name in expected_tools:
-            self.assertIn(f"`{tool_name}`", install_text)
+        self.assertLess(len(install_text.splitlines()), 220)
         for stale_token in (
             "InfoLoom",
             "save analysis",
@@ -509,8 +499,11 @@ class PortabilityTests(unittest.TestCase):
             "city recovery",
             "dataexport",
             "saveinvestigator",
+            "older or separate",
+            "previous local tools repo",
+            "manual cleanup",
         ):
-            self.assertIn(stale_token, install_text)
+            self.assertNotIn(stale_token, install_text)
 
     def test_retrieval_layer_is_internal_not_a_submodule(self) -> None:
         server_text = (ROOT / "cities2_mcp" / "mcp_server.py").read_text(encoding="utf-8")
@@ -519,7 +512,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertFalse((ROOT / ".gitmodules").exists())
         self.assertTrue((ROOT / "cities2_mcp" / "retrieval" / "mcp_server.py").exists())
         self.assertFalse((ROOT / "cities2_mcp" / "retrieval" / "LICENSE.wiki-mcp").exists())
-        self.assertIn("wiki-mcp contributors", notices)
+        self.assertNotIn("wiki-mcp contributors", notices)
         self.assertFalse((ROOT / "vendor" / "wiki-mcp").exists())
         self.assertNotIn("vendor/wiki-mcp", server_text)
         self.assertNotIn("wiki_mcp_server", server_text)

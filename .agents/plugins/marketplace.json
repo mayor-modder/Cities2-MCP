@@ -1,7 +1,7 @@
 {
   "name": "cities2-mcp",
   "interface": {
-    "displayName": "Cities2-MCP"
+    "displayName": "Cities2 MCP and Modding Toolkit"
   },
   "plugins": [
     {

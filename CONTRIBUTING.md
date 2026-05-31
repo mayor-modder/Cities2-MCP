@@ -1,16 +1,17 @@
 # Contributing
 
-Thanks for helping improve Cities2-MCP. This project is a local MCP server and
-agent skill bundle for Cities: Skylines II knowledge and modding workflows.
+Thanks for helping improve Cities2 MCP and Modding Toolkit. This project is a
+local MCP server and agent skill bundle for Cities: Skylines II knowledge and
+modding workflows.
 
-## Before You Start
+## Before you start
 
 - Read [README.md](README.md) for the project overview.
 - Read [INSTALL.md](INSTALL.md) if you want to test the plugin in an MCP client.
 - Report vulnerabilities through [SECURITY.md](SECURITY.md), not public issues.
 - Keep contributions focused. Small pull requests are easier to review and test.
 
-## Development Setup
+## Development setup
 
 Use Python 3.10 or newer. From the repository root:
 
@@ -28,7 +29,7 @@ py -3 -m cities2_mcp.plugin_packages check
 If the package check reports stale generated plugin payloads, run the sync
 command it recommends, review the resulting diff, and run the check again.
 
-## What To Keep Out Of Commits
+## What to keep out of commits
 
 Do not commit:
 
@@ -42,7 +43,7 @@ Do not commit:
 The repository includes generated plugin payloads where needed for distribution,
 but local caches and machine-specific settings should stay local.
 
-## Contribution Standards
+## Contribution standards
 
 - Preserve filesystem boundaries. Workflow tools must not read or write outside
   configured trusted workspaces.
@@ -55,7 +56,7 @@ but local caches and machine-specific settings should stay local.
 - Add or update tests when behavior, packaging, safety checks, skills, or docs
   expectations change.
 
-## Agent Skills And Plugin Packages
+## Agent skills and plugin packages
 
 The root `skills/` directory is the source of truth for bundled agent skills.
 Generated copies under plugin or integration directories must stay in sync with
@@ -68,7 +69,7 @@ When changing skills:
 - avoid promising that an agent can prove in-game behavior without user testing
 - rerun the plugin package check before opening a pull request
 
-## Pull Requests
+## Pull requests
 
 Before opening a pull request:
 
