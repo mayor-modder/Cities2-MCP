@@ -16,7 +16,7 @@ public class LocaleEN : IDictionarySource
     {
         return new Dictionary<string, string>
         {
-            { _setting.GetSettingsLocaleID(), "{{DISPLAY_NAME}}" },
+            { _setting.GetSettingsLocaleID(), "{{DISPLAY_NAME_CS_STRING}}" },
             { _setting.GetOptionTabLocaleID(Setting.kSection), "Main" },
             { _setting.GetOptionLabelLocaleID(nameof(Setting.EnableUiPanel)), "Enable UI panel" },
             { _setting.GetOptionDescLocaleID(nameof(Setting.EnableUiPanel)), "Enable the mod UI panel integration." },

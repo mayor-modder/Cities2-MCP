@@ -12,7 +12,6 @@ EXPECTED_DOMAIN_TOOLS = {
     "build_project",
     "analyze_project",
     "package_project",
-    "launch_cities2",
 }
 
 

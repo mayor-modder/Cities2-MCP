@@ -139,6 +139,9 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("Cities: Skylines II Wiki", tools["get_page"])
         self.assertIn("Cities: Skylines II mod project", tools["scaffold_project"])
         self.assertIn("Cities: Skylines II mod project", tools["build_project"])
+        self.assertIn("trusted workspace code", tools["build_project"])
+        self.assertIn("untrusted repositories", tools["build_project"])
+        self.assertNotIn("launch_cities2", tools)
         for description in tools.values():
             self.assertNotIn("MediaWiki", description)
 
@@ -407,6 +410,8 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("Get-ChildItem", text)
             self.assertIn("package-lock.json", text)
             self.assertIn("Windows paths", text)
+            self.assertIn("trusted workspace code", text)
+            self.assertIn("untrusted repositories", text)
             self.assertIn("do not", text)
             self.assertIn("start a dev server", text)
             self.assertNotIn("Claude Code and Codex, project-scoped plugin", text)
@@ -417,6 +422,8 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("trusted workspace", install_text)
         self.assertIn("trusted parent folder", install_text)
         self.assertIn("Path must stay inside configured workspaces", install_text)
+        self.assertIn("builds execute trusted workspace code", install_text.lower())
+        self.assertIn("not use build_project for arbitrary untrusted repositories", install_text)
         self.assertIn("mod project folder", install_text)
         self.assertNotIn("// Add more", install_text)
 

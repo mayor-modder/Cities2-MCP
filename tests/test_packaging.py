@@ -82,7 +82,7 @@ class PackagingTests(unittest.TestCase):
             scaffold = call(proc, 4, "scaffold_project", {"name": "No Workspace", "template": "cities2-csharp"})
 
             self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.9")
-            self.assertEqual(len(tools["result"]["tools"]), 14)
+            self.assertEqual(len(tools["result"]["tools"]), 13)
             self.assertTrue(search["ok"])
             self.assertFalse(scaffold["ok"])
             self.assertIn("--workspace", scaffold["error"])
@@ -144,7 +144,8 @@ class PackagingTests(unittest.TestCase):
         )
 
         tools = response["result"]["tools"]
-        self.assertEqual(len(tools), 14)
+        self.assertEqual(len(tools), 13)
+        self.assertNotIn("launch_cities2", {tool["name"] for tool in tools})
         for tool in tools:
             annotations = tool.get("annotations")
             self.assertIsInstance(annotations, dict, tool["name"])
@@ -256,7 +257,7 @@ class PackagingTests(unittest.TestCase):
                 scaffold = call(proc, 4, "scaffold_project", {"name": "Plugin Version", "template": "cities2-csharp"})
 
                 self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.9")
-                self.assertEqual(len(tools["result"]["tools"]), 14)
+                self.assertEqual(len(tools["result"]["tools"]), 13)
                 self.assertTrue(status["wiki"]["available"])
                 self.assertEqual(scaffold["game_version"], "1.5.*")
                 self.assertIn("game_version_source", scaffold)
@@ -347,7 +348,7 @@ class PackagingTests(unittest.TestCase):
                 scaffold = call(proc, 4, "scaffold_project", {"name": "Codex Plugin Version", "template": "cities2-csharp"})
 
                 self.assertEqual(init["result"]["serverInfo"]["version"], "0.1.9")
-                self.assertEqual(len(tools["result"]["tools"]), 14)
+                self.assertEqual(len(tools["result"]["tools"]), 13)
                 self.assertTrue(status["wiki"]["available"])
                 self.assertEqual(scaffold["game_version"], "1.5.*")
                 self.assertIn("game_version_source", scaffold)
@@ -367,6 +368,8 @@ class PackagingTests(unittest.TestCase):
         bootstrap = plugin_mcp["mcpServers"]["cities2-mcp"]["args"][1]
         self.assertIn("antigravity-cli", bootstrap)
         self.assertIn("bin','cities2-mcp-launcher.js", bootstrap)
+        self.assertIn("CITIES2_MCP_ALLOW_WORKSPACE_PLUGIN_ROOTS", bootstrap)
+        self.assertLess(bootstrap.index("antigravity-cli"), bootstrap.index(".agents"))
         self.assertFalse((ROOT / "plugin.json").exists())
         self.assertFalse((ROOT / "mcp_config.json").exists())
         self.assertFalse((ROOT / "start_mcp.bat").exists())
@@ -395,6 +398,40 @@ class PackagingTests(unittest.TestCase):
             )
 
             self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
+
+    def test_antigravity_mcp_config_prefers_installed_plugin_over_workspace_shadow(self) -> None:
+        plugin_mcp = json.loads((ROOT / "plugins" / "cities2-mcp" / "mcp_config.json").read_text(encoding="utf-8"))
+        server = plugin_mcp["mcpServers"]["cities2-mcp"]
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-antigravity-precedence-") as tmp:
+            root = Path(tmp)
+            workspace = root / "workspace"
+            workspace.mkdir()
+            userprofile = root / "home"
+            shadow = workspace / ".agents" / "plugins" / "cities2-mcp" / "bin"
+            installed = userprofile / ".gemini" / "config" / "plugins" / "cities2-mcp" / "bin"
+            shadow.mkdir(parents=True)
+            installed.mkdir(parents=True)
+            shadow_launcher = shadow / "cities2-mcp-launcher.js"
+            installed_launcher = installed / "cities2-mcp-launcher.js"
+            shadow_launcher.write_text("console.log('evil workspace plugin');\n", encoding="utf-8")
+            installed_launcher.write_text("console.log('good installed plugin');\n", encoding="utf-8")
+
+            env = dict(os.environ)
+            env.pop("CITIES2_MCP_PLUGIN_ROOT", None)
+            env.pop("ANTIGRAVITY_PLUGIN_ROOT", None)
+            env.pop("CITIES2_MCP_ALLOW_WORKSPACE_PLUGIN_ROOTS", None)
+            env["USERPROFILE"] = str(userprofile)
+            env["HOME"] = str(userprofile)
+            result = subprocess.run(
+                [server["command"], *server["args"], "--version"],
+                cwd=workspace,
+                env=env,
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+
+        self.assertEqual(result.stdout.strip(), "good installed plugin")
 
     def test_plugin_package_check_detects_stale_payload(self) -> None:
         from cities2_mcp import plugin_packages
