@@ -41,7 +41,7 @@ SERVER_INSTRUCTIONS = (
     "Cities2-MCP gives AI assistants local access to the bundled Cities: Skylines II Wiki corpus "
     "for gameplay, systems, and modding questions. It also includes local workflow tools for CS2 "
     "mod projects: scaffolding, reading and writing project files, static analysis, building, "
-    "packaging, and dry-run launching the game. Use the wiki retrieval tools for game knowledge "
+    "and packaging. Use the wiki retrieval tools for game knowledge "
     "and reference lookups; use the workflow tools only inside configured local workspaces."
 )
 DOCS_GUARD_CODE = "DOCS_INDEX_MISSING_OR_MISCONFIGURED"
@@ -216,6 +216,32 @@ def installed_game_context(encyclopedia: Optional[GameEncyclopediaSource]) -> JS
     return context
 
 
+class UnavailableGameEncyclopedia:
+    available = False
+    entries: List[JSON] = []
+    discovery = None
+
+    def __init__(self, message: str, *, cache_status: str = "error") -> None:
+        self.message = message
+        self.cache_status = cache_status
+
+    def status(self) -> JSON:
+        return {
+            "source": "game_encyclopedia",
+            "available": False,
+            "warning": self.message,
+            "error": self.message,
+            "cache_status": self.cache_status,
+            "entry_count": 0,
+        }
+
+    def search(self, query: str, *, limit: int = 5) -> List[JSON]:
+        return []
+
+    def get_entry(self, entry_id: str) -> Optional[JSON]:
+        return None
+
+
 WORKFLOW_TOOL_NAMES = {
     "scaffold_project",
     "write_project_file",
@@ -223,7 +249,6 @@ WORKFLOW_TOOL_NAMES = {
     "build_project",
     "analyze_project",
     "package_project",
-    "launch_cities2",
 }
 
 # ---------------------------------------------------------------------------
@@ -334,7 +359,10 @@ def domain_tools_catalog() -> List[JSON]:
         },
         {
             "name": "build_project",
-            "description": "Build a Cities: Skylines II mod project and return normalized diagnostics.",
+            "description": (
+                "Build a Cities: Skylines II mod project and return normalized diagnostics. "
+                "This executes trusted workspace code; do not use it for arbitrary untrusted repositories."
+            ),
             "annotations": {
                 "title": "Build Mod Project",
                 "readOnlyHint": False,
@@ -413,30 +441,6 @@ def domain_tools_catalog() -> List[JSON]:
                     "exclude_globs": {"type": "array", "items": {"type": "string"}},
                 },
                 "required": ["project_dir"],
-            },
-        },
-        {
-            "name": "launch_cities2",
-            "description": "Launch Cities: Skylines II with platform-aware executable resolution (dry-run by default).",
-            "annotations": {
-                "title": "Launch Cities: Skylines II",
-                "readOnlyHint": False,
-                "destructiveHint": False,
-                "idempotentHint": False,
-                "openWorldHint": True,
-            },
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "executable": {"type": "string"},
-                    "flags": {"type": "array", "items": {"type": "string"}},
-                    "platform": {
-                        "type": "string",
-                        "enum": ["auto", "mac", "windows", "linux"],
-                        "default": "auto",
-                    },
-                    "dry_run": {"type": "boolean", "default": True},
-                },
             },
         },
     ]
@@ -541,7 +545,8 @@ PROMPT_DEFINITIONS: Dict[str, JSON] = {
             "Use wiki retrieval tools for modding concepts, APIs, localization, UI, project structure, and toolchain "
             "references. Use workflow tools only for explicit local project actions inside configured workspaces: "
             "scaffold_project, write_project_file, list_project_tree, build_project, analyze_project, package_project, "
-            "and launch_cities2. Before writing files or running builds, make the intended local action clear."
+            "and manual playtesting handoff steps. build_project executes trusted workspace code; do not run it for "
+            "arbitrary untrusted repositories. Before writing files or running builds, make the intended local action clear."
         ),
     },
 }
@@ -699,8 +704,10 @@ def handle_encyclopedia_resource_read(
 # ---------------------------------------------------------------------------
 
 
-def encyclopedia_unavailable_result() -> JSON:
-    return text_result({"ok": False, "message": GAME_ENCYCLOPEDIA_WARNING}, is_error=True)
+def encyclopedia_unavailable_result(encyclopedia: Optional[GameEncyclopediaSource] = None) -> JSON:
+    status = encyclopedia.status() if encyclopedia is not None else {}
+    message = str(status.get("error") or status.get("warning") or GAME_ENCYCLOPEDIA_WARNING)
+    return text_result({"ok": False, "message": message}, is_error=True)
 
 
 def handle_encyclopedia_tools(
@@ -744,7 +751,7 @@ def handle_encyclopedia_tools(
 
         if name == "search_encyclopedia":
             if encyclopedia is None or not encyclopedia.available:
-                return {"jsonrpc": "2.0", "id": req_id, "result": encyclopedia_unavailable_result()}
+                return {"jsonrpc": "2.0", "id": req_id, "result": encyclopedia_unavailable_result(encyclopedia)}
             query = str(args.get("query", "")).strip()
             limit = max(1, min(20, int(args.get("limit", 5) or 5)))
             if not query:
@@ -762,7 +769,7 @@ def handle_encyclopedia_tools(
 
         if name == "get_encyclopedia_entry":
             if encyclopedia is None or not encyclopedia.available:
-                return {"jsonrpc": "2.0", "id": req_id, "result": encyclopedia_unavailable_result()}
+                return {"jsonrpc": "2.0", "id": req_id, "result": encyclopedia_unavailable_result(encyclopedia)}
             entry_id = str(args.get("entry_id", "")).strip()
             entry = encyclopedia.get_entry(entry_id)
             if entry is None:
@@ -863,18 +870,6 @@ def handle_domain_tools(
                 output_dir=str(args.get("output_dir", "")).strip() or None,
                 package_name=str(args.get("package_name", "")).strip() or None,
                 exclude_globs=_as_str_list(args.get("exclude_globs")),
-            )
-            return {"jsonrpc": "2.0", "id": req_id, "result": text_result(payload)}
-
-        if name == "launch_cities2":
-            flags = _as_str_list(args.get("flags"))
-            exe_val = args.get("executable")
-            executable = str(exe_val).strip() if isinstance(exe_val, str) else None
-            payload = wm.builder.launch_cities2(
-                executable=executable or None,
-                flags=flags,
-                platform=str(args.get("platform", "auto")).strip() or "auto",
-                dry_run=bool(args.get("dry_run", True)),
             )
             return {"jsonrpc": "2.0", "id": req_id, "result": text_result(payload)}
 
@@ -1075,7 +1070,7 @@ def main() -> None:
         )
     except Exception as exc:
         debug_log(f"Game encyclopedia init failed: {exc}")
-        encyclopedia = None
+        encyclopedia = UnavailableGameEncyclopedia(str(exc))  # type: ignore[assignment]
 
     if workspace_paths:
         try:

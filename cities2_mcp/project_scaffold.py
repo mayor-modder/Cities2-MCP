@@ -4,11 +4,13 @@ import json
 import os
 import re
 from html import escape
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Dict, List, Optional, Sequence
 
 JSON = Dict[str, Any]
 FALLBACK_GAME_VERSION_PATTERN = "1.5.*"
+IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+PROJECT_SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 
 class ProjectScaffolder:
@@ -64,6 +66,23 @@ class ProjectScaffolder:
             allowed = ", ".join(str(workspace) for workspace in self.allowed_workspaces)
             raise ValueError(f"Path must stay inside configured workspaces: {allowed}")
         return rp
+
+    @staticmethod
+    def is_within_path(path: Path, root: Path) -> bool:
+        resolved_path = path.resolve()
+        resolved_root = root.resolve()
+        return resolved_path == resolved_root or resolved_root in resolved_path.parents
+
+    @staticmethod
+    def validate_relative_glob(pattern: str, *, field_name: str = "glob") -> str:
+        value = str(pattern or "").strip() or "**/*"
+        posix = PurePosixPath(value)
+        windows = PureWindowsPath(value)
+        if posix.is_absolute() or windows.is_absolute() or windows.drive:
+            raise ValueError(f"{field_name} must be a relative pattern inside the project")
+        if ".." in posix.parts or ".." in windows.parts:
+            raise ValueError(f"{field_name} must not contain parent directory traversal")
+        return value
 
     @staticmethod
     def slug(name: str) -> str:
@@ -307,6 +326,38 @@ class ProjectScaffolder:
         return out
 
     @staticmethod
+    def _validate_identifier(value: object, *, field_name: str) -> str:
+        text = str(value or "").strip()
+        if not IDENTIFIER_RE.fullmatch(text):
+            raise ValueError(f"{field_name} must be a valid C# identifier")
+        return text
+
+    @staticmethod
+    def _validate_project_slug(value: object) -> str:
+        text = str(value or "").strip()
+        if not PROJECT_SLUG_RE.fullmatch(text):
+            raise ValueError("project_slug must be a lowercase path-safe slug")
+        return text
+
+    @staticmethod
+    def _string_token(value: object) -> str:
+        return json.dumps(str(value or ""), ensure_ascii=False)[1:-1]
+
+    @staticmethod
+    def _xml_token(value: object) -> str:
+        return escape(str(value or ""), quote=True)
+
+    @classmethod
+    def _normalize_metadata(cls, metadata: JSON) -> JSON:
+        normalized = dict(metadata)
+        normalized["project_slug"] = cls._validate_project_slug(normalized.get("project_slug", ""))
+        normalized["root_namespace"] = cls._validate_identifier(
+            normalized.get("root_namespace", ""),
+            field_name="root_namespace",
+        )
+        return normalized
+
+    @staticmethod
     def _default_options(template: str) -> JSON:
         include_ui_pipeline = "auto"
         if template == "cities2-csharp":
@@ -411,11 +462,18 @@ class ProjectScaffolder:
         return {
             "MOD_NAME": str(metadata.get("display_name", "")),
             "DISPLAY_NAME": str(metadata.get("display_name", "")),
+            "DISPLAY_NAME_CS_STRING": self._string_token(metadata.get("display_name", "")),
+            "DISPLAY_NAME_TS_STRING": self._string_token(metadata.get("display_name", "")),
+            "DISPLAY_NAME_XML": self._xml_token(metadata.get("display_name", "")),
             "PROJECT_SLUG": str(metadata.get("project_slug", "")),
             "ROOT_NAMESPACE": str(metadata.get("root_namespace", "")),
             "SHORT_DESCRIPTION": str(metadata.get("short_description", "")),
+            "SHORT_DESCRIPTION_XML": self._xml_token(metadata.get("short_description", "")),
             "GAME_VERSION": str(metadata.get("game_version", "")),
+            "GAME_VERSION_XML": self._xml_token(metadata.get("game_version", "")),
             "VERSION": str(metadata.get("version", "0.1.0")),
+            "VERSION_STRING": self._string_token(metadata.get("version", "0.1.0")),
+            "VERSION_XML": self._xml_token(metadata.get("version", "0.1.0")),
             "USING_HARMONY": using_harmony,
             "HARMONY_FIELD": harmony_field,
             "SETTING_FIELD": setting_field,
@@ -466,6 +524,9 @@ class ProjectScaffolder:
             rel = src.relative_to(template_dir)
             rel_str = str(rel).replace("__PROJECT_SLUG__", str(tokens["PROJECT_SLUG"]))
             dest = target_dir / rel_str
+            resolved_dest = dest.resolve()
+            if not self.is_within_path(resolved_dest, target_dir):
+                raise ValueError("template path escapes target project directory")
             if src.is_dir():
                 dest.mkdir(parents=True, exist_ok=True)
                 continue
@@ -506,6 +567,7 @@ class ProjectScaffolder:
         metadata_game_version = str((metadata or {}).get("game_version", "")).strip()
         default_game_version_info = self.default_game_version_info()
         md = self._merge_defaults(self._default_metadata(name, slug), metadata)
+        md = self._normalize_metadata(md)
         game_version_source = "metadata" if metadata_game_version else str(default_game_version_info["game_version_source"])
         opts = self._merge_defaults(self._default_options(template), options)
         tokens = self._template_tokens(template, md, opts)
@@ -603,17 +665,21 @@ class ProjectScaffolder:
         max_files = max(1, min(10000, int(max_files)))
 
         files: List[JSON] = []
-        for p in sorted(root.glob(glob)):
+        safe_glob = self.validate_relative_glob(glob)
+        for p in sorted(root.glob(safe_glob)):
             if not p.is_file():
                 continue
-            rel = p.relative_to(root)
+            resolved = p.resolve()
+            if not self.is_within_path(resolved, root):
+                continue
+            rel = resolved.relative_to(root)
             if not include_hidden and any(part.startswith(".") for part in rel.parts):
                 continue
             files.append(
                 {
-                    "path": str(p),
+                    "path": str(resolved),
                     "relative": str(rel),
-                    "size": p.stat().st_size,
+                    "size": resolved.stat().st_size,
                 }
             )
             if len(files) >= max_files:

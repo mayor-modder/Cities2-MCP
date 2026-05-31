@@ -176,7 +176,6 @@ def main() -> None:
         b1 = call(proc, 12, "build_project", {"project_dir": proj, "steps": ["package"], "profile": "release"})
         a1 = call(proc, 13, "analyze_project", {"project_dir": proj, "profile": "auto", "strict": True})
         z1 = call(proc, 14, "package_project", {"project_dir": proj, "exclude_globs": ["obj/*", "bin/*"]})
-        g1 = call(proc, 18, "launch_cities2", {"platform": "auto", "flags": ["--developerMode"], "dry_run": True})
         status = call(proc, 19, "source_status", {})
         assert "game_encyclopedia" in status
 
@@ -199,7 +198,6 @@ def main() -> None:
         print("build ok:", b1["ok"])
         print("analyze score:", a1["score"])
         print("package path exists:", Path(z1["package_path"]).exists())
-        print("launch dry_run:", g1["dry_run"])
         print("game encyclopedia available:", status["game_encyclopedia"]["available"])
     finally:
         proc.terminate()
