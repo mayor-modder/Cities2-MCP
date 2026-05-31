@@ -29,7 +29,7 @@ This is useful for questions about game mechanics, modding APIs, toolchain setup
 
 When Cities: Skylines II is installed locally, the MCP server reads the game encyclopedia from the user's own game files. This source is enabled by default when the server can find `Cities2_Data/Content/Game/Locale.cok`, especially for standard Steam installs.
 
-The extracted Encyclopedia index is cached locally on the user's machine and rebuilt only when the source game file, detected Steam build id, locale, or extractor version changes. Extracted game text is not committed to this repository, shipped in releases, or part of the redistributed wiki corpus.
+The extracted encyclopedia index is cached locally on the user's machine and rebuilt only when the source game file, detected Steam build id, locale, or extractor version changes. Extracted game text is not committed to this repository, shipped in releases, or part of the redistributed wiki corpus.
 
 If the game install is not found automatically, set `CITIES2_GAME_DIR` to the Cities: Skylines II install directory or `CITIES2_LOCALE_COK` to the full `Locale.cok` path.
 
@@ -84,6 +84,6 @@ Paradox Interactive, Iceflake Studios, Colossal Order, Paradox Wikis, or any
 related company. Cities: Skylines II and related names are used referentially.
 The bundled wiki corpus contains text adapted from the Cities: Skylines II Wiki
 under CC BY-SA 3.0. Non-text wiki media is not included, and local game
-Encyclopedia text is read from your own installed game files rather than shipped
+Game encyclopedia text is read from your own installed game files rather than shipped
 with this package. Additional third-party notices are in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

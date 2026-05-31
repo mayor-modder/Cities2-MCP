@@ -36,7 +36,7 @@ class FakeUnavailableEncyclopedia:
             "source": "game_encyclopedia",
             "available": False,
             "cache_status": "missing",
-            "warning": "Game Encyclopedia not found",
+            "warning": "Game encyclopedia not found",
         }
 
 
@@ -165,7 +165,7 @@ class McpGameEncyclopediaTests(unittest.TestCase):
         payload = json.loads(response["result"]["content"][0]["text"])
 
         self.assertFalse(payload["game_encyclopedia"]["available"])
-        self.assertIn("Game Encyclopedia not found", payload["game_encyclopedia"]["warning"])
+        self.assertIn("Game encyclopedia not found", payload["game_encyclopedia"]["warning"])
 
     def test_search_encyclopedia_unavailable_returns_tool_error_payload(self) -> None:
         response = self.module.handle_tools_call(
@@ -181,7 +181,7 @@ class McpGameEncyclopediaTests(unittest.TestCase):
         payload = json.loads(response["result"]["content"][0]["text"])
 
         self.assertFalse(payload["ok"])
-        self.assertIn("Game Encyclopedia not found", payload["message"])
+        self.assertIn("Game encyclopedia not found", payload["message"])
 
     def test_search_encyclopedia_malformed_limit_returns_tool_error_payload(self) -> None:
         response = self.module.handle_tools_call(
@@ -278,7 +278,7 @@ class McpGameEncyclopediaTests(unittest.TestCase):
         )
 
         self.assertEqual(-32001, response["error"]["code"])
-        self.assertIn("Game Encyclopedia not found", response["error"]["message"])
+        self.assertIn("Game encyclopedia not found", response["error"]["message"])
 
     def test_main_debug_logs_unavailable_encyclopedia_status(self) -> None:
         loaded_encyclopedia = FakeUnavailableEncyclopedia()
@@ -315,7 +315,7 @@ class McpGameEncyclopediaTests(unittest.TestCase):
         encyclopedia_logs = [line for line in logs if "Game encyclopedia status:" in line]
         self.assertEqual(1, len(encyclopedia_logs))
         self.assertIn("missing", encyclopedia_logs[0])
-        self.assertIn("Game Encyclopedia not found", encyclopedia_logs[0])
+        self.assertIn("Game encyclopedia not found", encyclopedia_logs[0])
 
     def test_main_passes_loaded_encyclopedia_to_request_handler(self) -> None:
         loaded_encyclopedia = FakeAvailableEncyclopedia()
