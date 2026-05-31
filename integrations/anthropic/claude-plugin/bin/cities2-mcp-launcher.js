@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const { spawn, spawnSync } = require("node:child_process");
 const path = require("node:path");
 
-const pluginRoot = process.env.PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, "..");
+const selfRoot = path.resolve(__dirname, "..");
 
 function candidates() {
   const configured = process.env.CITIES2_MCP_PYTHON;
@@ -33,10 +33,34 @@ function findPython() {
   return null;
 }
 
-function serverInvocation() {
+function uniquePaths(values) {
+  const seen = new Set();
+  const paths = [];
+  for (const value of values) {
+    if (!value) {
+      continue;
+    }
+    const resolved = path.resolve(value);
+    const key = process.platform === "win32" ? resolved.toLowerCase() : resolved;
+    if (!seen.has(key)) {
+      seen.add(key);
+      paths.push(resolved);
+    }
+  }
+  return paths;
+}
+
+function invocationForRoot(pluginRoot) {
   const vendoredScript = path.join(pluginRoot, "vendor", "run_server.py");
   if (fs.existsSync(vendoredScript)) {
     return { args: [vendoredScript], env: process.env };
+  }
+
+  const vendoredPackageServer = path.join(pluginRoot, "vendor", "cities2_mcp", "mcp_server.py");
+  if (fs.existsSync(vendoredPackageServer)) {
+    const env = { ...process.env };
+    env.PYTHONPATH = [path.join(pluginRoot, "vendor"), env.PYTHONPATH].filter(Boolean).join(path.delimiter);
+    return { args: ["-m", "cities2_mcp.mcp_server"], env };
   }
 
   const sourceServer = path.join(pluginRoot, "cities2_mcp", "mcp_server.py");
@@ -46,7 +70,19 @@ function serverInvocation() {
     return { args: ["-m", "cities2_mcp.mcp_server"], env };
   }
 
-  console.error(`Unable to locate Cities2-MCP server files under ${pluginRoot}.`);
+  return null;
+}
+
+function serverInvocation() {
+  const checkedRoots = uniquePaths([selfRoot, process.env.PLUGIN_ROOT, process.env.CLAUDE_PLUGIN_ROOT]);
+  for (const root of checkedRoots) {
+    const invocation = invocationForRoot(root);
+    if (invocation) {
+      return invocation;
+    }
+  }
+
+  console.error(`Unable to locate Cities2-MCP server files. Checked: ${checkedRoots.join("; ")}.`);
   process.exit(1);
 }
 

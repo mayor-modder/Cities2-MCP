@@ -15,7 +15,6 @@ from pathlib import Path, PureWindowsPath
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, unquote
 
-from . import __version__, bundled_data_dir
 from .build_runner import BuildRunner
 from .game_encyclopedia import (
     GAME_ENCYCLOPEDIA_WARNING,
@@ -24,7 +23,7 @@ from .game_encyclopedia import (
 )
 from .project_analyzer import ProjectAnalyzer
 from .project_scaffold import ProjectScaffolder
-from .retrieval import (
+from .retrieval.mcp_server import (
     Corpus,
     debug_enabled,
     debug_log,
@@ -35,6 +34,7 @@ from .retrieval import (
 )
 from .retrieval import mcp_server as retrieval_impl
 
+__version__ = "0.1.9"
 JSON = Dict[str, Any]
 SERVER_NAME = "Cities2-MCP — game knowledge and modding tools for Cities: Skylines II"
 SERVER_INSTRUCTIONS = (
@@ -49,6 +49,10 @@ DOCS_GUARD_HEADLINE = "Cities2 docs are not available for this session"
 DOCS_TOOL_NAMES = {"search", "query_reference", "get_page", "get_snippets"}
 retrieval_resource_catalog = retrieval_impl.resource_catalog
 retrieval_handle_resources_read = retrieval_impl.handle_resources_read
+
+
+def bundled_data_dir() -> Path:
+    return Path(__file__).resolve().parent / "data"
 
 
 def docs_guard_payload(corpus_error: Optional[str], docs_paths: Optional[Dict[str, str]]) -> JSON:
