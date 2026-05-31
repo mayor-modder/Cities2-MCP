@@ -48,7 +48,7 @@ These tools are meant for local development workflows. They can write files and 
 
 ## Agent skills
 
-Marketplace installs include five user-facing skills:
+It includes five user-facing skills:
 
 - `cities2-knowledge`: answers gameplay, city-system, and player-facing patch/update questions.
 - `cities2-modding`: handles general modding questions and local mod project workflows.
@@ -58,7 +58,7 @@ Marketplace installs include five user-facing skills:
 
 The modding quality skills use documented CS2 best practices and negative constraints as defaults, and they require local playtesting before distribution unless you explicitly choose to package an unverified build.
 
-The marketplace install includes these skills. In Claude:
+The plugin includes these skills. In Claude:
 
 ```text
 /cities2-knowledge what's new in the latest Cities: Skylines II patch?
