@@ -1,4 +1,4 @@
-# Privacy Policy
+# Privacy policy
 
 Cities2 MCP and Modding Toolkit runs locally on your machine and doesn't send any data to the cloud. It does not collect telemetry, phone home, or send data to its authors.
 It only modifies the way agents respond when you send messages to third party

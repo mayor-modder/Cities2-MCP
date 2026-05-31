@@ -22,7 +22,7 @@ Run these inside Claude Code:
 Start a new Claude Code session in your mod project folder. The plugin starts
 `cities2-mcp` there so workflow tools can scaffold, read, write, build, and package files.
 
-### Install in Claude Desktop
+### Install in Claude desktop
 
 1. Open either the **Cowork** or **Code** tab.
 2. Select **Customize** in the sidebar.
@@ -31,7 +31,7 @@ Start a new Claude Code session in your mod project folder. The plugin starts
 5. Enter `mayor-modder/Cities2-MCP`.
 6. Install and enable **Cities2 MCP and Modding Toolkit**.
 
-### Using Skills in Claude
+### Using skills in Claude
 
 ```text
 /cities2-knowledge Why is my office demand stuck near zero?
@@ -73,7 +73,7 @@ Codex in the same folder.
 5. Install and enable **Cities2 MCP and Modding Toolkit**.
 6. Fully exit Codex and restart.
 
-### Using Skills in Codex
+### Using skills in Codex
 
 ```text
 $cities2-mcp:cities2-knowledge How can I make a subway line carry more passengers?
@@ -87,34 +87,44 @@ $cities2-mcp:cities2-modding Scaffold a small Cities: Skylines II UI mod in this
 $cities2-mcp:cities2-mod-review Review this Cities: Skylines II mod before I install it.
 ```
 
-Use `/skills` or type `$` to browse installed Codex skills.
+You can also check available skills with `/skills` and type `$` to pick one.
+
+Known Codex behavior: plugin-bundled MCP servers currently launch from the
+installed plugin cache, so direct MCP workflow tools may be allowlist-blocked.
+The bundled `cities2-modding` skill handles this by copying the bundled template
+as an explicit fallback, building with normal Codex workspace access, and
+stopping after build verification.
 
 ## Google Antigravity
 
 ### Install in Google Antigravity
 
-Clone the plugin into Google Antigravity's plugin folder:
+Run this once in PowerShell:
 
-```sh
-tmp="${TMPDIR:-/tmp}/Cities2-MCP"
-plugin="$HOME/.gemini/config/plugins/cities2-mcp"
-rm -rf "$tmp" "$plugin"
-git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP "$tmp"
-mkdir -p "$(dirname "$plugin")"
-cp -R "$tmp/plugins/cities2-mcp" "$plugin"
+```powershell
+$repo = Join-Path ([System.IO.Path]::GetTempPath()) ("Cities2-MCP-" + [guid]::NewGuid())
+$plugin = "$env:USERPROFILE\.gemini\config\plugins\cities2-mcp"
+if (Test-Path -LiteralPath $plugin) {
+    Write-Error "Cities2-MCP already exists at $plugin. Move or replace that one folder before reinstalling."
+    exit 1
+}
+git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP $repo
+New-Item -ItemType Directory -Force (Split-Path $plugin) | Out-Null
+Copy-Item -Recurse -LiteralPath (Join-Path $repo "plugins\cities2-mcp") -Destination $plugin
 ```
 
-Then start `agy` from your mod workspace, or restart the Google Antigravity app. Both use this plugin folder.
-This installs to `~/.gemini/config/plugins/cities2-mcp`.
+Then restart the Google Antigravity app, or open Antigravity CLI with `agy` from
+your mod workspace. Both apps read plugins from this folder.
 
 If you download the GitHub ZIP instead, copy the extracted `plugins/cities2-mcp`
 folder to the Antigravity plugin folder. `plugin.json` should be directly inside it.
 
-To update later, rerun the same install commands.
+To update later, replace only the existing `cities2-mcp` plugin folder. Do not
+clear the parent Antigravity `plugins` folder.
 
 Direct URL installs are not currently supported for this plugin.
 
-### Using Skills in Google Antigravity
+### Using skills in Google Antigravity
 
 Type `/cities2` and choose one of the Cities2 skills.
 
@@ -130,7 +140,7 @@ Type `/cities2` and choose one of the Cities2 skills.
 /cities2-mod-review Review this Cities: Skylines II mod before I install it.
 ```
 
-## Workspace Access
+## Workspace access
 
 Game knowledge and Encyclopedia lookup work immediately. Mod workflow tools need
 a trusted workspace, and Claude and Codex usually use the project you opened:
@@ -143,7 +153,7 @@ a trusted workspace, and Claude and Codex usually use the project you opened:
 Codex plugin MCP servers may launch from the plugin cache. If a direct workflow tool is
 allowlist-blocked, invoke `cities2-modding`; it has a bundled-template fallback.
 
-## Optional Build Prerequisites
+## Optional build prerequisites
 
 Knowledge, Encyclopedia, and scaffold tools do not require the Cities: Skylines II
 modding toolchain. Builds may need:
@@ -157,7 +167,7 @@ modding toolchain. Builds may need:
 If a build prerequisite is missing, the agent should stop, explain what is missing,
 and ask whether you want to install it, keep the scaffold, or continue with edits.
 
-## Direct MCP Command
+## Direct MCP command
 
 The plugin marketplace path is recommended. Use a direct MCP command only for a
 client that cannot install plugins:

@@ -1,4 +1,4 @@
-# Third-Party Notices
+# Third-party notices
 
 ## wiki-mcp retrieval code
 

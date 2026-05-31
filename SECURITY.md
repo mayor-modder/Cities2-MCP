@@ -1,6 +1,6 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+## Supported versions
 
 Security fixes are applied to the default branch first. When practical, fixes are
 also included in the latest public release.
@@ -11,7 +11,7 @@ also included in the latest public release.
 | Latest public release | Yes |
 | Older releases | Best effort |
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
 Please do not open a public issue with exploit details.
 
@@ -73,7 +73,7 @@ control:
 - dependency reports that do not affect this project
 - denial-of-service reports based only on excessive automated traffic
 
-## Safe Configuration Notes
+## Safe configuration notes
 
 - Configure `--workspace` roots narrowly. Only include repositories or parent
   folders you trust the MCP workflow tools to read, write, build, and package.

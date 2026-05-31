@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an improvement to Cities2-MCP, skills, or documentation.
+description: Suggest an improvement to the toolkit, skills, or documentation.
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
@@ -40,10 +40,10 @@ body:
       multiple: true
       options:
         - Claude Code
-        - Claude Desktop
+        - Claude desktop
         - Codex CLI
-        - Codex Desktop
-        - Antigravity
+        - Codex app
+        - Google Antigravity
         - Other or not sure
   - type: textarea
     id: safety

@@ -1,4 +1,4 @@
-# Cities2-MCP Corpus Attribution
+# Cities2-MCP corpus attribution
 
 The documentation corpus in this directory is adapted from article text on the
 Cities: Skylines II Wiki, part of Paradox Wikis.
@@ -15,7 +15,7 @@ preserved in `index/pages.jsonl`.
 Attribution for contributing wiki editors is available through each page's
 source URL, revision URL, or page history on the source wiki.
 
-## Media, Trademarks, and Endorsement Notice
+## Media, trademarks, and endorsement notice
 
 The public corpus includes text and JSONL metadata only. Non-text media
 from the source wiki, including images and screenshots, is not included.

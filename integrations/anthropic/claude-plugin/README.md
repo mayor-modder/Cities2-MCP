@@ -1,4 +1,4 @@
-# Cities2 MCP and Modding Toolkit Claude Plugin
+# Cities2 MCP and Modding Toolkit Claude plugin
 
 This is the Claude plugin package for Cities2 MCP and Modding Toolkit. It bundles five user-facing agent skills and a plugin-local MCP server launcher.
 

@@ -1,4 +1,4 @@
-# Cities2 MCP and Modding Toolkit Codex Plugin
+# Cities2 MCP and Modding Toolkit Codex plugin
 
 This is the Codex plugin package for Cities2 MCP and Modding Toolkit. It bundles five user-facing
 agent skills and a plugin-local MCP server launcher.

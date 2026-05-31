@@ -6,16 +6,16 @@ Cities2 MCP and Modding Toolkit is a local MCP server and agent skill bundle for
 
 It gives AI agents access to a local, searchable version of the Cities: Skylines II Wiki. It also lets them search the game encyclopedia, if the game is installed locally. This gives agents the ability to answer general knowledge questions about playing the game and offer advice on how to solve problems in your city. It also includes agent skills for creating, inspecting, building, and packaging CS2 mod projects. The modding skills are designed to ensure that mods built with this plugin conform to the best practices documented in the wiki.
 
-## Quick Install
+## Quick install
 
 Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [the Codex app](INSTALL.md#install-in-the-codex-app) | [Google Antigravity](INSTALL.md#install-in-google-antigravity)
 
 See [INSTALL.md](INSTALL.md) for full installation details, direct MCP config,
 workspace setup, build prerequisites, and troubleshooting.
 
-## What It Can Do
+## What it can do
 
-### Search Game And Modding Information
+### Search game and modding information
 
 The server includes a prepared text corpus from the Cities: Skylines II Wiki. An AI assistant can:
 
@@ -25,7 +25,7 @@ The server includes a prepared text corpus from the Cities: Skylines II Wiki. An
 
 This is useful for questions about game mechanics, modding APIs, toolchain setup, project structure, localization, UI mods, and related CS2 development topics.
 
-### Search The Local Game Encyclopedia
+### Search the local game Encyclopedia
 
 When Cities: Skylines II is installed locally, the MCP server also tries to read the in-game Encyclopedia from the user's own game files. This source is enabled by default when the server can find `Cities2_Data/Content/Game/Locale.cok`, especially for standard Steam installs.
 
@@ -33,7 +33,7 @@ The extracted Encyclopedia index is cached locally on the user's machine and reb
 
 If the game install is not found automatically, set `CITIES2_GAME_DIR` to the Cities: Skylines II install directory or `CITIES2_LOCALE_COK` to the full `Locale.cok` path.
 
-### Help With Mod Project Workflows
+### Help with mod project workflows
 
 The server also includes local workflow tools for CS2 mod projects. An AI assistant can:
 
@@ -46,7 +46,7 @@ The server also includes local workflow tools for CS2 mod projects. An AI assist
 
 These tools are meant for local development workflows. They can write files and run commands, so configure workspaces deliberately.
 
-## Agent Skills
+## Agent skills
 
 Marketplace installs include five user-facing skills:
 
@@ -90,7 +90,7 @@ Project templates are stored at:
 - `cities2_mcp/templates/cities2-ui`
 - `cities2_mcp/templates/cities2-hybrid`
 
-## MCP Tools
+## MCP tools
 
 Game and modding knowledge:
 
@@ -112,7 +112,7 @@ Mod project workflow:
 - `package_project(project_dir, output_dir?, package_name?, exclude_globs?)`
 - `launch_cities2(executable?, flags?, platform=auto|mac|windows|linux, dry_run=true)`
 
-## Included Wiki Corpus
+## Included wiki text
 
 The packaged server reads the prepared corpus from `cities2_mcp/data` by default. The corpus contains page metadata and JSONL indexes used by the MCP retrieval tools.
 

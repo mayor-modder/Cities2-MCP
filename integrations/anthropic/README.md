@@ -1,4 +1,4 @@
-# Anthropic Distribution
+# Anthropic distribution
 
 `claude-plugin/` is the primary Claude package. It bundles the Claude slash
 commands, a plugin-local MCP launcher, and a vendored copy of the Python package

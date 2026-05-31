@@ -1,4 +1,4 @@
-# OpenAI Codex Distribution
+# OpenAI Codex distribution
 
 Cities2 MCP and Modding Toolkit publishes a Codex plugin through this repository's plugin
 marketplace:
