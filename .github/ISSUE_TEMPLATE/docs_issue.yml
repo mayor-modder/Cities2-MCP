@@ -30,8 +30,8 @@ body:
       options:
         - Not client-specific
         - Claude Code
-        - Claude desktop
+        - Claude Desktop
         - Codex CLI
-        - Codex app
-        - Google Antigravity
+        - Codex Desktop
+        - Antigravity
         - Other or not sure

@@ -1,8 +1,7 @@
 # Contributing
 
-Thanks for helping improve Cities2 MCP and Modding Toolkit. This project is a
-local MCP server and agent skill bundle for Cities: Skylines II knowledge and
-modding workflows.
+Thanks for helping improve Cities2-MCP. This project is a local MCP server and
+agent skill bundle for Cities: Skylines II knowledge and modding workflows.
 
 ## Before You Start
 
