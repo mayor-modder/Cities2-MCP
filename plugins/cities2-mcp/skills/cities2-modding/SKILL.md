@@ -15,7 +15,7 @@ Trigger this skill for asset/mod workflows, toolchain questions, project analysi
 
 - Use wiki retrieval tools for concepts, APIs, toolchain setup, project structure, localization, UI mods, and reference lookup.
 - Use project workflow tools only for explicit local actions inside configured workspaces.
-- Do not use the game encyclopedia as the primary source for modding APIs; it is gameplay-facing. It can still help explain in-game concepts a mod interacts with.
+- Do not use the Game Encyclopedia as the primary source for modding APIs; it is gameplay-facing. It can still help explain in-game concepts a mod interacts with.
 
 ## Specialized Skill Routing
 

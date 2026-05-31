@@ -27,7 +27,7 @@ Use the connected `cities2-mcp` MCP server to answer this Cities: Skylines II ga
 
 $ARGUMENTS
 
-        Follow the bundled `cities2-knowledge` source workflow: call `source_status()` first, search both the wiki corpus and local game encyclopedia when available, fetch full pages or entries for important claims, and end with compact source notes.
+Follow the bundled `cities2-knowledge` source workflow: call `source_status()` first, search both the wiki corpus and local Game Encyclopedia when available, fetch full pages or entries for important claims, and end with compact source notes.
 """,
     "cities2-modding": """---
 description: "Ask Cities2-MCP about Cities: Skylines II modding or local mod project workflows"

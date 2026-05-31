@@ -40,9 +40,9 @@ class DiagnosticsTests(unittest.TestCase):
 
     def test_parse_missing_dotnet_runtime_from_msbuild_postprocessor(self) -> None:
         output = (
-            r"C:\Users\Example\AppData\LocalLow\Colossal Order\Cities Skylines II\.cache\Modding\Mod.targets(103,5): "
+            r"C:\Users\matt\AppData\LocalLow\Colossal Order\Cities Skylines II\.cache\Modding\Mod.targets(103,5): "
             r"error : You must install or update .NET to run this application. "
-            r"[C:\Users\Example\Documents\Cities2-MCP\TestMayor\testmayor.csproj]"
+            r"[C:\Users\matt\OneDrive\Documents\Cities2-MCP\TestMayor\testmayor.csproj]"
         )
 
         diags = parse_build_output(output, tool_hint="dotnet")

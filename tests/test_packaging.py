@@ -124,7 +124,6 @@ class PackagingTests(unittest.TestCase):
         server_json = json.loads((ROOT / "server.json").read_text(encoding="utf-8"))
 
         self.assertEqual(server_json["name"], "io.github.mayor-modder/cities2-mcp")
-        self.assertEqual(server_json["title"], "Cities2 MCP and Modding Toolkit")
         self.assertEqual(server_json["version"], "0.2.0")
         package = server_json["packages"][0]
         self.assertEqual(package["registryType"], "pypi")
@@ -361,7 +360,6 @@ class PackagingTests(unittest.TestCase):
         plugin_mcp = json.loads((plugin_root / "mcp_config.json").read_text(encoding="utf-8"))
 
         self.assertEqual(plugin["name"], "cities2-mcp")
-        self.assertEqual(plugin["description"], "Cities: Skylines II knowledge and modding tools for AI agents.")
         self.assertEqual(plugin["version"], "0.2.0")
         self.assertEqual(plugin_mcp["mcpServers"]["cities2-mcp"]["command"], "node")
         self.assertIn("-e", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])

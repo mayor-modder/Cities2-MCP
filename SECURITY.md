@@ -43,7 +43,7 @@ want credit.
 Cities2 MCP and Modding Toolkit is a local MCP server for Cities: Skylines II
 knowledge and modding workflows. It includes Python MCP server code, bundled
 wiki retrieval data, agent skills, mod project templates, local game
-encyclopedia extraction, plugin manifests, launchers, packaged client
+Encyclopedia extraction, plugin manifests, launchers, packaged client
 integration payloads, and workflow tools that can read, write, build, package,
 and dry-run launch local mod projects.
 
@@ -55,7 +55,7 @@ Reports are especially useful when they involve:
   launch helpers
 - unsafe handling of untrusted mod project files, template metadata, package
   names, or generated files
-- leaking local game files, generated encyclopedia caches, personal paths,
+- leaking local game files, generated Encyclopedia caches, personal paths,
   secrets, or user data through tool responses, packages, logs, or generated
   files
 - release workflow or artifact integrity issues
@@ -82,7 +82,7 @@ control:
 - Treat build, package, analyze, and launch helpers as local development
   actions. They may execute project toolchains or inspect project files and
   should only be used on trusted projects.
-- Do not commit locally extracted game encyclopedia text, user save data,
+- Do not commit locally extracted game Encyclopedia text, user save data,
   generated caches, or personal paths.
 - Review generated mod files before publishing or distributing them.
 

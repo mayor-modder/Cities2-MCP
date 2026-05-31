@@ -75,6 +75,7 @@ class PortabilityTests(unittest.TestCase):
         targets = [
             ROOT / "mcp.config.example.json",
             ROOT / "README.md",
+            ROOT / "scripts" / "mcp_launch_wrapper.sh",
             ROOT / "cities2_mcp" / "mcp_server.py",
         ]
         for path in targets:

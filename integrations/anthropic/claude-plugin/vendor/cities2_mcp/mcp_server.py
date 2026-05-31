@@ -446,9 +446,9 @@ def encyclopedia_tools_catalog() -> List[JSON]:
     return [
         {
             "name": "search_encyclopedia",
-                "description": "Search the local Cities: Skylines II in-game encyclopedia read from the user's installed game files.",
+            "description": "Search the local Cities: Skylines II in-game Encyclopedia read from the user's installed game files.",
             "annotations": {
-                    "title": "Search game encyclopedia",
+                "title": "Search Game Encyclopedia",
                 "readOnlyHint": True,
                 "destructiveHint": False,
                 "idempotentHint": True,
@@ -465,9 +465,9 @@ def encyclopedia_tools_catalog() -> List[JSON]:
         },
         {
             "name": "get_encyclopedia_entry",
-                "description": "Return one local Cities: Skylines II in-game encyclopedia entry by entry_id.",
+            "description": "Return one local Cities: Skylines II in-game Encyclopedia entry by entry_id.",
             "annotations": {
-                    "title": "Get encyclopedia entry",
+                "title": "Get Encyclopedia Entry",
                 "readOnlyHint": True,
                 "destructiveHint": False,
                 "idempotentHint": True,
@@ -481,7 +481,7 @@ def encyclopedia_tools_catalog() -> List[JSON]:
         },
         {
             "name": "source_status",
-            "description": "Report source availability for the wiki corpus and local game encyclopedia.",
+            "description": "Report Cities2-MCP source availability for the wiki corpus and local game Encyclopedia.",
             "annotations": {
                 "title": "Check Source Status",
                 "readOnlyHint": True,
@@ -509,11 +509,11 @@ PROMPT_ARGUMENTS = [
 
 PROMPT_DEFINITIONS: Dict[str, JSON] = {
     "cities2": {
-            "description": "Answer Cities: Skylines II questions using both the bundled wiki corpus and the local game encyclopedia when available.",
+        "description": "Answer Cities: Skylines II questions using both the bundled wiki corpus and the local game Encyclopedia when available.",
         "tool_guidance": (
             "Use source_status() first. Search both sources when they are available: use search/query_reference/get_page "
             "for the bundled Cities: Skylines II Wiki corpus, and search_encyclopedia/get_encyclopedia_entry for the "
-            "local in-game encyclopedia. Prefer the local game encyclopedia for current in-game terminology and exact "
+            "local in-game Encyclopedia. Prefer the local game Encyclopedia for current in-game terminology and exact "
             "mechanics, and use the wiki for broader explanations, guide context, tables, and modding background. "
             "If the sources disagree, say so plainly and identify which source says what."
         ),
@@ -527,10 +527,10 @@ PROMPT_DEFINITIONS: Dict[str, JSON] = {
         ),
     },
     "cities2-encyclopedia": {
-            "description": "Answer using only the local in-game encyclopedia read from the user's installed game files.",
+        "description": "Answer using only the local in-game Encyclopedia read from the user's installed game files.",
         "tool_guidance": (
             "Use source_status() first and check game_encyclopedia.available. If it is unavailable, explain that the "
-            "local game encyclopedia was not found and mention CITIES2_GAME_DIR or CITIES2_LOCALE_COK. If available, "
+            "local game Encyclopedia was not found and mention CITIES2_GAME_DIR or CITIES2_LOCALE_COK. If available, "
             "use search_encyclopedia, then get_encyclopedia_entry for the best entries before answering. Do not use "
             "the wiki tools unless the user explicitly asks for fallback."
         ),
@@ -602,7 +602,7 @@ def prompt_text(name: str, question: str) -> str:
         f"User question: {question}\n\n"
         f"Source workflow:\n{tool_guidance}\n\n"
         "Answer normally and synthesize the retrieved material instead of showing raw search results. "
-        "Use concise source labels such as wiki, game encyclopedia, or mod project tools when they matter. "
+        "Use concise source labels such as Wiki, Game Encyclopedia, or Mod project tools when they matter. "
         "If there is not enough retrieved evidence, say what is missing rather than guessing."
     )
 
@@ -1084,7 +1084,7 @@ def main() -> None:
             workflow_error = str(exc)
             debug_log(f"WorkflowManager init failed: {workflow_error}")
     else:
-        workflow_error = "Configure at least one --workspace to use MCP workflow tools."
+        workflow_error = "Configure at least one --workspace to use Cities2-MCP workflow tools."
 
     if debug_enabled():
         if corpus is not None:
