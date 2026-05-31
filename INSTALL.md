@@ -34,7 +34,7 @@ Start a new Claude Code session in your mod project folder. The plugin starts
 ### Using Skills in Claude
 
 ```text
-/cities2-knowledge what's new in the latest Cities: Skylines II patch?
+/cities2-knowledge Why is my office demand stuck near zero?
 ```
 
 ```text
@@ -43,14 +43,6 @@ Start a new Claude Code session in your mod project folder. The plugin starts
 
 ```text
 /cities2-mod-review Review this Cities: Skylines II mod before I install it.
-```
-
-```text
-/cities2-mod-debugging Debug this Cities: Skylines II mod build failure and Modding.log excerpt.
-```
-
-```text
-/cities2-mod-release Check this Cities: Skylines II mod release package for upload readiness.
 ```
 
 ## Codex
@@ -84,7 +76,7 @@ Codex in the same folder.
 ### Using Skills in Codex
 
 ```text
-$cities2-mcp:cities2-knowledge what's new in the latest Cities: Skylines II patch?
+$cities2-mcp:cities2-knowledge How can I make a subway line carry more passengers?
 ```
 
 ```text
@@ -93,14 +85,6 @@ $cities2-mcp:cities2-modding Scaffold a small Cities: Skylines II UI mod in this
 
 ```text
 $cities2-mcp:cities2-mod-review Review this Cities: Skylines II mod before I install it.
-```
-
-```text
-$cities2-mcp:cities2-mod-debugging Debug this Cities: Skylines II mod build failure and Modding.log excerpt.
-```
-
-```text
-$cities2-mcp:cities2-mod-release Check this Cities: Skylines II mod release package for upload readiness.
 ```
 
 Use `/skills` or type `$` to browse installed Codex skills.
@@ -131,7 +115,15 @@ Direct URL installs are not currently supported for this plugin.
 Type `/cities2` and choose one of the Cities2 skills.
 
 ```text
-/cities2-knowledge What is the latest Cities: Skylines II patch in the bundled sources? Include compact source notes.
+/cities2-knowledge Why are my industrial companies complaining about not enough customers?
+```
+
+```text
+/cities2-modding Scaffold a small Cities: Skylines II UI mod in this project folder, then build it.
+```
+
+```text
+/cities2-mod-review Review this Cities: Skylines II mod before I install it.
 ```
 
 ## Workspace Access

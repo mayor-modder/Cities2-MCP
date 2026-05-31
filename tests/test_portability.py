@@ -279,7 +279,6 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("cities2-mcp", metadata_text)
             self.assertIn(f"${skill_name}", metadata_text)
             self.assertIn(skill_name, readme_text)
-            self.assertIn(skill_name, install_text)
             for distributed_root in (
                 ROOT / "plugins" / "cities2-mcp" / "skills",
                 ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills",
@@ -305,6 +304,8 @@ class PortabilityTests(unittest.TestCase):
         )
 
         self.assertIn("compact source notes", " ".join(readme_text.split()))
+        for skill_name in ("cities2-knowledge", "cities2-modding", "cities2-mod-review"):
+            self.assertIn(skill_name, install_text)
         self.assertIn("patch", (ROOT / "skills" / "cities2-knowledge" / "SKILL.md").read_text(encoding="utf-8"))
         self.assertIn("uvx cities2-mcp install-agent-assets", install_text)
         self.assertIn("load local agent skills separately", install_text)
