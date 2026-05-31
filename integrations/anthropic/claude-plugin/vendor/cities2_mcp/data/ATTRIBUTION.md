@@ -1,4 +1,4 @@
-# Cities2-MCP Corpus Attribution
+# Cities2-MCP corpus attribution
 
 The documentation corpus in this directory is adapted from article text on the
 Cities: Skylines II Wiki, part of Paradox Wikis.
@@ -15,7 +15,7 @@ preserved in `index/pages.jsonl`.
 Attribution for contributing wiki editors is available through each page's
 source URL, revision URL, or page history on the source wiki.
 
-## Media, Trademarks, and Endorsement Notice
+## Media, trademarks, and endorsement notice
 
 The public corpus includes text and JSONL metadata only. Non-text media
 from the source wiki, including images and screenshots, is not included.
@@ -25,10 +25,12 @@ game material may be owned by Paradox Interactive or its subsidiaries.
 Paradox Wikis may have permission to use that material; reuse
 elsewhere may be restricted.
 
-Cities: Skylines II, Paradox Interactive, and related names are used
-referentially to identify the game and source wiki. This project is not
-affiliated with, sponsored by, endorsed by, or approved by Paradox
-Interactive, Paradox Wikis, Colossal Order, or any related company.
+Cities: Skylines II, Paradox Interactive, Iceflake Studios, Colossal Order,
+Paradox Wikis, and related names are used referentially to identify the game,
+source wiki, and related companies. This project is not developed by,
+affiliated with, sponsored by, endorsed by, reviewed by, or approved by Paradox
+Interactive, Iceflake Studios, Colossal Order, Paradox Wikis, or any of their
+related companies.
 
 ## Changes
 

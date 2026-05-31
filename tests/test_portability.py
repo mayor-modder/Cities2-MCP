@@ -422,8 +422,9 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("trusted workspace", install_text)
         self.assertIn("trusted parent folder", install_text)
         self.assertIn("Path must stay inside configured workspaces", install_text)
-        self.assertIn("builds execute trusted workspace code", install_text.lower())
-        self.assertIn("not use build_project for arbitrary untrusted repositories", install_text)
+        self.assertIn("Builds run project commands", install_text)
+        self.assertIn("only build projects you trust", install_text)
+        self.assertNotIn("build_project", install_text)
         self.assertIn("mod project folder", install_text)
         self.assertNotIn("// Add more", install_text)
 

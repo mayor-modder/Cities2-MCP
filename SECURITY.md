@@ -79,9 +79,9 @@ control:
 - Configure trusted workspace roots narrowly, whether through `--workspace` or
   your client/plugin settings. Only include repositories or parent folders you
   trust the MCP workflow tools to read, write, build, and package.
-- Treat build, package, analyze, and launch helpers as local development
-  actions. They may execute project toolchains or inspect project files and
-  should only be used on trusted projects.
+- Treat build, package, and analyze helpers as local development actions. They
+  may execute project toolchains or inspect project files and should only be
+  used on trusted projects.
 - Do not commit locally extracted game encyclopedia text, user save data,
   generated caches, or personal paths.
 - Review generated mod files before publishing or distributing them.
