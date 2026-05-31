@@ -384,7 +384,7 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("not the final review artifact", text)
             self.assertIn("Offer to remove temporary review files", text)
             self.assertIn("Do not outsource judgment", text)
-            self.assertNotIn("C:\\Users\\matt", text)
+            self.assertNotIn("C:\\Users\\ExampleUser", text)
 
     def test_docs_do_not_advertise_unimplemented_workspace_escape_flag(self) -> None:
         for path in (ROOT / "README.md", ROOT / "INSTALL.md"):

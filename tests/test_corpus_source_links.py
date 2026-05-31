@@ -40,7 +40,7 @@ class CorpusSourceLinkTests(unittest.TestCase):
             "source_file",
             "markdown_path",
             "json_path",
-            "C:\\Users\\matt",
+            "C:\\Users\\ExampleUser",
             "Downloads\\cs2wiki",
             "OneDrive\\Documents",
         ]
