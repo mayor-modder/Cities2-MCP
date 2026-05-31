@@ -163,11 +163,26 @@ class HybridIndex:
         return scored[: max(1, min(limit, 20))]
 
 
+def _is_within_path(path: Path, root: Path) -> bool:
+    resolved_path = path.resolve()
+    resolved_root = root.resolve()
+    return resolved_path == resolved_root or resolved_root in resolved_path.parents
+
+
 def markdown_sidecar_path(row: JSON) -> Optional[Path]:
     value = str(row.get("markdown_path") or row.get("_markdown_path") or "").strip()
     if not value:
         return None
-    path = Path(value)
+    data_dir_value = str(row.get("_data_dir", "")).strip()
+    if not data_dir_value:
+        return None
+    root = Path(data_dir_value).resolve()
+    candidate = Path(value)
+    if candidate.is_absolute() or ".." in candidate.parts:
+        return None
+    path = (root / candidate).resolve()
+    if not _is_within_path(path, root):
+        return None
     return path if path.is_file() else None
 
 
@@ -254,8 +269,9 @@ class Corpus:
                 prefixed_id = f"{dataset_name}:{orig_page_id}" if orig_page_id else ""
                 row["page_id"] = prefixed_id
                 row["dataset"] = dataset_name
+                row["_data_dir"] = str(data_dir.resolve())
                 if orig_page_id and not row.get("markdown_path"):
-                    row["_markdown_path"] = str(data_dir / "pages" / "markdown" / f"{orig_page_id}.md")
+                    row["_markdown_path"] = str(Path("pages") / "markdown" / f"{orig_page_id}.md")
                 if prefixed_id:
                     self.pages[prefixed_id] = row
                     dataset_pages[prefixed_id] = row

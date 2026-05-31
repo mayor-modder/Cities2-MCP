@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import fnmatch
 import os
 import shutil
 import subprocess
 import sys
 import time
 import zipfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Dict, List, Optional, Sequence
 
 from .diagnostics import parse_build_output
@@ -213,9 +212,18 @@ class BuildRunner:
         out_dir = self.scaffolder.resolve_workspace_path(output_dir) if output_dir else (root / "packages")
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        name = package_name or root.name
+        name = self._safe_package_name(package_name or root.name)
         zip_path = (out_dir / f"{name}.zip").resolve()
-        excludes = sorted(self.DEFAULT_PACKAGE_EXCLUDES | {str(x) for x in (exclude_globs or []) if str(x).strip()})
+        if not ProjectScaffolder.is_within_path(zip_path, out_dir):
+            raise ValueError("package output path escapes output_dir")
+        excludes = sorted(
+            self.DEFAULT_PACKAGE_EXCLUDES
+            | {
+                ProjectScaffolder.validate_relative_glob(str(x), field_name="exclude_globs")
+                for x in (exclude_globs or [])
+                if str(x).strip()
+            }
+        )
 
         entries = 0
         with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -224,6 +232,7 @@ class BuildRunner:
                 rel_dir = current.relative_to(root).as_posix()
                 if rel_dir == ".":
                     rel_dir = ""
+                self._prune_unsafe_directories(root, current, dirnames)
                 dirnames[:] = [
                     dirname
                     for dirname in dirnames
@@ -235,8 +244,13 @@ class BuildRunner:
                         continue
                     rel = p.relative_to(root)
                     rel_str = rel.as_posix()
-                    if any(fnmatch.fnmatch(rel_str, g) for g in excludes):
+                    if any(PurePosixPath(rel_str).match(g) for g in excludes):
                         continue
+                    resolved_file = p.resolve()
+                    if not ProjectScaffolder.is_within_path(resolved_file, root):
+                        raise ValueError(f"package file resolves outside project root: {rel_str}")
+                    if p.stat(follow_symlinks=False).st_nlink > 1:
+                        raise ValueError(f"package file has multiple hard links: {rel_str}")
                     zf.write(p, arcname=rel_str)
                     entries += 1
 
@@ -248,6 +262,32 @@ class BuildRunner:
             "entries_count": entries,
             "excluded": excludes,
         }
+
+    @staticmethod
+    def _safe_package_name(value: str) -> str:
+        name = str(value or "").strip()
+        posix = PurePosixPath(name)
+        windows = PureWindowsPath(name)
+        if not name or name in {".", ".."}:
+            raise ValueError("package_name must be a non-empty file name")
+        if posix.is_absolute() or windows.is_absolute() or windows.drive:
+            raise ValueError("package_name must not be an absolute path")
+        if "/" in name or "\\" in name or ".." in posix.parts or ".." in windows.parts:
+            raise ValueError("package_name must not contain path separators or parent traversal")
+        return name
+
+    @staticmethod
+    def _prune_unsafe_directories(root: Path, current: Path, dirnames: List[str]) -> None:
+        for dirname in list(dirnames):
+            path = current / dirname
+            rel = path.relative_to(root).as_posix()
+            if path.is_symlink():
+                dirnames.remove(dirname)
+                if not ProjectScaffolder.is_within_path(path.resolve(), root):
+                    raise ValueError(f"package directory resolves outside project root: {rel}")
+                continue
+            if ProjectScaffolder.is_reparse_point(path):
+                dirnames.remove(dirname)
 
     def build_project(
         self,
@@ -394,70 +434,4 @@ class BuildRunner:
             "profile": build_profile,
             "steps": results,
             "summary": summary,
-        }
-
-    @staticmethod
-    def _platform_name(value: str) -> str:
-        val = value.strip().lower()
-        if val != "auto":
-            return val
-        if sys.platform == "darwin":
-            return "mac"
-        if sys.platform.startswith("win"):
-            return "windows"
-        return "linux"
-
-    @staticmethod
-    def _default_executable(platform_name: str) -> str:
-        if platform_name == "mac":
-            return "/Applications/Cities Skylines II.app/Contents/MacOS/Cities Skylines II"
-        if platform_name == "windows":
-            return r"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Cities Skylines II\\Cities2.exe"
-        return "Cities2"
-
-    def launch_cities2(
-        self,
-        executable: Optional[str],
-        flags: Optional[List[str]],
-        platform: str,
-        dry_run: bool,
-    ) -> JSON:
-        platform_name = self._platform_name(platform)
-        if platform_name not in {"mac", "windows", "linux"}:
-            raise ValueError("platform must be one of: auto, mac, windows, linux")
-
-        resolved_executable = executable or self._default_executable(platform_name)
-        cmd = [resolved_executable, *[str(f) for f in (flags or [])]]
-
-        if dry_run:
-            return {
-                "ok": True,
-                "dry_run": True,
-                "platform": platform_name,
-                "resolved_executable": resolved_executable,
-                "command": cmd,
-                "message": "Dry run only; command not executed.",
-            }
-
-        if platform_name != "windows":
-            exe_path = Path(resolved_executable).expanduser()
-            if (os.path.sep in resolved_executable or resolved_executable.startswith(".")) and not exe_path.exists():
-                return {
-                    "ok": False,
-                    "dry_run": False,
-                    "platform": platform_name,
-                    "resolved_executable": resolved_executable,
-                    "command": cmd,
-                    "message": f"Executable not found: {resolved_executable}",
-                }
-
-        proc = subprocess.Popen(cmd)
-        return {
-            "ok": True,
-            "dry_run": False,
-            "platform": platform_name,
-            "resolved_executable": resolved_executable,
-            "command": cmd,
-            "pid": proc.pid,
-            "message": "Launched process.",
         }

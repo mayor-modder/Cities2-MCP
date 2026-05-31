@@ -1,6 +1,6 @@
 ---
 name: cities2-modding
-description: "Use when working on Cities: Skylines II modding, mod projects, C#/UI mods, localization, scaffold, analyze, build, package, or dry-run launch requests."
+description: "Use when working on Cities: Skylines II modding, mod projects, C#/UI mods, localization, scaffold, analyze, build, package, or playtesting handoff requests."
 metadata:
   short-description: "Use CS2 docs and mod workflow tools"
 ---
@@ -9,7 +9,7 @@ metadata:
 
 Use this skill for Cities: Skylines II modding and local mod-project work through Cities2-MCP. Keep documentation retrieval separate from write/build actions.
 
-Trigger this skill for asset/mod workflows, toolchain questions, project analysis, file edits, scaffolding, build/package/install work, or local dry-run launches, even when the user does not mention this plugin.
+Trigger this skill for asset/mod workflows, toolchain questions, project analysis, file edits, scaffolding, build/package/install work, or local playtesting handoffs, even when the user does not mention this plugin.
 
 ## Source And Tool Roles
 
@@ -49,7 +49,7 @@ Example queries:
 
 ## Local Project Workflow
 
-Before writing files, building, packaging, or launching:
+Before writing files, building, packaging, or preparing playtesting handoff steps:
 
 1. Confirm the target project path is inside a configured workspace.
    - If no trusted mod projects folder is configured, or the requested project
@@ -89,9 +89,9 @@ Before writing files, building, packaging, or launching:
    - `list_project_tree` before editing unfamiliar projects.
    - `write_project_file` for explicit file changes.
    - `analyze_project` before or after edits to catch structure/toolchain problems.
-   - `build_project` for build/package diagnostics.
+   - `build_project` for trusted workspace code build/package diagnostics. Do not use it for arbitrary untrusted repositories.
    - `package_project` for distributable output.
-   - `launch_cities2` only as a dry run unless the user clearly asks to launch.
+   - Provide manual Cities: Skylines II launch and playtesting steps instead of invoking a launch tool.
 
 If a write/build tool returns diagnostics, summarize the actionable errors first and include paths or commands that matter.
 

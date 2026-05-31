@@ -1,6 +1,6 @@
 {
   "name": "{{PROJECT_SLUG}}-ui",
-  "version": "{{VERSION}}",
+  "version": "{{VERSION_STRING}}",
   "private": true,
   "scripts": {
     "build": "esbuild src/index.tsx --bundle --format=esm --outfile=dist/ui.js",

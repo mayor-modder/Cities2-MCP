@@ -40,6 +40,19 @@ class FakeUnavailableEncyclopedia:
         }
 
 
+class FakeErroredEncyclopedia:
+    available = False
+    entries = []
+
+    def status(self):
+        return {
+            "source": "game_encyclopedia",
+            "available": False,
+            "cache_status": "error",
+            "error": "Locale.cok exceeds configured size limit",
+        }
+
+
 class McpGameEncyclopediaTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -183,6 +196,22 @@ class McpGameEncyclopediaTests(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertIn("Game encyclopedia not found", payload["message"])
 
+    def test_search_encyclopedia_unavailable_preserves_source_error(self) -> None:
+        response = self.module.handle_tools_call(
+            3,
+            {"name": "search_encyclopedia", "arguments": {"query": "roads"}},
+            corpus=None,
+            wm=None,
+            encyclopedia=FakeErroredEncyclopedia(),
+            corpus_error=None,
+            workflow_error=None,
+            docs_paths={},
+        )
+        payload = json.loads(response["result"]["content"][0]["text"])
+
+        self.assertFalse(payload["ok"])
+        self.assertIn("Locale.cok exceeds configured size limit", payload["message"])
+
     def test_search_encyclopedia_malformed_limit_returns_tool_error_payload(self) -> None:
         response = self.module.handle_tools_call(
             4,
@@ -316,6 +345,52 @@ class McpGameEncyclopediaTests(unittest.TestCase):
         self.assertEqual(1, len(encyclopedia_logs))
         self.assertIn("missing", encyclopedia_logs[0])
         self.assertIn("Game encyclopedia not found", encyclopedia_logs[0])
+
+    def test_main_preserves_encyclopedia_load_error_status(self) -> None:
+        messages = iter(
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "id": 5,
+                    "method": "tools/call",
+                    "params": {"name": "source_status", "arguments": {}},
+                },
+                None,
+            ]
+        )
+        sent_messages = []
+
+        original_argv = self.module.sys.argv
+        original_corpus = self.module.Corpus
+        original_wm = self.module.WorkflowManager
+        original_load = self.module.GameEncyclopediaSource.load
+        original_read = self.module.read_message
+        original_send = self.module.send_message
+
+        try:
+            self.module.sys.argv = ["mcp_server.py"]
+            self.module.Corpus = lambda paths: None
+            self.module.WorkflowManager = lambda workspaces, mods_dir, **kwargs: None
+            self.module.GameEncyclopediaSource.load = lambda config: (_ for _ in ()).throw(
+                ValueError("Locale.cok exceeds configured size limit")
+            )
+            self.module.read_message = lambda: next(messages)
+            self.module.send_message = sent_messages.append
+
+            self.module.main()
+        finally:
+            self.module.sys.argv = original_argv
+            self.module.Corpus = original_corpus
+            self.module.WorkflowManager = original_wm
+            self.module.GameEncyclopediaSource.load = original_load
+            self.module.read_message = original_read
+            self.module.send_message = original_send
+
+        payload = json.loads(sent_messages[0]["result"]["content"][0]["text"])
+        encyclopedia_status = payload["game_encyclopedia"]
+        self.assertFalse(encyclopedia_status["available"])
+        self.assertEqual(encyclopedia_status["cache_status"], "error")
+        self.assertIn("Locale.cok exceeds configured size limit", encyclopedia_status["error"])
 
     def test_main_passes_loaded_encyclopedia_to_request_handler(self) -> None:
         loaded_encyclopedia = FakeAvailableEncyclopedia()

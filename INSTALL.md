@@ -120,9 +120,7 @@ If you download the GitHub ZIP instead, copy the extracted `plugins/cities2-mcp`
 folder to the Antigravity plugin folder. `plugin.json` should be directly inside it.
 
 To update later, replace only the existing `cities2-mcp` plugin folder. Do not
-clear the parent Antigravity `plugins` folder.
-
-Direct URL installs are not currently supported for this plugin.
+clear the parent Antigravity `plugins` folder. Direct URL installs are not currently supported for this plugin.
 
 ### Using skills in Google Antigravity
 
@@ -152,6 +150,8 @@ a trusted workspace, and Claude and Codex usually use the project you opened:
 
 Codex plugin MCP servers may launch from the plugin cache. If a direct workflow tool is
 allowlist-blocked, invoke `cities2-modding`; it has a bundled-template fallback.
+
+Project builds execute trusted workspace code through `npm`, `dotnet`, and packaging steps. Do not use build_project for arbitrary untrusted repositories.
 
 ## Optional build prerequisites
 

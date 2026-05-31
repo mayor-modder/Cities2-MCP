@@ -21,6 +21,8 @@ GAME_ENCYCLOPEDIA_WARNING = (
     "Set CITIES2_GAME_DIR or CITIES2_LOCALE_COK to enable local game encyclopedia search."
 )
 RELATIVE_LOCALE_COK = Path("Cities2_Data") / "Content" / "Game" / "Locale.cok"
+MAX_LOCALE_PAYLOAD_BYTES = 64 * 1024 * 1024
+MAX_LOCALE_COMPRESSED_BYTES = 64 * 1024 * 1024
 _GLOSSARY_PREFIX = "Glossary."
 _IMAGE_RE = re.compile(r"<image:([^>]+)>")
 _ICON_RE = re.compile(r"<icon:([^>]+)>")
@@ -247,11 +249,22 @@ def read_locale_payload(locale_cok: Path, *, locale: str) -> bytes:
     try:
         with zipfile.ZipFile(locale_cok) as archive:
             target = f"{locale}.loc".lower()
-            for name in archive.namelist():
-                if name.lower() == target:
-                    return archive.read(name)
+            for info in archive.infolist():
+                if info.filename.lower() == target:
+                    if info.compress_size > MAX_LOCALE_COMPRESSED_BYTES:
+                        raise ValueError(
+                            f"Locale.cok compressed member size exceeds limit: {info.compress_size} bytes"
+                        )
+                    if info.file_size > MAX_LOCALE_PAYLOAD_BYTES:
+                        raise ValueError(
+                            f"Locale.cok uncompressed member size exceeds limit: {info.file_size} bytes"
+                        )
+                    return archive.read(info)
             return b""
     except zipfile.BadZipFile:
+        size = locale_cok.stat().st_size
+        if size > MAX_LOCALE_PAYLOAD_BYTES:
+            raise ValueError(f"Locale.cok raw file size exceeds limit: {size} bytes")
         return locale_cok.read_bytes()
 
 
@@ -547,16 +560,31 @@ class GameEncyclopediaSource:
             chunks = load_cached_chunks(cache_dir)
             return cls(discovery=discovery, cache_status="hit", entries=entries, chunks=chunks)
 
-        data = read_locale_payload(discovery.locale_cok_path, locale=config.locale)
-        records = extract_glossary_records(data)
-        entries = records_to_entries(records, locale=config.locale, source_metadata=_source_metadata(discovery))
-        chunks = entries_to_chunks(entries)
-        write_cache(cache_dir, fingerprint, entries, chunks=chunks)
-        return cls(discovery=discovery, cache_status="rebuilt", entries=entries, chunks=chunks)
+        try:
+            data = read_locale_payload(discovery.locale_cok_path, locale=config.locale)
+            records = extract_glossary_records(data)
+            entries = records_to_entries(records, locale=config.locale, source_metadata=_source_metadata(discovery))
+            chunks = entries_to_chunks(entries)
+            write_cache(cache_dir, fingerprint, entries, chunks=chunks)
+            return cls(discovery=discovery, cache_status="rebuilt", entries=entries, chunks=chunks)
+        except Exception as exc:
+            error_discovery = LocaleDiscovery(
+                available=True,
+                locale_cok_path=discovery.locale_cok_path,
+                game_dir=discovery.game_dir,
+                source_kind=discovery.source_kind,
+                steam_app_id=discovery.steam_app_id,
+                steam_build_id=discovery.steam_build_id,
+                warning=str(exc),
+            )
+            return cls(discovery=error_discovery, cache_status="error", entries=[], chunks=[])
 
     def status(self) -> JSON:
         payload = source_status_payload(self.discovery, cache_status=self.cache_status, entry_count=len(self.entries))
         payload["available"] = self.available
+        if self.cache_status == "error":
+            payload["error"] = self.discovery.warning
+            payload["warning"] = self.discovery.warning
         if not self.available and not payload.get("warning"):
             payload["warning"] = "Game encyclopedia was found, but no glossary entries could be loaded."
         return payload

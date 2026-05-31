@@ -42,9 +42,8 @@ The server also includes local workflow tools for CS2 mod projects. An AI assist
 - list project trees
 - run project builds and analyzers
 - package project output
-- dry-run launching Cities: Skylines II with selected flags
 
-These tools are meant for local development workflows. They can write files and run commands, so configure workspaces deliberately.
+These tools are meant for local development workflows. They can write files and run trusted workspace code during builds, so configure workspaces deliberately and use manual Cities: Skylines II launch steps for playtesting.
 
 ## Agent skills
 

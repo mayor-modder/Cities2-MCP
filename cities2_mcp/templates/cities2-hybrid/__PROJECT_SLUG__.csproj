@@ -4,11 +4,11 @@
     <TargetFramework>net472</TargetFramework>
     <Nullable>enable</Nullable>
     <Configurations>Debug;Release</Configurations>
-    <Version>{{VERSION}}</Version>
+    <Version>{{VERSION_XML}}</Version>
     <PublishConfigurationPath>Properties\PublishConfiguration.xml</PublishConfigurationPath>
-    <DisplayName>{{DISPLAY_NAME}}</DisplayName>
-    <ShortDescription>{{SHORT_DESCRIPTION}}</ShortDescription>
-    <GameVersion>{{GAME_VERSION}}</GameVersion>
+    <DisplayName>{{DISPLAY_NAME_XML}}</DisplayName>
+    <ShortDescription>{{SHORT_DESCRIPTION_XML}}</ShortDescription>
+    <GameVersion>{{GAME_VERSION_XML}}</GameVersion>
 {{MOD_ID_NODE}}{{GITHUB_NODE}}{{FORUM_NODE}}  </PropertyGroup>
 
   <Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.props" />

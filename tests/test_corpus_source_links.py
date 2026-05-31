@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -134,6 +135,85 @@ class CorpusSourceLinkTests(unittest.TestCase):
             payload = json.loads(response["result"]["content"][0]["text"])
 
         self.assertIn("Roads move traffic.", payload["markdown"])
+
+    def test_get_page_rejects_absolute_markdown_path_outside_corpus(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-agent-corpus-") as tmp:
+            root = Path(tmp)
+            data_dir = root / "corpus"
+            external = root / "outside.md"
+            external.write_text("external sentinel", encoding="utf-8")
+            (data_dir / "index").mkdir(parents=True)
+            (data_dir / "manifest.json").write_text(json.dumps({"name": "agent-corpus"}), encoding="utf-8")
+            (data_dir / "index" / "pages.jsonl").write_text(
+                json.dumps(
+                    {
+                        "page_id": "roads",
+                        "title": "Roads",
+                        "url": "https://cs2.paradoxwikis.com/Roads",
+                        "markdown_path": str(external),
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            (data_dir / "index" / "chunks.jsonl").write_text(
+                json.dumps({"chunk_id": "roads#1", "page_id": "roads", "title": "Roads", "text": "safe chunk"})
+                + "\n",
+                encoding="utf-8",
+            )
+
+            corpus = Corpus([data_dir])
+            response = retrieval_server.handle_tools_call(
+                1,
+                {"name": "get_page", "arguments": {"page_id": "roads"}},
+                corpus,
+            )
+            payload = json.loads(response["result"]["content"][0]["text"])
+
+        self.assertIn("safe chunk", payload["markdown"])
+        self.assertNotIn("external sentinel", payload["markdown"])
+
+    def test_get_page_rejects_parent_markdown_path_outside_corpus(self) -> None:
+        previous_cwd = Path.cwd()
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-agent-corpus-") as tmp:
+            root = Path(tmp)
+            data_dir = root / "corpus"
+            external = root / "outside.md"
+            external.write_text("external sentinel", encoding="utf-8")
+            (data_dir / "index").mkdir(parents=True)
+            (data_dir / "manifest.json").write_text(json.dumps({"name": "agent-corpus"}), encoding="utf-8")
+            (data_dir / "index" / "pages.jsonl").write_text(
+                json.dumps(
+                    {
+                        "page_id": "roads",
+                        "title": "Roads",
+                        "url": "https://cs2.paradoxwikis.com/Roads",
+                        "markdown_path": "../outside.md",
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            (data_dir / "index" / "chunks.jsonl").write_text(
+                json.dumps({"chunk_id": "roads#1", "page_id": "roads", "title": "Roads", "text": "safe chunk"})
+                + "\n",
+                encoding="utf-8",
+            )
+
+            try:
+                os.chdir(data_dir)
+                corpus = Corpus([data_dir])
+                response = retrieval_server.handle_tools_call(
+                    1,
+                    {"name": "get_page", "arguments": {"page_id": "roads"}},
+                    corpus,
+                )
+                payload = json.loads(response["result"]["content"][0]["text"])
+            finally:
+                os.chdir(previous_cwd)
+
+        self.assertIn("safe chunk", payload["markdown"])
+        self.assertNotIn("external sentinel", payload["markdown"])
 
 
 if __name__ == "__main__":

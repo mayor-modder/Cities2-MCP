@@ -360,6 +360,62 @@ class GameEncyclopediaSourceTests(unittest.TestCase):
             self.assertEqual(source.status()["cache_status"], "rebuilt")
             self.assertEqual(source.status()["entry_count"], 0)
 
+    def test_raw_locale_cok_over_size_limit_returns_error_status(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            locale = root / "Locale.cok"
+            locale.write_bytes(b"x" * 6)
+
+            with mock.patch("cities2_mcp.game_encyclopedia.MAX_LOCALE_PAYLOAD_BYTES", 5, create=True):
+                source = GameEncyclopediaSource.load(
+                    EncyclopediaConfig(locale_cok=locale, cache_dir=root / "cache"),
+                    steam_roots=[],
+                )
+
+        status = source.status()
+        self.assertFalse(source.available)
+        self.assertEqual(status["cache_status"], "error")
+        self.assertIn("Locale.cok", status["error"])
+        self.assertIn("size", status["error"].lower())
+
+    def test_zip_locale_member_compressed_size_limit_returns_error_status(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            locale = root / "Locale.cok"
+            with zipfile.ZipFile(locale, "w", compression=zipfile.ZIP_STORED) as archive:
+                archive.writestr("en-US.loc", b"x" * 6)
+
+            with mock.patch("cities2_mcp.game_encyclopedia.MAX_LOCALE_COMPRESSED_BYTES", 5, create=True):
+                source = GameEncyclopediaSource.load(
+                    EncyclopediaConfig(locale_cok=locale, locale="en-US", cache_dir=root / "cache"),
+                    steam_roots=[],
+                )
+
+        status = source.status()
+        self.assertFalse(source.available)
+        self.assertEqual(status["cache_status"], "error")
+        self.assertIn("Locale.cok", status["error"])
+        self.assertIn("compressed", status["error"].lower())
+
+    def test_zip_locale_member_uncompressed_size_limit_returns_error_status(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            locale = root / "Locale.cok"
+            with zipfile.ZipFile(locale, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr("en-US.loc", b"x" * 20)
+
+            with mock.patch("cities2_mcp.game_encyclopedia.MAX_LOCALE_PAYLOAD_BYTES", 5, create=True):
+                source = GameEncyclopediaSource.load(
+                    EncyclopediaConfig(locale_cok=locale, locale="en-US", cache_dir=root / "cache"),
+                    steam_roots=[],
+                )
+
+        status = source.status()
+        self.assertFalse(source.available)
+        self.assertEqual(status["cache_status"], "error")
+        self.assertIn("Locale.cok", status["error"])
+        self.assertIn("uncompressed", status["error"].lower())
+
     def test_semantically_invalid_cache_rows_are_rebuilt(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
