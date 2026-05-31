@@ -82,7 +82,6 @@ class PortabilityTests(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             for token in old_tokens:
                 self.assertNotIn(token, text, f"{path}: {token}")
-        self.assertIn("data/index/chunks.jsonl", (ROOT / "README.md").read_text(encoding="utf-8"))
 
     def test_public_docs_avoid_scraping_language(self) -> None:
         for path in (ROOT / "README.md", ROOT / "INSTALL.md"):
@@ -384,7 +383,7 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("not the final review artifact", text)
             self.assertIn("Offer to remove temporary review files", text)
             self.assertIn("Do not outsource judgment", text)
-            self.assertNotIn("C:\\Users\\matt", text)
+            self.assertNotIn("C:\\Users\\ExampleUser", text)
 
     def test_docs_do_not_advertise_unimplemented_workspace_escape_flag(self) -> None:
         for path in (ROOT / "README.md", ROOT / "INSTALL.md"):
@@ -422,8 +421,9 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("trusted workspace", install_text)
         self.assertIn("trusted parent folder", install_text)
         self.assertIn("Path must stay inside configured workspaces", install_text)
-        self.assertIn("builds execute trusted workspace code", install_text.lower())
-        self.assertIn("not use build_project for arbitrary untrusted repositories", install_text)
+        self.assertIn("Builds run project commands", install_text)
+        self.assertIn("only build projects you trust", install_text)
+        self.assertNotIn("build_project", install_text)
         self.assertIn("mod project folder", install_text)
         self.assertNotIn("// Add more", install_text)
 

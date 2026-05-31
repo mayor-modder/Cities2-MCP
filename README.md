@@ -2,9 +2,11 @@
 
 <!-- mcp-name: io.github.mayor-modder/cities2-mcp -->
 
-Cities2 MCP and Modding Toolkit is a local MCP server and agent skill bundle for Cities: Skylines II game knowledge and modding workflows.
+Cities2 MCP and Modding Toolkit is a local MCP server and agent skill bundle for Cities: Skylines II.
 
-It gives AI agents access to a local, searchable version of the Cities: Skylines II Wiki. It also lets them search the game encyclopedia, if the game is installed locally. This gives agents the ability to answer general knowledge questions about playing the game and offer advice on how to solve problems in your city. It also includes agent skills for creating, inspecting, building, and packaging CS2 mod projects. The modding skills are designed to ensure that mods built with this plugin conform to the best practices documented in the wiki.
+It gives AI agents access to a local, searchable version of the Cities: Skylines II Wiki. It also lets them search the game encyclopedia, if the game is installed locally. This gives them the ability to answer general knowledge questions about playing the game and offer advice on how to solve problems in your city. It includes agent skills for creating, inspecting, building, and packaging CS2 mod projects. The modding skills are designed to ensure that mods built with this plugin conform to the best practices documented in the wiki.
+
+**The plugin is in development, and not all skills have been verified by testing.** Installs and baseline workflows are being tested across Claude, Codex, and Google Antigravity. See the [known issues](https://github.com/mayor-modder/Cities2-MCP/issues) for more information on what's been verified.
 
 ## Quick install
 
@@ -17,21 +19,17 @@ workspace setup, build prerequisites, and troubleshooting.
 
 ### Search game and modding information
 
-The server includes a prepared text corpus from the Cities: Skylines II Wiki. An AI assistant can:
+The MCP server includes a prepared text corpus from the Cities: Skylines II Wiki. An AI assistant can:
 
 - search the wiki
 - retrieve reference-style snippets for game systems and modding topics
-- answer questions during your agent session
-
-This is useful for questions about game mechanics, modding APIs, toolchain setup, project structure, localization, UI mods, and related CS2 development topics.
+- answer questions about game mechanics and how they affect your city
 
 ### Search the local game encyclopedia
 
-When Cities: Skylines II is installed locally, the MCP server reads the game encyclopedia from the user's own game files. This source is enabled by default when the server can find `Cities2_Data/Content/Game/Locale.cok`, especially for standard Steam installs.
+When Cities: Skylines II is installed locally, the MCP server reads the game encyclopedia from the installed game files. This source is enabled by default when the server can find `Cities2_Data/Content/Game/Locale.cok`.
 
 The extracted encyclopedia index is cached locally on the user's machine and rebuilt only when the source game file, detected Steam build id, locale, or extractor version changes. Extracted game text is not committed to this repository, shipped in releases, or part of the redistributed wiki corpus.
-
-If the game install is not found automatically, set `CITIES2_GAME_DIR` to the Cities: Skylines II install directory or `CITIES2_LOCALE_COK` to the full `Locale.cok` path.
 
 ### Help with mod project workflows
 
@@ -43,11 +41,9 @@ The server also includes local workflow tools for CS2 mod projects. An AI assist
 - run project builds and analyzers
 - package project output
 
-These tools are meant for local development workflows. They can write files and run trusted workspace code during builds, so configure workspaces deliberately and use manual Cities: Skylines II launch steps for playtesting.
+These tools are meant for local development workflows. Claude, Codex, and Antigravity can use them to write and run trusted workspace code during builds, so configure workspaces deliberately and use manual playtesting.
 
 ## Agent skills
-
-It includes five user-facing skills:
 
 - [`cities2-knowledge`](skills/cities2-knowledge/SKILL.md): answers gameplay, city-system, and player-facing patch/update questions.
 - [`cities2-modding`](skills/cities2-modding/SKILL.md): handles general modding questions and local mod project workflows.
@@ -56,18 +52,6 @@ It includes five user-facing skills:
 - [`cities2-mod-release`](skills/cities2-mod-release/SKILL.md): checks whether a mod is ready to share.
 
 The modding quality skills use documented CS2 best practices and negative constraints as defaults, and they do not present a mod as ready to share until it has been locally playtested.
-
-## Included wiki text
-
-The packaged server reads the prepared corpus from `cities2_mcp/data` by default. The corpus contains page metadata and JSONL indexes used by the MCP retrieval tools.
-
-Corpus layout:
-
-- `cities2_mcp/data/LICENSE`
-- `cities2_mcp/data/ATTRIBUTION.md`
-- `cities2_mcp/data/manifest.json`
-- `cities2_mcp/data/index/pages.jsonl`
-- `cities2_mcp/data/index/chunks.jsonl`
 
 ## Privacy
 
@@ -81,8 +65,3 @@ The MCP server code is licensed under the MIT License. The included `cities2_mcp
 This project is not developed by, endorsed by, reviewed by, or approved by
 Paradox Interactive, Iceflake Studios, Colossal Order, Paradox Wikis, or any
 related company. Cities: Skylines II and related names are used referentially.
-The bundled wiki corpus contains text adapted from the Cities: Skylines II Wiki
-under CC BY-SA 3.0. Non-text wiki media is not included, and local game
-Game encyclopedia text is read from your own installed game files rather than shipped
-with this package. Additional third-party notices are in
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
