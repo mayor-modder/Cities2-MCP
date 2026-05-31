@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -316,6 +317,51 @@ class PackagingTests(unittest.TestCase):
             capture_output=True,
             check=True,
         )
+
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
+
+    def test_codex_plugin_launcher_ignores_bad_plugin_root_when_self_root_is_valid(self) -> None:
+        plugin_root = ROOT / "plugins" / "cities2-mcp"
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-empty-codex-cache-") as tmp:
+            empty_cache = Path(tmp) / "empty-cache"
+            empty_cache.mkdir()
+
+            result = subprocess.run(
+                [
+                    "node",
+                    str(plugin_root / "bin" / "cities2-mcp-launcher.js"),
+                    "--version",
+                ],
+                cwd=ROOT,
+                env={**os.environ, "PLUGIN_ROOT": str(empty_cache)},
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+
+        self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
+
+    def test_codex_plugin_launcher_handles_stripped_vendor_package_cache(self) -> None:
+        plugin_root = ROOT / "plugins" / "cities2-mcp"
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-stripped-codex-cache-") as tmp:
+            staged_root = Path(tmp) / "cities2-mcp" / "0.1.9"
+            shutil.copytree(plugin_root, staged_root)
+            (staged_root / "vendor" / "run_server.py").unlink()
+            for init_file in (staged_root / "vendor").rglob("__init__.py"):
+                init_file.unlink()
+
+            result = subprocess.run(
+                [
+                    "node",
+                    str(staged_root / "bin" / "cities2-mcp-launcher.js"),
+                    "--version",
+                ],
+                cwd=ROOT,
+                env={**os.environ, "PLUGIN_ROOT": str(Path(tmp) / "empty-final-cache")},
+                text=True,
+                capture_output=True,
+                check=True,
+            )
 
         self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
 
