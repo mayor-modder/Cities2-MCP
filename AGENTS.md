@@ -1,5 +1,7 @@
 # Agent Rules
 
+*For maintaining the Cities2-MCP repo*
+
 - Do not delete protected files. This includes system metadata files like `.DS_Store` and any other files the user has not explicitly asked to remove.
 - Do not merge PRs, tag releases, publish packages, delete branches, or perform other irreversible repo/release actions while a user-stated validation gate is still pending. Casual approval is enough only when it directly responds to that action and no earlier stated gate remains unresolved. If the user has said they want to test, review, or verify something first, stop after preparatory work and report that the gate is still pending.
 - This repository enforces squash merging. When merging PRs with `gh`, use `gh pr merge <number> --squash` unless the user explicitly requests a different allowed strategy.
