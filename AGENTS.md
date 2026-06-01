@@ -53,7 +53,8 @@
 
 ## Markdown style
 
-- Use sentence case for Markdown headings.
+- Use sentence case for Markdown headings,
+  preserving proper nouns, product names, acronyms, and code identifiers.
 - For Markdown prose, use semantic line breaks at sentence or clause boundaries,
   and avoid orphaned single-word lines.
 - Follow the file's dominant wrapping style when editing existing docs.
