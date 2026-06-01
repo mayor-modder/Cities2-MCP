@@ -351,6 +351,23 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("cities2-mod-debugging", modding)
         self.assertIn("cities2-mod-release", modding)
 
+    def test_skill_quality_documents_draft_pr_batch_readiness(self) -> None:
+        checklist = (
+            ROOT
+            / "docs"
+            / "superpowers"
+            / "specs"
+            / "2026-06-01-skill-quality-draft-pr-batch-readiness.md"
+        )
+        self.assertTrue(checklist.exists(), f"Missing draft PR batch checklist: {checklist}")
+        text = checklist.read_text(encoding="utf-8")
+
+        self.assertIn("Draft PR batch readiness checklist", text)
+        self.assertIn("changed-line size", text)
+        self.assertIn("required gates", text)
+        self.assertIn("remaining blocker", text)
+        self.assertIn("Skip a coordination comment", text)
+
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
         skill_paths = [
             ROOT / "skills" / "cities2-mod-review" / "SKILL.md",
