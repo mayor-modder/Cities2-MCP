@@ -59,6 +59,8 @@
 - Agent contributors editing `SKILL.md` files must have access to Superpowers.
   Before editing a skill file, use `superpowers:writing-skills`,
   then follow the repository's documented skill-testing protocol.
+- For multi-agent skill-quality work,
+  follow `docs/superpowers/specs/2026-06-01-skill-quality-agent-workflow.md`.
 
 ## Markdown style
 
