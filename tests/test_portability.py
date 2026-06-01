@@ -351,6 +351,24 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("cities2-mod-debugging", modding)
         self.assertIn("cities2-mod-release", modding)
 
+    def test_skill_quality_pressure_tests_cover_pr_coauthor_footer(self) -> None:
+        pressure_test = (
+            ROOT
+            / "docs"
+            / "superpowers"
+            / "pressure-tests"
+            / "cs2-modding-quality"
+            / "workflow-pr-coauthor-footer.md"
+        )
+        self.assertTrue(pressure_test.exists(), f"{pressure_test} is missing")
+        text = pressure_test.read_text(encoding="utf-8")
+
+        self.assertIn("*Co-authored by Codex.*", text)
+        self.assertIn("*Co-authored by Claude.*", text)
+        self.assertIn("PR body", text)
+        self.assertIn("PR comment", text)
+        self.assertNotIn("*Authored by Codex.*", text)
+
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
         skill_paths = [
             ROOT / "skills" / "cities2-mod-review" / "SKILL.md",
