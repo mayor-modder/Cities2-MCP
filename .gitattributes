@@ -1,3 +1,4 @@
 # Keep Markdown diffs readable across Windows and Unix clients.
 *.md text eol=lf
 .gitattributes text eol=lf
+evals/scenarios/**/*.sh text eol=lf
