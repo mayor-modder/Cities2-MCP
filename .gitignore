@@ -10,8 +10,8 @@ __pycache__/
 venv/
 env/
 node_modules/
+.claude/
 .codex/
-docs/
 mcp.config.json
 
 # Local game Encyclopedia cache/previews; generated from a user's installed game files.
