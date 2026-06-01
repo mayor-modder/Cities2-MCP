@@ -351,6 +351,24 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("cities2-mod-debugging", modding)
         self.assertIn("cities2-mod-release", modding)
 
+    def test_skill_quality_pressure_tests_cover_oversized_pr_split(self) -> None:
+        pressure_test = (
+            ROOT
+            / "docs"
+            / "superpowers"
+            / "pressure-tests"
+            / "cs2-modding-quality"
+            / "workflow-oversized-pr-split.md"
+        )
+        self.assertTrue(pressure_test.exists(), f"{pressure_test} is missing")
+        text = pressure_test.read_text(encoding="utf-8")
+
+        self.assertIn("400 changed lines", text)
+        self.assertIn("1000 changed lines", text)
+        self.assertIn("follow-up issue", text)
+        self.assertIn("unrelated", text)
+        self.assertIn("draft PR", text)
+
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
         skill_paths = [
             ROOT / "skills" / "cities2-mod-review" / "SKILL.md",
