@@ -61,16 +61,3 @@
 - Do not reflow unrelated text unless the user explicitly asks.
 - Do not wrap code blocks, tables, URLs, generated output, front matter,
   or text where line breaks are meaningful.
-
-## Search tooling
-
-- `rg`/ripgrep is optional, not required.
-- Prefer `rg` when available; if it is missing, blocked, or fails,
-  immediately fall back.
-- Mention ripgrep as an optional local install at most once,
-  and only if fallback searches were noticeably slower.
-- Recommended fallbacks:
-  - PowerShell file list: `Get-ChildItem -Recurse -File`
-  - PowerShell text search: `Get-ChildItem -Recurse -File | Select-String -Pattern "term"`
-  - CMD text search: `findstr /S /N /I "term" *`
-  - POSIX text search: `grep -RIn --exclude-dir=.git "term" .`
