@@ -45,9 +45,18 @@
   unless a human explicitly directs that exact action.
 - Never bump MCP server or plugin version numbers unless a human explicitly
   directs that exact action.
-- This repository uses squash merging.
-  Unless the user explicitly requests a different allowed strategy,
-  use `gh pr merge <number> --squash`.
+- Squash merging is the default for ordinary PRs.
+- Merge commits are allowed for explicitly stacked PRs.
+  A stacked PR must name its parent PR or branch in the PR description,
+  using a line such as `Stacked on: #123` or
+  `Stacked on: branch-name`.
+- Use a merge commit for a stacked PR when landing it with squash would
+  force dependent branches to be restacked.
+  For GitHub CLI merges, use `gh pr merge <number> --merge`.
+- Do not squash a PR that has dependent open PRs unless the stack owner
+  has already restacked them or explicitly asks for the squash.
+- Unless a PR is explicitly marked as stacked, or the user requests a
+  different allowed strategy, use `gh pr merge <number> --squash`.
 - Do not manually delete branches unless asked.
 
 ## Required test gates
