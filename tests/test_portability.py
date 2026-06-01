@@ -351,6 +351,23 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("cities2-mod-debugging", modding)
         self.assertIn("cities2-mod-release", modding)
 
+    def test_skill_quality_pressure_tests_cover_local_uri_marker_wording(self) -> None:
+        pressure_test = (
+            ROOT
+            / "docs"
+            / "superpowers"
+            / "pressure-tests"
+            / "cs2-modding-quality"
+            / "workflow-local-uri-marker-wording.md"
+        )
+        self.assertTrue(pressure_test.exists(), f"Missing pressure test: {pressure_test}")
+        text = pressure_test.read_text(encoding="utf-8")
+
+        self.assertIn("local URI marker class", text)
+        self.assertIn("local-file URI link", text)
+        self.assertIn("forbidden marker class", text)
+        self.assertNotIn("file" + "://", text)
+
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
         skill_paths = [
             ROOT / "skills" / "cities2-mod-review" / "SKILL.md",
