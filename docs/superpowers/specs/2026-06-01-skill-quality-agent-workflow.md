@@ -120,6 +120,31 @@ Each orchestrator should repeat this loop until no eligible issue remains:
 Agents should not set timers, poll periodically, or create background monitors unless the maintainer
 explicitly asks.
 
+## Workspace handoff checks
+
+Implementation work should happen in an issue-specific isolated worktree and branch. For
+review-only work, agents may inspect existing worktrees, but they should not edit them unless the
+reviewer first claims an implementation issue and creates or reuses the matching issue-specific
+workspace.
+
+Before editing, verify and record these local facts for the handoff:
+
+- issue number and issue title
+- branch name and worktree path
+- clean baseline from `git status --short --branch`
+- expected scope and files from the issue body
+- whether the work starts from the intended base branch
+- any unrelated local changes that must stay out of the PR
+
+Use branch and worktree names that include the issue number when possible, such as
+`codex/issue-63-worktree-handoff-checks`. Work only the claimed issue in that workspace. If an
+adjacent finding belongs elsewhere, create or route a follow-up issue instead of expanding the
+branch.
+
+Do not delete branches or worktrees as part of the agent handoff unless the maintainer explicitly
+asks. Report stale or confusing worktrees as residual risk, and leave cleanup to a human-directed
+maintenance pass.
+
 ## Self-review before PR
 
 Before opening a PR, the authoring orchestrator must run a local subagent self-review. The

@@ -351,6 +351,17 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("cities2-mod-debugging", modding)
         self.assertIn("cities2-mod-release", modding)
 
+    def test_skill_quality_workflow_documents_issue_specific_worktrees(self) -> None:
+        workflow = ROOT / "docs" / "superpowers" / "specs" / "2026-06-01-skill-quality-agent-workflow.md"
+        text = workflow.read_text(encoding="utf-8")
+
+        self.assertIn("issue-specific isolated worktree", text)
+        self.assertIn("issue number", text)
+        self.assertIn("branch name", text)
+        self.assertIn("clean baseline", text)
+        self.assertIn("review-only", text)
+        self.assertIn("Do not delete branches", text)
+
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
         skill_paths = [
             ROOT / "skills" / "cities2-mod-review" / "SKILL.md",
