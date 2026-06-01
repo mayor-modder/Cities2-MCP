@@ -4,7 +4,7 @@
 
 Cities2 MCP and Modding Toolkit is a local MCP server and agent skill bundle for Cities: Skylines II.
 
-It gives AI agents access to a local, searchable version of the Cities: Skylines II Wiki. It also lets them search the game encyclopedia, if the game is installed locally. This gives them the ability to answer general knowledge questions about playing the game and offer advice on how to solve problems in your city. It includes agent skills for creating, inspecting, building, and packaging CS2 mod projects. The modding skills are designed to ensure that mods built with this plugin conform to the best practices documented in the wiki.
+It gives AI agents access to a local, searchable version of the Cities: Skylines II Wiki. It also lets them search the game encyclopedia, if the game is installed locally. This gives them the ability to answer general knowledge questions about playing the game and offer advice on how to solve problems in your city. It includes agent skills: one for general game knowledge, and others for creating, inspecting, building, and packaging CS2 mod projects. The modding skills are designed to ensure that mods built with this plugin conform to the best practices documented in the wiki.
 
 **The plugin is in development, and not all skills have been verified by testing.** Installs and baseline workflows are being tested across Claude, Codex, and Google Antigravity. See the [known issues](https://github.com/mayor-modder/Cities2-MCP/issues) for more information on what's been verified.
 
