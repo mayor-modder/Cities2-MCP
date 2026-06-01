@@ -7,6 +7,9 @@
 - Do not delete protected files, including `.DS_Store`, unless the user explicitly asks.
 - Before editing, run `git status --short --branch`.
 - Do not edit the `main` checkout for branch or PR work unless the user explicitly asks.
+- Use the active client's native workspace or worktree mechanism when available,
+  especially when the maintainer needs in-client review tools.
+  Fall back to manual Git worktrees only when no native mechanism is available.
 - If the checkout is stale, detached, behind remote, or not the intended branch,
   stop and switch to the correct worktree before editing.
 - Preserve touched files' existing line-ending style.
