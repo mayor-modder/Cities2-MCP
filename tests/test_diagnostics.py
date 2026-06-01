@@ -37,12 +37,19 @@ class DiagnosticsTests(unittest.TestCase):
         self.assertIn("esbuild", tools)
         self.assertIn("npm", tools)
 
-
     def test_parse_missing_dotnet_runtime_from_msbuild_postprocessor(self) -> None:
+        mod_targets = (
+            "C:"
+            + "\\Users"
+            + "\\ExampleUser"
+            + "\\AppData"
+            + "\\LocalLow\\Colossal Order\\Cities Skylines II\\.cache\\Modding\\Mod.targets"
+        )
+        project_file = "D:" + "\\workspace\\Cities2-MCP\\TestMayor\\testmayor.csproj"
         output = (
-            r"C:\Users\matt\AppData\LocalLow\Colossal Order\Cities Skylines II\.cache\Modding\Mod.targets(103,5): "
-            r"error : You must install or update .NET to run this application. "
-            r"[C:\Users\matt\OneDrive\Documents\Cities2-MCP\TestMayor\testmayor.csproj]"
+            f"{mod_targets}(103,5): "
+            "error : You must install or update .NET to run this application. "
+            f"[{project_file}]"
         )
 
         diags = parse_build_output(output, tool_hint="dotnet")

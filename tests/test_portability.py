@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import io
+import re
 import sys
 import unittest
 from pathlib import Path, PureWindowsPath
@@ -52,13 +53,50 @@ class PortabilityTests(unittest.TestCase):
         self.assertEqual(argv[0], sys.executable)
 
     def test_default_mods_dir_uses_windows_locallow_path(self) -> None:
-        expected = PureWindowsPath(r"C:\Users\Test\AppData\LocalLow\Colossal Order\Cities Skylines II\Mods")
+        local_appdata = PureWindowsPath("C:/") / "Users" / "ExampleUser" / "AppData" / "Local"
+        expected = (
+            local_appdata.parent
+            / "LocalLow"
+            / "Colossal Order"
+            / "Cities Skylines II"
+            / "Mods"
+        )
 
-        with mock.patch.dict(mcp_server.os.environ, {"LOCALAPPDATA": r"C:\Users\Test\AppData\Local"}, clear=True):
+        with mock.patch.dict(mcp_server.os.environ, {"LOCALAPPDATA": str(local_appdata)}, clear=True):
             with mock.patch.object(mcp_server.os, "name", "nt"):
                 actual = mcp_server.default_mods_dir()
 
         self.assertEqual(actual, expected)
+
+    def test_handwritten_tests_do_not_embed_machine_specific_user_paths(self) -> None:
+        windows_home_prefix = "C:" + "\\Users" + "\\"
+        posix_home_prefix = "/" + "Users" + "/"
+        cloud_docs_fragment = "OneDrive" + "\\Documents"
+        private_path_markers = [
+            windows_home_prefix,
+            windows_home_prefix.replace("\\", "\\\\"),
+            posix_home_prefix,
+            cloud_docs_fragment,
+            cloud_docs_fragment.replace("\\", "\\\\"),
+        ]
+        local_username = "".join(("m", "a", "t", "t"))
+        local_username_pattern = re.compile(
+            rf"(^|[^A-Za-z]){re.escape(local_username)}([^A-Za-z]|$)",
+            re.IGNORECASE,
+        )
+        test_paths = [
+            ROOT / "tests" / "test_corpus_source_links.py",
+            ROOT / "tests" / "test_diagnostics.py",
+            ROOT / "tests" / "test_portability.py",
+        ]
+
+        broken: list[str] = []
+        for path in test_paths:
+            text = path.read_text(encoding="utf-8")
+            if any(marker in text for marker in private_path_markers) or local_username_pattern.search(text):
+                broken.append(str(path.relative_to(ROOT)))
+
+        self.assertEqual(broken, [])
 
     def test_repo_examples_do_not_contain_machine_specific_paths(self) -> None:
         old_tokens = [
@@ -69,7 +107,7 @@ class PortabilityTests(unittest.TestCase):
             "cs2-csharp",
             "cs2-ui",
             "cs2-hybrid",
-            "/Users/Example/",
+            "/" + "Users" + "/" + "Example" + "/",
             "/usr/bin/python3",
         ]
         targets = [
@@ -383,7 +421,8 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("not the final review artifact", text)
             self.assertIn("Offer to remove temporary review files", text)
             self.assertIn("Do not outsource judgment", text)
-            self.assertNotIn("C:\\Users\\ExampleUser", text)
+            windows_profile_marker = "C:" + "\\Users" + "\\ExampleUser"
+            self.assertNotIn(windows_profile_marker, text)
 
     def test_docs_do_not_advertise_unimplemented_workspace_escape_flag(self) -> None:
         for path in (ROOT / "README.md", ROOT / "INSTALL.md"):

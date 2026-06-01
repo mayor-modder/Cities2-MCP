@@ -36,13 +36,15 @@ class CorpusSourceLinkTests(unittest.TestCase):
         self.assertEqual(broken, [])
 
     def test_public_corpus_does_not_include_private_build_paths(self) -> None:
+        windows_home_marker = "C:" + "\\Users" + "\\ExampleUser"
+        cloud_docs_marker = "OneDrive" + "\\Documents"
         private_markers = [
             "source_file",
             "markdown_path",
             "json_path",
-            "C:\\Users\\ExampleUser",
+            windows_home_marker,
             "Downloads\\cs2wiki",
-            "OneDrive\\Documents",
+            cloud_docs_marker,
         ]
         broken: list[str] = []
         for path in CORPUS.rglob("*"):
