@@ -314,10 +314,17 @@ report:
 The baseline should not trigger any skill edits. Skill changes happen only after
 the baseline is recorded and reviewed.
 
-## Open Questions
+## Resolved Decisions
 
-- Which runner pieces from Quorum should be reused after the
-  `cities2-knowledge` runner spike?
-- What is the minimum portable way to isolate Antigravity runs before adding
-  Antigravity to the matrix, especially if Antigravity needs desktop or
-  user-profile state? This is deferred until Codex works.
+- The first implementation should keep scenarios Quorum-compatible, but should
+  not copy or vendor the full Quorum runner before the spike. Build the smallest
+  local runner subset needed for the `cities2-knowledge` spike, then record a
+  post-spike decision to either reuse Quorum directly or keep the compatible
+  subset.
+- The default isolation model is Quorum-style per-run agent homes plus a
+  minimal environment allowlist. VM or container isolation is a contingency for
+  backends that leak installed skills, ignore fresh profile paths, or otherwise
+  cannot be made factory-fresh with per-run homes.
+- Antigravity isolation is deferred until the Codex runner spike works. Do not
+  block the first Codex spike on Antigravity desktop or user-profile isolation
+  details.
