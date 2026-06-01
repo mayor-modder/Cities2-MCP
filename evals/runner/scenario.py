@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from evals.runner.models import Scenario
@@ -25,6 +26,15 @@ def _parse_frontmatter(text: str) -> dict[str, str]:
     return data
 
 
+def _defines_shell_function(text: str, name: str) -> bool:
+    function_name = re.escape(name)
+    pattern = (
+        rf"(?m)^[ \t]*(?:{function_name}[ \t]*\(\)[ \t]*\{{"
+        rf"|function[ \t]+{function_name}(?:[ \t]*\(\))?[ \t]*\{{)"
+    )
+    return re.search(pattern, text) is not None
+
+
 def load_scenario(path: Path) -> Scenario:
     scenario_dir = path.resolve()
     story = scenario_dir / "story.md"
@@ -39,16 +49,21 @@ def load_scenario(path: Path) -> Scenario:
     scenario_id = frontmatter.get("id")
     if not scenario_id:
         raise ScenarioError("story.md frontmatter missing id")
+    title = frontmatter.get("title")
+    if not title:
+        raise ScenarioError("story.md frontmatter missing title")
     if "## Acceptance Criteria" not in story_text:
         raise ScenarioError("story.md missing Acceptance Criteria section")
 
     checks_text = checks.read_text(encoding="utf-8")
-    if "pre()" not in checks_text or "post()" not in checks_text:
+    if not _defines_shell_function(checks_text, "pre") or not _defines_shell_function(
+        checks_text, "post"
+    ):
         raise ScenarioError("checks.sh must define pre() and post()")
 
     return Scenario(
         id=scenario_id,
-        title=frontmatter.get("title", scenario_id),
+        title=title,
         path=scenario_dir,
         story=story,
         setup=setup,

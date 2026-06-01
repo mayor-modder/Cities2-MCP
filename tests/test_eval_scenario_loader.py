@@ -47,9 +47,37 @@ class EvalScenarioLoaderTests(unittest.TestCase):
             scenario_dir = Path(tmp) / "sample"
             scenario_dir.mkdir()
             _write_minimal_scenario(scenario_dir)
-            (scenario_dir / "story.md").write_text("---\nid: sample\n---\n", encoding="utf-8")
+            (scenario_dir / "story.md").write_text(
+                "---\nid: sample\ntitle: Sample scenario\n---\n",
+                encoding="utf-8",
+            )
 
             with self.assertRaisesRegex(ScenarioError, "Acceptance Criteria"):
+                load_scenario(scenario_dir)
+
+    def test_rejects_story_without_title(self) -> None:
+        from evals.runner.scenario import ScenarioError, load_scenario
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-scenario-") as tmp:
+            scenario_dir = Path(tmp) / "sample"
+            scenario_dir.mkdir()
+            _write_minimal_scenario(scenario_dir)
+            (scenario_dir / "story.md").write_text(
+                textwrap.dedent(
+                    """\
+                    ---
+                    id: sample
+                    ---
+
+                    ## Acceptance Criteria
+
+                    - It loads.
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ScenarioError, "frontmatter missing title"):
                 load_scenario(scenario_dir)
 
     def test_rejects_checks_without_pre_and_post(self) -> None:
@@ -60,6 +88,21 @@ class EvalScenarioLoaderTests(unittest.TestCase):
             scenario_dir.mkdir()
             _write_minimal_scenario(scenario_dir)
             (scenario_dir / "checks.sh").write_text("pre() { :; }\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(ScenarioError, "pre\\(\\).*post\\(\\)"):
+                load_scenario(scenario_dir)
+
+    def test_rejects_checks_with_only_commented_pre_and_post(self) -> None:
+        from evals.runner.scenario import ScenarioError, load_scenario
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-scenario-") as tmp:
+            scenario_dir = Path(tmp) / "sample"
+            scenario_dir.mkdir()
+            _write_minimal_scenario(scenario_dir)
+            (scenario_dir / "checks.sh").write_text(
+                "# pre() { :; }\n# post() { :; }\n",
+                encoding="utf-8",
+            )
 
             with self.assertRaisesRegex(ScenarioError, "pre\\(\\).*post\\(\\)"):
                 load_scenario(scenario_dir)
