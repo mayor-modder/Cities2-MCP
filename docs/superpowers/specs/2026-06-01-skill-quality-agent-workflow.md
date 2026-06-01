@@ -169,6 +169,8 @@ The authoring orchestrator addresses review findings on its own branch.
 
 The maintainer remains the final merge gate. Agents may prepare PRs, reviews, and evidence, but they
 must not merge unless explicitly asked and all documented test gates for the PR have passed.
+Agents must not bump MCP server or plugin version numbers unless a human explicitly asks for that
+exact action.
 
 ## Pilot sequence
 
