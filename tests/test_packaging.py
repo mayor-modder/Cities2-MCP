@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import io
 import json
 import os
 import shutil
@@ -8,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
 from cities2_mcp.agent_assets import install_agent_assets
@@ -494,6 +496,28 @@ class PackagingTests(unittest.TestCase):
             stale = plugin_packages.check_packages(root, package_roots=(package_root,))
 
             self.assertIn(stale_skill, stale)
+
+    def test_plugin_package_check_output_explains_generated_skill_sync(self) -> None:
+        from cities2_mcp import plugin_packages
+
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-plugin-sync-") as tmp:
+            root = Path(tmp)
+            self._write_plugin_sync_fixture(root)
+            plugin_packages.sync_packages(root)
+            stale_skill = root / "plugins" / "cities2-mcp" / "skills" / "cities2-knowledge" / "SKILL.md"
+            stale_skill.write_text("stale\n", encoding="utf-8")
+
+            stdout = io.StringIO()
+            with redirect_stdout(stdout):
+                exit_code = plugin_packages.main(["check", "--repo-root", str(root)])
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 1)
+            self.assertIn("generated copies differ from canonical sources", output)
+            self.assertIn("skills/", output)
+            self.assertIn("cities2_mcp/", output)
+            self.assertIn("python -m cities2_mcp.plugin_packages sync", output)
+            self.assertIn(str(stale_skill), output)
 
     def test_plugin_package_sync_updates_stale_payload(self) -> None:
         from cities2_mcp import plugin_packages

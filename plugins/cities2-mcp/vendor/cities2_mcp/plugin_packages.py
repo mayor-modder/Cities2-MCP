@@ -287,7 +287,10 @@ def main(argv: list[str] | None = None) -> int:
 
     stale = check_packages(args.repo_root)
     if stale:
-        print("Stale plugin package payloads:")
+        print("Stale plugin package payloads: generated copies differ from canonical sources.")
+        print("Canonical sources: skills/ and cities2_mcp/")
+        print("Generated copies: integrations/anthropic/claude-plugin/ and plugins/cities2-mcp/")
+        print("Run: python -m cities2_mcp.plugin_packages sync")
         for path in stale:
             print(f"  {path}")
         return 1
