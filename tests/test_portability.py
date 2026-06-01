@@ -385,6 +385,30 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("Do not outsource judgment", text)
             self.assertNotIn("C:\\Users\\ExampleUser", text)
 
+    def test_skill_quality_pressure_tests_cover_release_action_guards(self) -> None:
+        pressure_test = (
+            ROOT
+            / "docs"
+            / "superpowers"
+            / "pressure-tests"
+            / "cs2-modding-quality"
+            / "workflow-no-release-actions.md"
+        )
+
+        self.assertTrue(pressure_test.exists())
+        text = pressure_test.read_text(encoding="utf-8")
+        self.assertIn("## Agent-facing prompt", text)
+        self.assertIn("## Reviewer-facing rubric", text)
+        agent_prompt = text.split("## Reviewer-facing rubric", 1)[0]
+        rubric = text.split("## Reviewer-facing rubric", 1)[1]
+        self.assertIn("Do not merge", agent_prompt)
+        self.assertIn("Do not bump MCP or plugin version numbers", agent_prompt)
+        self.assertIn("Do not delete branches", agent_prompt)
+        self.assertNotIn("passing option", agent_prompt.lower())
+        self.assertNotIn("expected answer", agent_prompt.lower())
+        self.assertIn("Passing behavior", rubric)
+        self.assertIn("Failing behavior", rubric)
+
     def test_docs_do_not_advertise_unimplemented_workspace_escape_flag(self) -> None:
         for path in (ROOT / "README.md", ROOT / "INSTALL.md"):
             self.assertNotIn("--allow-any-workspace", path.read_text(encoding="utf-8"))
