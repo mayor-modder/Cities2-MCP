@@ -351,6 +351,27 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("cities2-mod-debugging", modding)
         self.assertIn("cities2-mod-release", modding)
 
+    def test_skill_quality_workflow_documents_routing_audit(self) -> None:
+        spec = (ROOT / "docs" / "superpowers" / "specs" / "2026-06-01-skill-quality-agent-workflow.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("## Routing audit checklist", spec)
+        for field in ("`Agent`", "`Status`", "`Work type`"):
+            self.assertIn(field, spec)
+        for work_type in ("`Protocol`", "`Pilot`", "`Skill update`", "`Review`", "`Follow-up`", "`Test coverage`"):
+            self.assertIn(work_type, spec)
+        for guardrail in (
+            "exactly one project item",
+            "existing issue instead of creating a duplicate",
+            "do not delete them during unattended runs",
+            "private paths",
+            "local usernames",
+            "tokens",
+            "private tool output",
+        ):
+            self.assertIn(guardrail, spec)
+
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
         skill_paths = [
             ROOT / "skills" / "cities2-mod-review" / "SKILL.md",

@@ -38,7 +38,7 @@ The project should use these fields:
 
 - `Agent`: `Codex`, `Claude`, or `Antigravity`
 - `Status`: `Ready`, `Claimed`, `In progress`, `Review needed`, `Blocked`, or `Done`
-- `Work type`: `Protocol`, `Pilot`, `Skill update`, `Review`, or `Follow-up`
+- `Work type`: `Protocol`, `Pilot`, `Skill update`, `Review`, `Follow-up`, or `Test coverage`
 
 Labels should stay broad and portable:
 
@@ -47,6 +47,28 @@ Labels should stay broad and portable:
 - `blocked`, when useful
 
 Agent routing should primarily use the `Agent` project field, not label proliferation.
+
+## Routing audit checklist
+
+Before creating or rerouting skill-quality work, refresh GitHub state and audit the board instead of
+working from memory. The audit should answer these questions:
+
+1. Is the issue already present on the skill-quality project?
+2. Is there exactly one project item for the issue?
+3. Do `Agent`, `Status`, and `Work type` match the issue body?
+4. Is the issue assigned to the maintainer or blocked on a maintainer decision?
+5. Is there an open PR already linked to the issue?
+6. Is there a recent claim or review claim by another agent?
+7. Would a coordination comment add new information, or would it only add noise?
+8. Does any public text about to be written avoid private paths, local usernames, tokens, private
+   logs, and private tool output?
+
+If the item is missing from the project, add the existing issue instead of creating a duplicate.
+If there are duplicate project items, do not delete them during unattended runs; report the duplicate
+and only edit the item that is clearly tied to the active issue. If the field values disagree with
+the issue body and no active agent has claimed the work, update the project fields to match the
+issue body. If an active claim or linked PR exists, leave a concise coordination comment only when
+the mismatch would otherwise block review or implementation.
 
 ## Human intervention
 
