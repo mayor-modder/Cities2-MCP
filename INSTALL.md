@@ -108,9 +108,10 @@ if (Test-Path -LiteralPath $plugin) {
     Write-Error "Cities2-MCP already exists at $plugin. Move or replace that one folder before reinstalling."
     exit 1
 }
-git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP $repo
+git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP "$repo"
 New-Item -ItemType Directory -Force (Split-Path $plugin) | Out-Null
-Copy-Item -Recurse -LiteralPath (Join-Path $repo "plugins\cities2-mcp") -Destination $plugin
+$src = Join-Path $repo "plugins\cities2-mcp"
+Copy-Item -Recurse -LiteralPath $src -Destination $plugin
 ```
 
 Then restart the Google Antigravity app, or open Antigravity CLI with `agy` from
@@ -198,14 +199,7 @@ uvx cities2-mcp --version
 uvx --refresh cities2-mcp --version
 ```
 
-Some clients can load local agent skills separately from MCP server settings.
-For those clients, install the bundled skills with:
-
-```sh
-uvx cities2-mcp install-agent-assets
-```
-
-For a source checkout, run `python -m cities2_mcp.mcp_server --workspace <folder>` from the repository root.
+To load local agent skills separately on some clients, install them with `uvx cities2-mcp install-agent-assets`. For a source checkout, run `python -m cities2_mcp.mcp_server --workspace <folder>` from the repository root.
 
 ## Troubleshooting
 
