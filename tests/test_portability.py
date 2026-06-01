@@ -351,6 +351,23 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("cities2-mod-debugging", modding)
         self.assertIn("cities2-mod-release", modding)
 
+    def test_knowledge_numeric_grounding_pressure_test_exists(self) -> None:
+        pressure_test = (
+            ROOT
+            / "docs"
+            / "superpowers"
+            / "pressure-tests"
+            / "cs2-modding-quality"
+            / "knowledge-unsupported-numeric-transit-advice.md"
+        )
+        text = pressure_test.read_text(encoding="utf-8")
+
+        self.assertIn("cities2-knowledge", text)
+        self.assertIn("unsupported exact numbers", text.lower())
+        self.assertIn("MCP sources", text)
+        self.assertIn("qualitative", text.lower())
+        self.assertIn("Choose A, B, or C", text)
+
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
         skill_paths = [
             ROOT / "skills" / "cities2-mod-review" / "SKILL.md",
