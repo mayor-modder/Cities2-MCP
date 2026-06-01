@@ -1,6 +1,7 @@
 tmp-smoke-ws/
 packages/
 dist/
+evals/results/
 .worktrees/
 __pycache__/
 .pytest_cache/
