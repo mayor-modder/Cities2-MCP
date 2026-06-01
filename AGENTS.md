@@ -54,6 +54,12 @@
 - If the needed evaluation document is absent,
   stop and ask where the current documented procedure lives.
 
+## Skill work
+
+- Agent contributors editing `SKILL.md` files must have access to Superpowers.
+  Before editing a skill file, use `superpowers:writing-skills`,
+  then follow the repository's documented skill-testing protocol.
+
 ## Markdown style
 
 - Use sentence case for Markdown headings,

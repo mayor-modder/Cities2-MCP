@@ -56,6 +56,12 @@ but local caches and machine-specific settings should stay local.
 - Add or update tests when behavior, packaging, safety checks, skills, or docs
   expectations change.
 
+## Agent prerequisites
+
+Agent contributors working on skills should have access to Superpowers.
+Before editing `SKILL.md` files, use `superpowers:writing-skills`,
+then follow the documented skill-testing protocol.
+
 ## Agent skills and plugin packages
 
 The root `skills/` directory is the source of truth for bundled agent skills.
