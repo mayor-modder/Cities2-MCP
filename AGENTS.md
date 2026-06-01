@@ -1,8 +1,8 @@
-# Agent Rules
+# Agent rules
 
 *For maintaining the Cities2-MCP repo*
 
-## Workspace Safety
+## Workspace safety
 
 - Do not delete protected files, including `.DS_Store`, unless the user explicitly asks.
 - Before editing, run `git status --short --branch`.
@@ -13,7 +13,7 @@
   If Git warns about line endings,
   check and normalize only touched files back to the repository/indexed style.
 
-## Commit And PR Safety
+## Commit and PR safety
 
 - Do not commit or push unless the user explicitly asks for the current branch or PR.
 - Preparing a diff is allowed; committing and pushing require user agreement.
@@ -21,9 +21,10 @@
   offer to update the PR description or metadata to reflect pushed changes
   unless the user has asked otherwise.
 - When writing, editing, or commenting on a PR,
-  append `*Authored by Codex.*` at the bottom on its own line.
+  append a co-author line naming the acting agent at the bottom on its own line,
+  such as `*Co-authored by Codex.*` or `*Co-authored by Claude.*`.
 
-## Merge And Release Gates
+## Merge and release gates
 
 - Do not merge PRs, tag releases, publish packages,
   or perform irreversible release actions while a user-stated validation gate is pending.
@@ -34,7 +35,7 @@
   unless the user explicitly requests a different allowed strategy.
 - Do not manually delete branches unless asked.
 
-## Required Test Gates
+## Required test gates
 
 - Do not merge a PR until every documented test gate relevant to that PR has passed.
 - Code/package changes require `python -m unittest discover -s tests -v`.
@@ -50,8 +51,9 @@
 - If the needed evaluation document is absent,
   stop and ask where the current documented procedure lives.
 
-## Markdown Style
+## Markdown style
 
+- Use sentence case for Markdown headings.
 - For Markdown prose, use semantic line breaks at sentence or clause boundaries,
   and avoid orphaned single-word lines.
 - Follow the file's dominant wrapping style when editing existing docs.
@@ -59,7 +61,7 @@
 - Do not wrap code blocks, tables, URLs, generated output, front matter,
   or text where line breaks are meaningful.
 
-## Search Tooling
+## Search tooling
 
 - `rg`/ripgrep is optional, not required.
 - Prefer `rg` when available; if it is missing, blocked, or fails,
