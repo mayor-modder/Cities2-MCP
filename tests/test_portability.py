@@ -332,6 +332,12 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("documented best practices", review.lower())
         self.assertIn("negative constraints", review.lower())
         self.assertIn("best practice", review.lower())
+        self.assertIn("observed in project files", review.lower())
+        self.assertIn("supported by mcp", review.lower())
+        self.assertIn("inferred recommendation", review.lower())
+        self.assertIn("do not infer react", review.lower())
+        self.assertIn(".tsx", review)
+        self.assertIn("no effect", review.lower())
         self.assertIn("playtesting handoff", debugging.lower())
         self.assertIn("Modding.log", debugging)
         self.assertIn("localhost:9444", debugging)
@@ -350,6 +356,19 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("cities2-mod-review", modding)
         self.assertIn("cities2-mod-debugging", modding)
         self.assertIn("cities2-mod-release", modding)
+
+        pressure_test = (
+            ROOT
+            / "docs"
+            / "superpowers"
+            / "pressure-tests"
+            / "cs2-modding-quality"
+            / "review-tsx-no-react-evidence.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("not describe the scaffold as React-based", pressure_test)
+        self.assertIn("observed facts", pressure_test)
+        self.assertIn("sourced rules", pressure_test)
+        self.assertIn("inferred recommendations", pressure_test)
 
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
         skill_paths = [
