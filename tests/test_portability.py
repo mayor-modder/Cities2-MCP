@@ -351,6 +351,25 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("cities2-mod-debugging", modding)
         self.assertIn("cities2-mod-release", modding)
 
+    def test_skill_quality_board_field_drift_notes_are_documented(self) -> None:
+        drift_notes = (
+            ROOT
+            / "docs"
+            / "superpowers"
+            / "specs"
+            / "2026-06-01-skill-quality-board-field-drift.md"
+        )
+        self.assertTrue(drift_notes.exists(), f"{drift_notes} is missing")
+        text = drift_notes.read_text(encoding="utf-8")
+
+        self.assertIn("Agent", text)
+        self.assertIn("Status", text)
+        self.assertIn("Work type", text)
+        self.assertIn("linked PR", text)
+        self.assertIn("duplicate project item", text)
+        self.assertIn("repair immediately", text)
+        self.assertIn("report only", text)
+
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
         skill_paths = [
             ROOT / "skills" / "cities2-mod-review" / "SKILL.md",
