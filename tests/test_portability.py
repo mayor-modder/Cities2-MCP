@@ -351,6 +351,33 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("cities2-mod-debugging", modding)
         self.assertIn("cities2-mod-release", modding)
 
+    def test_skill_quality_public_write_privacy_pressure_test_exists(self) -> None:
+        pressure_test = (
+            ROOT
+            / "docs"
+            / "superpowers"
+            / "pressure-tests"
+            / "cs2-modding-quality"
+            / "workflow-public-github-write-privacy.md"
+        )
+        rubric = pressure_test.with_name("workflow-public-github-write-privacy-rubric.md")
+        self.assertTrue(pressure_test.exists(), f"{pressure_test} should exist")
+        self.assertTrue(rubric.exists(), f"{rubric} should exist")
+        text = pressure_test.read_text(encoding="utf-8")
+        rubric_text = rubric.read_text(encoding="utf-8")
+
+        self.assertIn("GitHub issue and PR creation", text)
+        self.assertIn("private evidence folder", text)
+        self.assertIn("Windows username", text)
+        self.assertIn("local-file URI", text)
+        self.assertIn("token-like output", text)
+        self.assertIn("Scan the issue body, PR body, and comments before posting", text)
+        self.assertIn("neutral public summary", text)
+        self.assertNotIn("Expected Result", text)
+        self.assertNotIn("Choose **A**", text)
+        self.assertIn("Do not paste private local details", rubric_text)
+        self.assertIn("Choose **A**", rubric_text)
+
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
         skill_paths = [
             ROOT / "skills" / "cities2-mod-review" / "SKILL.md",
