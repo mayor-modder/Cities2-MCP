@@ -17,6 +17,8 @@ Use MCP server wiki/reference lookup for CS2-specific packaging, toolchain, and 
 
 A successful build is not enough for distribution. Before public release, require local playtesting of the packaged mod in game, or an explicit user override that the release is not gameplay-verified.
 
+An override must use clear, informed override language after you restate the missing playtest risk. A casual request such as "release it now" or "it is tiny" is not enough. Without local playtesting or that override, do not create a distribution package, final upload text, or any handoff that calls the mod ready for public upload.
+
 If the user chooses the override, label the release notes or handoff as not gameplay-verified and list the missing checks. Do not imply Paradox Mods readiness from compile/package success alone.
 
 For save-affecting mods, pause before release if testing used only a live save. Prefer backed-up saves, copied-save workflows, offline reproduction, and supported APIs.
