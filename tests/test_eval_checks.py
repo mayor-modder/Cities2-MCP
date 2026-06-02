@@ -211,7 +211,8 @@ class EvalCheckToolTests(unittest.TestCase):
     def test_source_command_drive_fallback_uses_current_shell(self) -> None:
         from evals.runner.checks import _source_command
 
-        command = _source_command(Path("Z:/evals/checks.sh"), wsl=False)
+        with patch("evals.runner.checks._bash_path", return_value="Z:/evals/checks.sh"):
+            command = _source_command(Path("checks.sh"), wsl=False)
 
         self.assertTrue(command.startswith("{ "), command)
         self.assertTrue(command.endswith("; }"), command)
