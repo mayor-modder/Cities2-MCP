@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 import tempfile
 import textwrap
@@ -168,6 +169,7 @@ class EvalRunnerCliTests(unittest.TestCase):
 
         self.assertEqual([setup.resolve()], observed_setup_paths)
 
+    @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
     def test_runner_writes_verdict_with_codex_stub(self) -> None:
         from evals.runner.__main__ import run_eval
 
@@ -208,6 +210,7 @@ class EvalRunnerCliTests(unittest.TestCase):
             self.assertTrue(paths.tool_calls.exists())
             self.assertTrue(paths.transcript.exists())
 
+    @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
     def test_nonzero_codex_stderr_is_appended_as_raw_text(self) -> None:
         from evals.runner.__main__ import run_eval
 
