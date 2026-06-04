@@ -91,12 +91,8 @@
 
 ## Markdown style
 
-- Use sentence case for Markdown headings while preserving proper nouns,
-  product names, acronyms, and code identifiers.
-- For Markdown prose, use fixed-width wrapping at a comfortable measure.
-  Prefer natural sentence or clause boundaries.
-  Avoid orphaned single-word lines.
-- Follow the file's dominant wrapping style when editing existing docs.
+- Use sentence case for Markdown headings while preserving proper nouns, product names, acronyms, and code identifiers.
+- For Markdown prose, keep each paragraph on a single logical line instead of hard-wrapping at a fixed width.
+- When editing existing docs, reflow touched prose to paragraph-per-line style unless the file uses line breaks as meaningful structure.
 - Do not reflow unrelated text unless the user explicitly asks.
-- Leave these unwrapped: code blocks, tables, URLs, generated output,
-  metadata blocks, and text where line breaks are meaningful.
+- Leave these as-is: code blocks, tables, URLs, generated output, metadata blocks, lists where each line is a distinct item, and text where line breaks are meaningful.
