@@ -9,7 +9,7 @@ EVALUATION = (
     / "docs"
     / "superpowers"
     / "evaluations"
-    / "2026-06-01-cities2-knowledge-runner-spike.md"
+    / "2026-06-04-cities2-knowledge-runner-spike.md"
 )
 
 
@@ -36,9 +36,12 @@ class EvalDocsTests(unittest.TestCase):
     def test_evaluation_note_records_client_matrix(self) -> None:
         evaluation = EVALUATION.read_text(encoding="utf-8")
 
+        self.assertIn("What was actually tested", evaluation)
+        self.assertIn("What was not tested", evaluation)
         self.assertIn("Required offline smoke protocol", evaluation)
         self.assertIn("Optional real-client smoke direction", evaluation)
         self.assertIn("Required offline fake-Codex smoke", evaluation)
+        self.assertIn("not a real model", evaluation)
         self.assertIn("`codex`", evaluation)
         self.assertIn("`claude`", evaluation)
         self.assertIn("`agy`", evaluation)

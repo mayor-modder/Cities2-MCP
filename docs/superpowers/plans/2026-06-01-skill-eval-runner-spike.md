@@ -80,7 +80,7 @@ Files added or modified by this plan:
 - Create `evals/runner/__main__.py`: `python -m evals.runner` entrypoint.
 - Create `tests/test_eval_runner_cli.py`: fake-Codex orchestration tests.
 - Create
-  `docs/superpowers/evaluations/2026-06-01-cities2-knowledge-runner-spike.md`:
+  `docs/superpowers/evaluations/2026-06-04-cities2-knowledge-runner-spike.md`:
   offline spike instructions, optional real-client direction, and curated result
   summary.
 
@@ -1553,7 +1553,7 @@ Branch: `codex/evals-live-smoke-note`
 
 - Modify: `evals/README.md`
 - Create:
-  `docs/superpowers/evaluations/2026-06-01-cities2-knowledge-runner-spike.md`
+  `docs/superpowers/evaluations/2026-06-04-cities2-knowledge-runner-spike.md`
 - Create: `tests/test_eval_docs.py`
 
 - [ ] **Step 1: create the branch from the updated harness**
@@ -1584,7 +1584,7 @@ EVALUATION = (
     / "docs"
     / "superpowers"
     / "evaluations"
-    / "2026-06-01-cities2-knowledge-runner-spike.md"
+    / "2026-06-04-cities2-knowledge-runner-spike.md"
 )
 
 
@@ -1681,7 +1681,7 @@ preserve the same isolation contract for `codex`, `claude`, and `agy`.
 - [ ] **Step 5: add the evaluation note**
 
 Create
-`docs/superpowers/evaluations/2026-06-01-cities2-knowledge-runner-spike.md`:
+`docs/superpowers/evaluations/2026-06-04-cities2-knowledge-runner-spike.md`:
 
 ```markdown
 # Cities2 knowledge runner spike
@@ -1798,7 +1798,7 @@ Expected: `OK`. This is the required smoke gate for Task 6.
 - [ ] **Step 8: append curated smoke results**
 
 Append a `## Smoke results` section to
-`docs/superpowers/evaluations/2026-06-01-cities2-knowledge-runner-spike.md`.
+`docs/superpowers/evaluations/2026-06-04-cities2-knowledge-runner-spike.md`.
 The section must contain:
 
 - One bullet for the required offline fake-Codex smoke with the test command and
@@ -1842,7 +1842,7 @@ Expected: `OK`.
 Run:
 
 ```powershell
-git add evals/README.md docs/superpowers/evaluations/2026-06-01-cities2-knowledge-runner-spike.md tests/test_eval_docs.py docs/superpowers/plans/2026-06-01-skill-eval-runner-spike.md
+git add evals/README.md docs/superpowers/evaluations/2026-06-04-cities2-knowledge-runner-spike.md tests/test_eval_docs.py docs/superpowers/plans/2026-06-01-skill-eval-runner-spike.md
 git commit -m "Document cities2 knowledge eval smoke"
 ```
 
