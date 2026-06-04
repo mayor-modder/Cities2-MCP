@@ -34,8 +34,8 @@ Branch strategy:
 - Target each feature PR at `codex/evals-harness`, not `main`.
 - After a feature PR merges, update `codex/evals-harness`, then branch the
   next feature from it.
-- Merge `codex/evals-harness` to `main` only after the live runner spike has a
-  recorded decision note and the maintainer approves that gate.
+- Merge `codex/evals-harness` to `main` only after the offline runner spike has
+  a recorded decision note and the maintainer approves that gate.
 - Do not edit any `SKILL.md` file in this plan.
 - Do not commit anything under `evals/results/`.
 - Each task below includes the exact branch creation command for that feature
@@ -81,7 +81,8 @@ Files added or modified by this plan:
 - Create `tests/test_eval_runner_cli.py`: fake-Codex orchestration tests.
 - Create
   `docs/superpowers/evaluations/2026-06-01-cities2-knowledge-runner-spike.md`:
-  live spike instructions and curated result summary.
+  offline spike instructions, optional real-client direction, and curated result
+  summary.
 
 ### Task 1: run metadata models
 
@@ -1544,7 +1545,7 @@ git commit -m "Add Codex eval runner CLI"
 Open a PR targeting `codex/evals-harness`. Merge only after review and the test
 gate passes.
 
-### Task 6: live smoke documentation and decision note
+### Task 6: offline smoke documentation and client-matrix decision note
 
 Branch: `codex/evals-live-smoke-note`
 
@@ -1588,15 +1589,16 @@ EVALUATION = (
 
 
 class EvalDocsTests(unittest.TestCase):
-    def test_docs_explain_live_smoke_without_local_paths_or_secrets(self) -> None:
+    def test_docs_explain_offline_smoke_without_local_paths_or_secrets(self) -> None:
         readme = (ROOT / "evals" / "README.md").read_text(encoding="utf-8")
         evaluation = EVALUATION.read_text(encoding="utf-8")
 
         for text in (readme, evaluation):
             self.assertIn("evals/results/", text)
             self.assertIn("gitignored", text.lower())
-            self.assertNotIn("C:\\\\Users", text)
-            self.assertNotIn("/Users/", text)
+            self.assertNotIn("C:" + "\\" + "Users", text)
+            self.assertNotIn("\\" + "Users" + "\\", text)
+            self.assertNotIn("/" + "Users" + "/", text)
             self.assertNotIn("OPENAI_API_KEY" + "=", text)
             self.assertNotIn("sk-", text)
 
@@ -1605,6 +1607,15 @@ class EvalDocsTests(unittest.TestCase):
 
         self.assertIn("Reuse Quorum directly", evaluation)
         self.assertIn("Keep the local compatible subset", evaluation)
+
+    def test_evaluation_note_records_client_matrix(self) -> None:
+        evaluation = EVALUATION.read_text(encoding="utf-8")
+
+        self.assertIn("Required offline smoke protocol", evaluation)
+        self.assertIn("Optional real-client smoke direction", evaluation)
+        self.assertIn("`codex`", evaluation)
+        self.assertIn("`claude`", evaluation)
+        self.assertIn("`agy`", evaluation)
 ```
 
 - [ ] **Step 3: run the tests and verify they fail**
@@ -1645,20 +1656,26 @@ The first spike scenario is:
 evals/scenarios/spike/cities2-knowledge-office-demand/
 ```
 
-Run the with-skill smoke:
+Run the required offline harness smoke:
+
+```powershell
+python -m unittest tests.test_eval_runner_cli -v
+```
+
+This uses a fake Codex process to validate clean-room setup, trace capture,
+checks, verdict writing, and `evals/results/` handling without live model auth.
+
+The runner CLI invokes the real Codex client and is reserved for optional
+maintainer-local smoke runs:
 
 ```powershell
 python -m evals.runner evals/scenarios/spike/cities2-knowledge-office-demand --condition with-cities2-knowledge --trial 1
-```
-
-Run the no-skill control:
-
-```powershell
 python -m evals.runner evals/scenarios/spike/cities2-knowledge-office-demand --condition no-skill --trial 1
 ```
 
 The runner creates a fresh `CODEX_HOME` inside each run directory and installs
-only the skill files declared by the condition.
+only the skill files declared by the condition. Future client adapters should
+preserve the same isolation contract for `codex`, `claude`, and `agy`.
 ```
 
 - [ ] **Step 5: add the evaluation note**
@@ -1674,7 +1691,8 @@ Create
 This evaluation records the first runnable harness spike for the Cities2-MCP
 skill eval suite. It tests whether the runner can isolate Codex, install only
 the declared `cities2-knowledge` skill, connect the Cities2-MCP server, capture
-trace artifacts, and write deterministic verdicts.
+trace artifacts, and write deterministic verdicts without requiring live model
+auth.
 
 This is a harness-validation result. It is not the later behavioral baseline
 for `cities2-mod-debugging`.
@@ -1702,25 +1720,41 @@ Generated run artifacts are written under `evals/results/`, which is
 gitignored. Do not commit raw traces, full transcripts, generated agent homes,
 or generated workdirs.
 
-## Live smoke protocol
+## Required offline smoke protocol
 
-Confirm tools and auth without printing secrets:
+Run the fake-Codex harness smoke:
 
 ```powershell
-Get-Command codex
-Get-Command bash
-if (-not $env:OPENAI_API_KEY) { throw "OPENAI_API_KEY is required for live Codex eval smoke" }
+python -m unittest tests.test_eval_runner_cli -v
 ```
 
-Run one with-skill trial:
+This is the required Task 6 gate. It validates runner orchestration with a fake
+client process, writes generated artifacts to a temporary results root, and
+validates the same result-handling path used by gitignored `evals/results/`. It
+does not claim behavioral model quality.
+
+## Optional real-client smoke direction
+
+When higher-order behavior needs checking, test the supported clients rather
+than generic provider lanes:
+
+- `codex`: optional maintainer-local smoke through the Codex CLI. Future OAuth
+  support should use an eval-only `CODEX_HOME`, file-based credential storage,
+  a disposable workdir, explicit sandbox settings, and only the skill/MCP config
+  declared by the condition.
+- `claude`: future adapter with a fresh client home/profile and only the
+  packaged Cities2-MCP skill payload needed by the condition.
+- `agy`: future Antigravity adapter with a fresh plugin/profile boundary and
+  the same condition-scoped skill payload.
+
+Real-client smoke is optional and local. It is not a CI gate, not a contributor
+gate, and not required for this harness-validation PR.
+
+The current runner CLI invokes real Codex and may be used only for optional
+maintainer-local smoke after auth and isolation requirements are satisfied:
 
 ```powershell
 python -m evals.runner evals/scenarios/spike/cities2-knowledge-office-demand --condition with-cities2-knowledge --trial 1
-```
-
-Run one no-skill control:
-
-```powershell
 python -m evals.runner evals/scenarios/spike/cities2-knowledge-office-demand --condition no-skill --trial 1
 ```
 
@@ -1730,7 +1764,7 @@ was indeterminate.
 
 ## Decision point
 
-After both smoke runs, choose one:
+After the offline smoke passes, choose one:
 
 - Reuse Quorum directly if Windows execution, Codex clean-room isolation, skill
   installation, trace capture, and check execution need only light adaptation.
@@ -1751,60 +1785,34 @@ python -m unittest tests.test_eval_docs -v
 
 Expected: `OK`.
 
-- [ ] **Step 7: run the live smoke preflight**
+- [ ] **Step 7: run the required offline harness smoke**
 
 Run:
 
 ```powershell
-Get-Command codex
-Get-Command bash
-if (-not $env:OPENAI_API_KEY) { throw "OPENAI_API_KEY is required for live Codex eval smoke" }
+python -m unittest tests.test_eval_runner_cli -v
 ```
 
-Expected: `codex` and `bash` resolve, and no exception is thrown. Do not print
-the API key.
+Expected: `OK`. This is the required smoke gate for Task 6.
 
-- [ ] **Step 8: run the with-skill live smoke**
-
-Run:
-
-```powershell
-python -m evals.runner evals/scenarios/spike/cities2-knowledge-office-demand --condition with-cities2-knowledge --trial 1
-```
-
-Expected: the command prints a repo-relative or local path to `verdict.json`.
-Exit code `0` means pass, `1` means fail, and `2` means indeterminate.
-
-- [ ] **Step 9: run the no-skill live smoke**
-
-Run:
-
-```powershell
-python -m evals.runner evals/scenarios/spike/cities2-knowledge-office-demand --condition no-skill --trial 1
-```
-
-Expected: the command prints a second `verdict.json` path under
-`evals/results/`.
-
-- [ ] **Step 10: append curated smoke results**
+- [ ] **Step 8: append curated smoke results**
 
 Append a `## Smoke results` section to
 `docs/superpowers/evaluations/2026-06-01-cities2-knowledge-runner-spike.md`.
 The section must contain:
 
-- One bullet for `with-cities2-knowledge` with the actual verdict status and
-  the exact repo-relative `verdict.json` path printed by the runner.
-- One bullet for `no-skill` with the actual verdict status and the exact
-  repo-relative `verdict.json` path printed by the runner.
+- One bullet for the required offline fake-Codex smoke with the test command and
+  result status.
 - The sentence `Raw run artifacts remain gitignored.`
 - A `Decision:` paragraph choosing either `Reuse Quorum directly` or
   `Keep the local compatible subset`, with one short rationale sentence.
+- A short note that real-client smoke for `codex`, `claude`, and `agy` is a
+  later optional adapter matrix, not this PR's gate.
 
-If either run is indeterminate, record the indeterminate status and the short
-reason from `final_reason`. Do not paste raw trace lines or full transcripts
-into this note.
+Do not paste raw trace lines, generated local paths, or full transcripts into
+this note.
 
-- [ ] **Step 11: run hygiene checks**
+- [ ] **Step 9: run hygiene checks**
 
 Run:
 
@@ -1819,7 +1827,7 @@ Expected: `git diff --check` passes. The `rg` command reports no tracked local
 paths, printed secrets, or token-like strings in the files changed by this
 branch.
 
-- [ ] **Step 12: run the code-change test gate**
+- [ ] **Step 10: run the code-change test gate**
 
 Run:
 
@@ -1829,16 +1837,16 @@ python -m unittest discover -s tests -v
 
 Expected: `OK`.
 
-- [ ] **Step 13: commit**
+- [ ] **Step 11: commit**
 
 Run:
 
 ```powershell
-git add evals/README.md docs/superpowers/evaluations/2026-06-01-cities2-knowledge-runner-spike.md tests/test_eval_docs.py
+git add evals/README.md docs/superpowers/evaluations/2026-06-01-cities2-knowledge-runner-spike.md tests/test_eval_docs.py docs/superpowers/plans/2026-06-01-skill-eval-runner-spike.md
 git commit -m "Document cities2 knowledge eval smoke"
 ```
 
-Open a PR targeting `codex/evals-harness`. Merge only after review, the live
+Open a PR targeting `codex/evals-harness`. Merge only after review, the offline
 smoke note is complete, and the test gate passes.
 
 ## Final harness gate
