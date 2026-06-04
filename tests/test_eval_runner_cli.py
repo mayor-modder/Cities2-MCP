@@ -6,12 +6,27 @@ import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENARIO = ROOT / "evals" / "scenarios" / "spike" / "cities2-knowledge-office-demand"
 
 
 class EvalRunnerCliTests(unittest.TestCase):
+    def test_run_setup_reports_missing_bash(self) -> None:
+        from evals.runner.__main__ import _run_setup
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
+            with patch(
+                "evals.runner.__main__.subprocess.run",
+                side_effect=FileNotFoundError("bash"),
+            ):
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "bash executable not found",
+                ):
+                    _run_setup(Path("setup.sh"), Path(tmp))
+
     def test_runner_writes_verdict_with_codex_stub(self) -> None:
         from evals.runner.__main__ import run_eval
 

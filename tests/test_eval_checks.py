@@ -5,6 +5,7 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -217,6 +218,93 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertTrue(command.startswith("{ "), command)
         self.assertTrue(command.endswith("; }"), command)
         self.assertNotRegex(command, r"^\(")
+
+    def test_run_checks_phase_reports_missing_bash_as_failed_check(self) -> None:
+        from evals.runner.checks import run_checks_phase
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-checks-") as tmp:
+            run_dir = Path(tmp)
+            workdir = run_dir / "coding-agent-workdir"
+            agent_home = run_dir / "coding-agent-config"
+            checks = run_dir / "checks.sh"
+            workdir.mkdir()
+            agent_home.mkdir()
+            checks.write_text("pre() { :; }\npost() { :; }\n", encoding="utf-8")
+
+            with patch(
+                "evals.runner.checks.subprocess.run",
+                side_effect=FileNotFoundError("bash"),
+            ):
+                records = run_checks_phase(
+                    checks,
+                    "pre",
+                    run_dir=run_dir,
+                    workdir=workdir,
+                    agent_home=agent_home,
+                    condition="no-skill",
+                    repo_root=ROOT,
+                )
+
+        self.assertEqual(1, len(records))
+        self.assertEqual("pre-checks", records[0].name)
+        self.assertEqual("fail", records[0].status)
+        self.assertIn("bash executable not found", records[0].detail)
+
+    def test_run_checks_phase_records_nonzero_exit_after_check_records(self) -> None:
+        from evals.runner.checks import run_checks_phase
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-checks-") as tmp:
+            run_dir = Path(tmp)
+            workdir = run_dir / "coding-agent-workdir"
+            agent_home = run_dir / "coding-agent-config"
+            checks = run_dir / "checks.sh"
+            sink = run_dir / "pre-checks.jsonl"
+            workdir.mkdir()
+            agent_home.mkdir()
+            checks.write_text("pre() { :; }\npost() { :; }\n", encoding="utf-8")
+
+            def run_with_partial_record(*args: object, **kwargs: object) -> object:
+                sink.write_text(
+                    json.dumps(
+                        {
+                            "name": "first-check",
+                            "phase": "pre",
+                            "status": "pass",
+                            "detail": "recorded before crash",
+                        }
+                    )
+                    + "\n",
+                    encoding="utf-8",
+                )
+                return subprocess.CompletedProcess(
+                    args=args,
+                    returncode=7,
+                    stdout="before crash\n",
+                    stderr="script crashed\n",
+                )
+
+            with patch("evals.runner.checks._is_wsl_bash", return_value=False):
+                with patch(
+                    "evals.runner.checks.subprocess.run",
+                    side_effect=run_with_partial_record,
+                ):
+                    records = run_checks_phase(
+                        checks,
+                        "pre",
+                        run_dir=run_dir,
+                        workdir=workdir,
+                        agent_home=agent_home,
+                        condition="no-skill",
+                        repo_root=ROOT,
+                    )
+
+        self.assertEqual(
+            ["first-check", "pre-checks"],
+            [record.name for record in records],
+        )
+        self.assertEqual("pass", records[0].status)
+        self.assertEqual("fail", records[1].status)
+        self.assertIn("exit=7", records[1].detail)
 
 
 if __name__ == "__main__":

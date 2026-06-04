@@ -31,8 +31,8 @@ def _copy_skill(repo_root: Path, codex_home: Path, skill_name: str) -> None:
     shutil.copytree(source, target)
 
 
-def _write_mcp_config(repo_root: Path, codex_home: Path) -> None:
-    workspace = repo_root.resolve()
+def _write_mcp_config(codex_home: Path, workspace: Path) -> None:
+    resolved_workspace = workspace.resolve()
     config = "\n".join(
         [
             "[mcp_servers.cities2-mcp]",
@@ -42,7 +42,7 @@ def _write_mcp_config(repo_root: Path, codex_home: Path) -> None:
                 '"-m", '
                 '"cities2_mcp.mcp_server", '
                 '"--workspace", '
-                f"{_toml_string(workspace)}"
+                f"{_toml_string(resolved_workspace)}"
                 "]"
             ),
             "",
@@ -52,13 +52,17 @@ def _write_mcp_config(repo_root: Path, codex_home: Path) -> None:
 
 
 def prepare_codex_home(
-    *, repo_root: Path, codex_home: Path, skills: tuple[str, ...]
+    *,
+    repo_root: Path,
+    codex_home: Path,
+    skills: tuple[str, ...],
+    workspace: Path | None = None,
 ) -> None:
     codex_home.mkdir(parents=True, exist_ok=False)
     (codex_home / "skills").mkdir()
     for skill_name in skills:
         _copy_skill(repo_root, codex_home, skill_name)
-    _write_mcp_config(repo_root, codex_home)
+    _write_mcp_config(codex_home, workspace if workspace is not None else repo_root)
 
 
 def _host_env_value(name: str) -> str | None:

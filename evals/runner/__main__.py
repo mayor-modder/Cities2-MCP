@@ -79,12 +79,15 @@ def _new_run_dir(
 
 
 def _run_setup(setup: Path, workdir: Path) -> None:
-    result = subprocess.run(
-        ["bash", setup.as_posix()],
-        cwd=workdir,
-        text=True,
-        capture_output=True,
-    )
+    try:
+        result = subprocess.run(
+            ["bash", setup.as_posix()],
+            cwd=workdir,
+            text=True,
+            capture_output=True,
+        )
+    except FileNotFoundError as error:
+        raise RuntimeError("scenario setup failed: bash executable not found") from error
     if result.returncode != 0:
         detail = (
             f"exit={result.returncode}; stdout={result.stdout.strip()}; "
@@ -161,8 +164,13 @@ def run_eval(
     )
     prompt = _prompt_from_story(scenario.story)
 
-    prepare_codex_home(repo_root=repo_root, codex_home=paths.agent_home, skills=skills)
     paths.workdir.mkdir()
+    prepare_codex_home(
+        repo_root=repo_root,
+        codex_home=paths.agent_home,
+        workspace=paths.workdir,
+        skills=skills,
+    )
     _run_setup(Path(os.path.relpath(scenario.setup, paths.workdir)), paths.workdir)
     pre_records = run_checks_phase(
         scenario.checks,

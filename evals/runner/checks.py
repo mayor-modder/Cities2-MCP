@@ -10,11 +10,14 @@ from .models import CheckRecord, Phase
 
 
 def _is_wsl_bash() -> bool:
-    result = subprocess.run(
-        ["bash", "-lc", "uname -r"],
-        text=True,
-        capture_output=True,
-    )
+    try:
+        result = subprocess.run(
+            ["bash", "-lc", "uname -r"],
+            text=True,
+            capture_output=True,
+        )
+    except FileNotFoundError:
+        return False
     return result.returncode == 0 and "microsoft" in result.stdout.lower()
 
 
@@ -95,16 +98,26 @@ def run_checks_phase(
     python_shim = 'python() { python3 "\\$@"; }; ' if wsl else ""
     cd_workdir = f"cd {shlex.quote(_bash_path(workdir, wsl=wsl))}; " if wsl else ""
     command = f"{exports}{python_shim}{cd_workdir}{_source_command(checks, wsl=wsl)}; {phase}"
-    result = subprocess.run(
-        ["bash", "-lc", command],
-        cwd=repo_root if wsl else workdir,
-        env=env,
-        text=True,
-        capture_output=True,
-    )
+    try:
+        result = subprocess.run(
+            ["bash", "-lc", command],
+            cwd=repo_root if wsl else workdir,
+            env=env,
+            text=True,
+            capture_output=True,
+        )
+    except FileNotFoundError:
+        return [
+            CheckRecord(
+                name=f"{phase}-checks",
+                phase=phase,
+                status="fail",
+                detail="bash executable not found",
+            )
+        ]
 
     records = _read_records(sink)
-    if result.returncode != 0 and not records:
+    if result.returncode != 0:
         detail = (
             f"exit={result.returncode}; stdout={result.stdout.strip()}; "
             f"stderr={result.stderr.strip()}"

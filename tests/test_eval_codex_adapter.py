@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -46,6 +47,24 @@ class CodexCleanRoomAdapterTests(unittest.TestCase):
             prepare_codex_home(repo_root=ROOT, codex_home=codex_home, skills=())
 
             self.assertEqual([], list((codex_home / "skills").iterdir()))
+
+    def test_mcp_config_uses_declared_workspace(self) -> None:
+        from evals.runner.codex_adapter import prepare_codex_home
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-codex-") as tmp:
+            codex_home = Path(tmp) / "coding-agent-config"
+            workspace = Path(tmp) / "coding-agent-workdir"
+
+            prepare_codex_home(
+                repo_root=ROOT,
+                codex_home=codex_home,
+                workspace=workspace,
+                skills=(),
+            )
+
+            config = (codex_home / "config.toml").read_text(encoding="utf-8")
+            self.assertIn(json.dumps(str(workspace.resolve())), config)
+            self.assertNotIn(json.dumps(str(ROOT.resolve())), config)
 
     def test_prepare_codex_home_rejects_path_like_skill_name(self) -> None:
         from evals.runner.codex_adapter import CodexAdapterError, prepare_codex_home
