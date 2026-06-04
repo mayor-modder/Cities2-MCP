@@ -12,13 +12,13 @@ SCENARIO = ROOT / "evals" / "scenarios" / "spike" / "cities2-knowledge-office-de
 
 
 class EvalRunnerCliTests(unittest.TestCase):
-    def test_runner_writes_verdict_with_fake_codex(self) -> None:
+    def test_runner_writes_verdict_with_codex_stub(self) -> None:
         from evals.runner.__main__ import run_eval
 
         with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
             root = Path(tmp)
-            fake_codex = root / "fake_codex.py"
-            fake_codex.write_text(
+            codex_stub = root / "codex_stub.py"
+            codex_stub.write_text(
                 textwrap.dedent(
                     """\
                     from __future__ import annotations
@@ -38,7 +38,7 @@ class EvalRunnerCliTests(unittest.TestCase):
                 repo_root=ROOT,
                 results_root=root / "results",
                 codex_command=sys.executable,
-                codex_args_prefix=(str(fake_codex),),
+                codex_args_prefix=(str(codex_stub),),
                 live_auth=False,
                 trial=1,
             )
@@ -57,8 +57,8 @@ class EvalRunnerCliTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
             root = Path(tmp)
-            fake_codex = root / "fake_codex.py"
-            fake_codex.write_text(
+            codex_stub = root / "codex_stub.py"
+            codex_stub.write_text(
                 textwrap.dedent(
                     """\
                     from __future__ import annotations
@@ -82,7 +82,7 @@ class EvalRunnerCliTests(unittest.TestCase):
                 repo_root=ROOT,
                 results_root=root / "results",
                 codex_command=sys.executable,
-                codex_args_prefix=(str(fake_codex),),
+                codex_args_prefix=(str(codex_stub),),
                 live_auth=False,
                 trial=1,
             )

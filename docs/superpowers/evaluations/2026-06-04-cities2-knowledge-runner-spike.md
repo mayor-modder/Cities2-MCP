@@ -8,7 +8,7 @@ The result is: keep the local Quorum-compatible runner subset for now, because i
 
 ## What was actually tested
 
-The required smoke ran `python -m unittest tests.test_eval_runner_cli -v`. That test uses a fake Codex process, not a real model.
+The required smoke ran `python -m unittest tests.test_eval_runner_cli -v`. That test uses a local test process that emits Codex-style events. It does not call a real model.
 
 This proves the runner can load the scenario, create an isolated run directory, prepare a clean agent home, run setup and check hooks, consume Codex-shaped JSONL events, normalize traces, write a verdict, and keep generated artifacts out of git.
 
@@ -56,13 +56,13 @@ Generated run artifacts are written under `evals/results/`, which is gitignored.
 
 ## Required offline smoke protocol
 
-Run the fake-Codex harness smoke:
+Run the local runner smoke:
 
 ```powershell
 python -m unittest tests.test_eval_runner_cli -v
 ```
 
-This is the required Task 6 gate. It validates runner orchestration with a fake client process, writes generated artifacts to a temporary results root, and validates the same result-handling path used by gitignored `evals/results/`.
+This is the required Task 6 gate. It validates runner orchestration with a local test process, writes generated artifacts to a temporary results root, and validates the same result-handling path used by gitignored `evals/results/`.
 
 ## Optional real-client smoke direction
 
@@ -94,7 +94,7 @@ Record the decision in the smoke results section using only curated verdict stat
 
 ## Recorded smoke result
 
-- Required offline fake-Codex smoke: `python -m unittest tests.test_eval_runner_cli -v` passed on 2026-06-04.
+- Required offline runner smoke: `python -m unittest tests.test_eval_runner_cli -v` passed on 2026-06-04.
 
 Raw run artifacts remain gitignored.
 

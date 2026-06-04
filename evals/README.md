@@ -27,8 +27,9 @@ Run the required offline harness smoke:
 python -m unittest tests.test_eval_runner_cli -v
 ```
 
-This uses a fake Codex process to validate clean-room setup, trace capture,
-checks, verdict writing, and `evals/results/` handling without live model auth.
+This uses a local test process that emits Codex-style events to validate
+clean-room setup, trace capture, checks, verdict writing, and `evals/results/`
+handling without live model auth.
 
 The runner CLI invokes the real Codex client and is reserved for optional
 maintainer-local smoke runs:

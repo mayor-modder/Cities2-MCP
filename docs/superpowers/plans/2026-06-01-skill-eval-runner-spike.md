@@ -78,7 +78,7 @@ Files added or modified by this plan:
   `checks.sh` and collects check records.
 - Create `tests/test_eval_checks.py`: check helper and shell hook tests.
 - Create `evals/runner/__main__.py`: `python -m evals.runner` entrypoint.
-- Create `tests/test_eval_runner_cli.py`: fake-Codex orchestration tests.
+- Create `tests/test_eval_runner_cli.py`: Codex stub orchestration tests.
 - Create
   `docs/superpowers/evaluations/2026-06-04-cities2-knowledge-runner-spike.md`:
   offline spike instructions, optional real-client direction, and curated result
@@ -1179,7 +1179,7 @@ git commit -m "Add eval check helpers"
 Open a PR targeting `codex/evals-harness`. Merge only after review and the test
 gate passes.
 
-### Task 5: runner CLI and fake Codex orchestration
+### Task 5: runner CLI and Codex stub orchestration
 
 Branch: `codex/evals-runner-cli`
 
@@ -1200,7 +1200,7 @@ git status --short --branch
 
 Expected: branch is `codex/evals-runner-cli` and the worktree is clean.
 
-- [ ] **Step 2: write the failing fake-Codex test**
+- [ ] **Step 2: write the failing Codex stub test**
 
 Create `tests/test_eval_runner_cli.py`:
 
@@ -1219,13 +1219,13 @@ SCENARIO = ROOT / "evals" / "scenarios" / "spike" / "cities2-knowledge-office-de
 
 
 class EvalRunnerCliTests(unittest.TestCase):
-    def test_runner_writes_verdict_with_fake_codex(self) -> None:
+    def test_runner_writes_verdict_with_codex_stub(self) -> None:
         from evals.runner.__main__ import run_eval
 
         with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
             root = Path(tmp)
-            fake_codex = root / "fake_codex.py"
-            fake_codex.write_text(
+            codex_stub = root / "codex_stub.py"
+            codex_stub.write_text(
                 textwrap.dedent(
                     """\
                     from __future__ import annotations
@@ -1245,7 +1245,7 @@ class EvalRunnerCliTests(unittest.TestCase):
                 repo_root=ROOT,
                 results_root=root / "results",
                 codex_command=sys.executable,
-                codex_args_prefix=(str(fake_codex),),
+                codex_args_prefix=(str(codex_stub),),
                 live_auth=False,
                 trial=1,
             )
@@ -1662,8 +1662,9 @@ Run the required offline harness smoke:
 python -m unittest tests.test_eval_runner_cli -v
 ```
 
-This uses a fake Codex process to validate clean-room setup, trace capture,
-checks, verdict writing, and `evals/results/` handling without live model auth.
+This uses a local test process that emits Codex-style events to validate
+clean-room setup, trace capture, checks, verdict writing, and `evals/results/`
+handling without live model auth.
 
 The runner CLI invokes the real Codex client and is reserved for optional
 maintainer-local smoke runs:
@@ -1722,7 +1723,7 @@ or generated workdirs.
 
 ## Required offline smoke protocol
 
-Run the fake-Codex harness smoke:
+Run the local runner smoke:
 
 ```powershell
 python -m unittest tests.test_eval_runner_cli -v
@@ -1801,7 +1802,7 @@ Append a `## Smoke results` section to
 `docs/superpowers/evaluations/2026-06-04-cities2-knowledge-runner-spike.md`.
 The section must contain:
 
-- One bullet for the required offline fake-Codex smoke with the test command and
+- One bullet for the required offline runner smoke with the test command and
   result status.
 - The sentence `Raw run artifacts remain gitignored.`
 - A `Decision:` paragraph choosing either `Reuse Quorum directly` or
