@@ -116,18 +116,30 @@ def run_checks_phase(
             )
         ]
 
-    records = _read_records(sink)
-    if result.returncode != 0:
-        detail = (
-            f"exit={result.returncode}; stdout={result.stdout.strip()}; "
-            f"stderr={result.stderr.strip()}"
-        )
+    records: list[CheckRecord] = []
+    record_error: Exception | None = None
+    try:
+        records = _read_records(sink)
+    except (json.JSONDecodeError, KeyError, TypeError) as error:
+        record_error = error
+
+    if result.returncode != 0 or record_error is not None:
+        details: list[str] = []
+        if result.returncode != 0:
+            details.append(
+                f"exit={result.returncode}; stdout={result.stdout.strip()}; "
+                f"stderr={result.stderr.strip()}"
+            )
+        if record_error is not None:
+            details.append(
+                f"invalid check record: {type(record_error).__name__}: {record_error}"
+            )
         records.append(
             CheckRecord(
                 name=f"{phase}-checks",
                 phase=phase,
                 status="fail",
-                detail=detail,
+                detail="; ".join(details),
             )
         )
     return records

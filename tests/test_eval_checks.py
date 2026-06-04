@@ -306,6 +306,49 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertEqual("fail", records[1].status)
         self.assertIn("exit=7", records[1].detail)
 
+    def test_run_checks_phase_reports_malformed_records_as_failed_check(self) -> None:
+        from evals.runner.checks import run_checks_phase
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-checks-") as tmp:
+            run_dir = Path(tmp)
+            workdir = run_dir / "coding-agent-workdir"
+            agent_home = run_dir / "coding-agent-config"
+            checks = run_dir / "checks.sh"
+            sink = run_dir / "pre-checks.jsonl"
+            workdir.mkdir()
+            agent_home.mkdir()
+            checks.write_text("pre() { :; }\npost() { :; }\n", encoding="utf-8")
+
+            def run_with_malformed_record(*args: object, **kwargs: object) -> object:
+                sink.write_text("{not-json}\n", encoding="utf-8")
+                return subprocess.CompletedProcess(
+                    args=args,
+                    returncode=7,
+                    stdout="before crash\n",
+                    stderr="script crashed\n",
+                )
+
+            with patch("evals.runner.checks._is_wsl_bash", return_value=False):
+                with patch(
+                    "evals.runner.checks.subprocess.run",
+                    side_effect=run_with_malformed_record,
+                ):
+                    records = run_checks_phase(
+                        checks,
+                        "pre",
+                        run_dir=run_dir,
+                        workdir=workdir,
+                        agent_home=agent_home,
+                        condition="no-skill",
+                        repo_root=ROOT,
+                    )
+
+        self.assertEqual(1, len(records))
+        self.assertEqual("pre-checks", records[0].name)
+        self.assertEqual("fail", records[0].status)
+        self.assertIn("invalid check record", records[0].detail)
+        self.assertIn("exit=7", records[0].detail)
+
 
 if __name__ == "__main__":
     unittest.main()
