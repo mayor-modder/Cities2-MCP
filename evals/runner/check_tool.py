@@ -63,6 +63,7 @@ def run_check(
         expected_by_condition = {
             "no-skill": [],
             "with-cities2-knowledge": ["cities2-knowledge"],
+            "with-cities2-mod-debugging": ["cities2-mod-debugging"],
         }
         expected = expected_by_condition.get(condition)
         actual = _skill_dirs(agent_home)

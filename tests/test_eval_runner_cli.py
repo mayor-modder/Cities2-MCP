@@ -60,6 +60,14 @@ class EvalRunnerCliTests(unittest.TestCase):
             r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$",
         )
 
+    def test_condition_skills_supports_debugging_skill_condition(self) -> None:
+        from evals.runner.__main__ import _condition_skills
+
+        self.assertEqual(
+            ("cities2-mod-debugging",),
+            _condition_skills("with-cities2-mod-debugging"),
+        )
+
     def test_run_setup_reports_missing_bash(self) -> None:
         from evals.runner.__main__ import _run_setup
 

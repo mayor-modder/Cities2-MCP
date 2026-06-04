@@ -99,6 +99,29 @@ class EvalCheckToolTests(unittest.TestCase):
 
             self.assertEqual("fail", record.status)
 
+    def test_condition_skill_set_supports_debugging_skill_condition(self) -> None:
+        from evals.runner.check_tool import run_check
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-check-") as tmp:
+            run_dir = Path(tmp)
+            workdir = run_dir / "coding-agent-workdir"
+            agent_home = run_dir / "coding-agent-config"
+            workdir.mkdir()
+            (agent_home / "skills" / "cities2-mod-debugging").mkdir(parents=True)
+
+            record = run_check(
+                "condition-skill-set",
+                [],
+                run_dir=run_dir,
+                workdir=workdir,
+                agent_home=agent_home,
+                condition="with-cities2-mod-debugging",
+                phase="pre",
+            )
+
+        self.assertEqual("pass", record.status)
+        self.assertIn("cities2-mod-debugging", record.detail)
+
     def test_check_tool_main_cli_errors_and_default_phase(self) -> None:
         from evals.runner import check_tool
 
