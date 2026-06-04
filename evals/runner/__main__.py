@@ -4,11 +4,11 @@ import argparse
 import datetime as dt
 import hashlib
 import json
-import os
+import shlex
 import subprocess
 from pathlib import Path
 
-from evals.runner.checks import run_checks_phase
+from evals.runner.checks import _bash_path, _is_wsl_bash, run_checks_phase
 from evals.runner.codex_adapter import (
     build_codex_exec_command,
     minimal_codex_env,
@@ -65,7 +65,7 @@ def _skill_checksums(repo_root: Path, skills: tuple[str, ...]) -> dict[str, str]
 
 
 def _utc_timestamp() -> str:
-    return dt.datetime.now(dt.UTC).strftime("%Y%m%dT%H%M%SZ")
+    return dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
 def _new_run_dir(
@@ -79,9 +79,18 @@ def _new_run_dir(
 
 
 def _run_setup(setup: Path, workdir: Path) -> None:
+    wsl = _is_wsl_bash()
+    if wsl:
+        command = (
+            f"cd {shlex.quote(_bash_path(workdir, wsl=True))}; "
+            f"bash {shlex.quote(_bash_path(setup, wsl=True))}"
+        )
+        args = ["bash", "-lc", command]
+    else:
+        args = ["bash", setup.as_posix()]
     try:
         result = subprocess.run(
-            ["bash", setup.as_posix()],
+            args,
             cwd=workdir,
             text=True,
             capture_output=True,
@@ -114,7 +123,7 @@ def _metadata(
         backend_executable=codex_command,
         repo_commit=_repo_commit(repo_root),
         runner_version=RUNNER_VERSION,
-        run_started_at=dt.datetime.now(dt.UTC)
+        run_started_at=dt.datetime.now(dt.timezone.utc)
         .replace(microsecond=0)
         .isoformat()
         .replace("+00:00", "Z"),
@@ -171,7 +180,7 @@ def run_eval(
         workspace=paths.workdir,
         skills=skills,
     )
-    _run_setup(Path(os.path.relpath(scenario.setup, paths.workdir)), paths.workdir)
+    _run_setup(scenario.setup.resolve(), paths.workdir)
     pre_records = run_checks_phase(
         scenario.checks,
         "pre",
