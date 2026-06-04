@@ -76,7 +76,7 @@ Codex in the same folder.
 ### Using skills in Codex
 
 ```text
-$cities2-mcp:cities2-knowledge How can I make a subway line carry more passengers?
+$cities2-mcp:cities2-knowledge How can I get more people to use my subway line?
 ```
 
 ```text
@@ -128,7 +128,7 @@ Direct URL installs are not currently supported for this plugin.
 Type `/cities2` and choose one of the Cities2 skills.
 
 ```text
-/cities2-knowledge Why are my industrial companies complaining about not enough customers?
+/cities2-knowledge Why are my commercial companies complaining about not enough customers?
 ```
 
 ```text
