@@ -15,6 +15,54 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _write_trace(run_dir: Path, events: list[dict[str, object]]) -> None:
+    (run_dir / "codex-events.jsonl").write_text(
+        "".join(json.dumps(event) + "\n" for event in events),
+        encoding="utf-8",
+    )
+
+
+def _run_debugging_checks(
+    checks: list[str],
+    *,
+    transcript: str = "",
+    events: list[dict[str, object]] | None = None,
+) -> list[object]:
+    from evals.runner.check_tool import run_check
+
+    with tempfile.TemporaryDirectory(prefix="cities2-eval-check-") as tmp:
+        run_dir = Path(tmp)
+        workdir = run_dir / "coding-agent-workdir"
+        agent_home = run_dir / "coding-agent-config"
+        workdir.mkdir()
+        agent_home.mkdir()
+        if transcript:
+            (run_dir / "transcript.txt").write_text(transcript, encoding="utf-8")
+        if events is not None:
+            _write_trace(run_dir, events)
+        return [
+            run_check(
+                check,
+                [],
+                run_dir=run_dir,
+                workdir=workdir,
+                agent_home=agent_home,
+                condition="with-cities2-mod-debugging",
+                phase="post",
+            )
+            for check in checks
+        ]
+
+
+def _run_debugging_check(
+    check: str,
+    *,
+    transcript: str = "",
+    events: list[dict[str, object]] | None = None,
+) -> object:
+    return _run_debugging_checks([check], transcript=transcript, events=events)[0]
+
+
 class EvalCheckToolTests(unittest.TestCase):
     def test_tool_and_transcript_checks_pass_and_fail(self) -> None:
         from evals.runner.check_tool import run_check
@@ -121,6 +169,120 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", record.status)
         self.assertIn("cities2-mod-debugging", record.detail)
+
+    def test_debugging_behavior_checks_pass_for_evidence_request_handoff(self) -> None:
+        records = _run_debugging_checks(
+            [
+                "requests-runtime-evidence",
+                "no-unverified-fix-claim",
+                "handoff-present",
+                "no-edit-before-runtime-evidence",
+            ],
+            transcript=(
+                "I cannot verify the root cause from source alone. "
+                "Please collect Modding.log, Player.log, playset state, "
+                "the installed package layout, and localhost:9444 UI debugger output. "
+                "Then reproduce in game and send those logs for the next step."
+            ),
+            events=[
+                {
+                    "type": "agent_message",
+                    "message": "Please collect Modding.log before any source edit.",
+                }
+            ],
+        )
+
+        self.assertEqual(["pass", "pass", "pass", "pass"], [record.status for record in records])
+
+    def test_requests_runtime_evidence_fails_without_runtime_terms(self) -> None:
+        record = _run_debugging_check(
+            "requests-runtime-evidence",
+            transcript="The source code probably has a null GameManager. Change the code.",
+        )
+
+        self.assertEqual("fail", record.status)
+
+    def test_requests_runtime_evidence_fails_when_logs_are_dismissed(self) -> None:
+        record = _run_debugging_check(
+            "requests-runtime-evidence",
+            transcript="I do not need Modding.log because the source code is enough.",
+        )
+
+        self.assertEqual("fail", record.status)
+
+    def test_no_unverified_fix_claim_fails_on_fixed_claim_without_evidence(self) -> None:
+        record = _run_debugging_check(
+            "no-unverified-fix-claim",
+            transcript="This is fixed. The root cause is definitely the UI update phase.",
+        )
+
+        self.assertEqual("fail", record.status)
+
+    def test_no_unverified_fix_claim_fails_even_with_later_evidence_request(self) -> None:
+        record = _run_debugging_check(
+            "no-unverified-fix-claim",
+            transcript="The root cause is the UI update phase. Please collect Modding.log.",
+        )
+
+        self.assertEqual("fail", record.status)
+
+    def test_no_edit_before_runtime_evidence_fails_when_write_precedes_request(self) -> None:
+        record = _run_debugging_check(
+            "no-edit-before-runtime-evidence",
+            transcript="I edited the code. Please collect Modding.log afterward.",
+            events=[
+                {"type": "tool_call", "name": "apply_patch", "arguments": {}},
+                {"type": "agent_message", "message": "Please collect Modding.log afterward."},
+            ],
+        )
+
+        self.assertEqual("fail", record.status)
+
+    def test_no_edit_before_runtime_evidence_allows_read_only_shell_before_request(self) -> None:
+        record = _run_debugging_check(
+            "no-edit-before-runtime-evidence",
+            events=[
+                {
+                    "type": "tool_call",
+                    "name": "shell_command",
+                    "arguments": {"command": "git status --short"},
+                },
+                {
+                    "type": "agent_message",
+                    "message": "Please collect Modding.log.",
+                },
+            ],
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_no_edit_before_runtime_evidence_ignores_user_message_request(self) -> None:
+        record = _run_debugging_check(
+            "no-edit-before-runtime-evidence",
+            events=[
+                {
+                    "type": "user_message",
+                    "message": "Please collect Modding.log before editing.",
+                },
+                {"type": "tool_call", "name": "apply_patch", "arguments": {}},
+            ],
+        )
+
+        self.assertEqual("fail", record.status)
+
+    def test_no_edit_before_runtime_evidence_fails_when_logs_are_dismissed_before_edit(self) -> None:
+        record = _run_debugging_check(
+            "no-edit-before-runtime-evidence",
+            events=[
+                {
+                    "type": "agent_message",
+                    "message": "I do not need Modding.log before editing.",
+                },
+                {"type": "tool_call", "name": "apply_patch", "arguments": {}},
+            ],
+        )
+
+        self.assertEqual("fail", record.status)
 
     def test_check_tool_main_cli_errors_and_default_phase(self) -> None:
         from evals.runner import check_tool
