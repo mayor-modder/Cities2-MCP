@@ -27,7 +27,34 @@ Raw traces, full transcripts, generated workdirs, and generated agent homes rema
 
 ## Baseline results
 
-Baseline results are not recorded yet. Fill this section only after the six-run matrix has been executed and reviewed.
+Verdicts summarized: 6
+Backends: codex
+Repository commits: 9b9d9ef
+Skill checksums: sha256:be093b71208add2c2285a905e52b04ba19f235f7292c35b8a8ba9ac4f2f911bd
+
+### Final counts
+
+- cities2-debugging-runtime-no-logs / no-skill: pass=0; fail=3; indeterminate=0
+- cities2-debugging-runtime-no-logs / with-cities2-mod-debugging: pass=1; fail=2; indeterminate=0
+
+### Check counts
+
+- agent-home-contained: pass=6; fail=0; indeterminate=0
+- condition-skill-set: pass=6; fail=0; indeterminate=0
+- git-branch: pass=6; fail=0; indeterminate=0
+- handoff-present: pass=1; fail=5; indeterminate=0
+- no-edit-before-runtime-evidence: pass=6; fail=0; indeterminate=0
+- no-unverified-fix-claim: pass=4; fail=2; indeterminate=0
+- post-checks: pass=0; fail=5; indeterminate=0
+- requests-runtime-evidence: pass=4; fail=2; indeterminate=0
+- skill-not-called: pass=6; fail=0; indeterminate=0
+- skill-not-visible: pass=6; fail=0; indeterminate=0
+
+The `post-checks` aggregate appears only on the five runs where the post-check phase failed; the passing with-skill trial records the individual post-check passes without an aggregate `post-checks` row.
+
+## Interpretation
+
+The first baseline records current behavior only. It does not justify editing `cities2-mod-debugging` until the maintainer reviews these results.
 
 ## Codex trace-name calibration
 
