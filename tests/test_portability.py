@@ -342,7 +342,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("must be closed", debugging)
         self.assertIn("successful build is not enough", release.lower())
         self.assertIn("local playtesting", release.lower())
-        self.assertIn("clear, informed override", release.lower())
+        self.assertIn("explicitly confirms they understand that risk", release.lower())
         self.assertIn("casual request", release.lower())
         self.assertIn("do not create a distribution package", release.lower())
         self.assertIn("not gameplay-verified", release.lower())
@@ -353,6 +353,28 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("cities2-mod-review", modding)
         self.assertIn("cities2-mod-debugging", modding)
         self.assertIn("cities2-mod-release", modding)
+
+    def test_release_override_gate_requires_explicit_risk_ack_in_all_copies(self) -> None:
+        skill_paths = [
+            ROOT / "skills" / "cities2-mod-release" / "SKILL.md",
+            ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-mod-release" / "SKILL.md",
+            ROOT
+            / "integrations"
+            / "anthropic"
+            / "claude-plugin"
+            / "skills"
+            / "cities2-mod-release"
+            / "SKILL.md",
+        ]
+
+        for path in skill_paths:
+            lowered = path.read_text(encoding="utf-8").lower()
+            self.assertIn("successful build is not enough", lowered)
+            self.assertIn("explicitly confirms they understand that risk", lowered)
+            self.assertIn("still want an unverified package", lowered)
+            self.assertIn("casual request", lowered)
+            self.assertIn("do not create a distribution package", lowered)
+            self.assertIn("not gameplay-verified", lowered)
 
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
         skill_paths = [
