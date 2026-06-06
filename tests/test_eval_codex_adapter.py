@@ -158,6 +158,79 @@ class CodexCleanRoomAdapterTests(unittest.TestCase):
         self.assertNotIn("OPENAI_API_KEY", kwargs["env"])
         self.assertEqual(str(codex_home), kwargs["env"]["CODEX_HOME"])
 
+    def test_seed_codex_auth_copies_host_oauth_when_api_key_absent(self) -> None:
+        from evals.runner.codex_adapter import seed_codex_auth
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-codex-") as tmp:
+            root = Path(tmp)
+            host_codex_home = root / "host-codex"
+            codex_home = root / "coding-agent-config"
+            host_codex_home.mkdir()
+            codex_home.mkdir()
+            (host_codex_home / "auth.json").write_text(
+                '{"mode":"chatgpt","placeholder":"unit-test"}\n',
+                encoding="utf-8",
+            )
+
+            with patch("evals.runner.codex_adapter.subprocess.run") as run:
+                seed_codex_auth(
+                    codex_home=codex_home,
+                    env={"PATH": "placeholder-path"},
+                    host_codex_home=host_codex_home,
+                )
+
+            self.assertEqual(
+                '{"mode":"chatgpt","placeholder":"unit-test"}\n',
+                (codex_home / "auth.json").read_text(encoding="utf-8"),
+            )
+            run.assert_not_called()
+
+    def test_seed_codex_auth_uses_configured_codex_home_as_oauth_source(self) -> None:
+        from evals.runner.codex_adapter import seed_codex_auth
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-codex-") as tmp:
+            root = Path(tmp)
+            host_codex_home = root / "configured-codex-home"
+            codex_home = root / "coding-agent-config"
+            host_codex_home.mkdir()
+            codex_home.mkdir()
+            (host_codex_home / "auth.json").write_text(
+                '{"mode":"chatgpt","placeholder":"configured-home"}\n',
+                encoding="utf-8",
+            )
+
+            with patch.dict(os.environ, {"CODEX_HOME": str(host_codex_home)}):
+                with patch("evals.runner.codex_adapter.subprocess.run") as run:
+                    seed_codex_auth(codex_home=codex_home, env={"PATH": "placeholder"})
+
+            self.assertEqual(
+                '{"mode":"chatgpt","placeholder":"configured-home"}\n',
+                (codex_home / "auth.json").read_text(encoding="utf-8"),
+            )
+            run.assert_not_called()
+
+    def test_seed_codex_auth_reports_missing_local_auth_without_api_key(self) -> None:
+        from evals.runner.codex_adapter import CodexAdapterError, seed_codex_auth
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-codex-") as tmp:
+            root = Path(tmp)
+            host_codex_home = root / "host-codex"
+            codex_home = root / "coding-agent-config"
+            host_codex_home.mkdir()
+            codex_home.mkdir()
+
+            with self.assertRaisesRegex(
+                CodexAdapterError,
+                "OPENAI_API_KEY or local Codex auth is required for live Codex evals",
+            ):
+                seed_codex_auth(
+                    codex_home=codex_home,
+                    env={"PATH": "placeholder-path"},
+                    host_codex_home=host_codex_home,
+                )
+
+            self.assertFalse((codex_home / "auth.json").exists())
+
     def test_seed_codex_auth_redacts_api_key_from_login_failure(self) -> None:
         from evals.runner.codex_adapter import CodexAdapterError, seed_codex_auth
 

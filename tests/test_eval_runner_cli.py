@@ -13,6 +13,9 @@ from evals.runner.models import Scenario
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENARIO = ROOT / "evals" / "scenarios" / "spike" / "cities2-knowledge-office-demand"
+DEBUGGING_SCENARIO = (
+    ROOT / "evals" / "scenarios" / "baseline" / "cities2-debugging-runtime-no-logs"
+)
 
 
 class EvalRunnerCliTests(unittest.TestCase):
@@ -217,6 +220,47 @@ class EvalRunnerCliTests(unittest.TestCase):
             self.assertTrue(paths.raw_events.exists())
             self.assertTrue(paths.tool_calls.exists())
             self.assertTrue(paths.transcript.exists())
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
+    def test_debugging_baseline_stub_writes_passing_verdict(self) -> None:
+        from evals.runner.__main__ import run_eval
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
+            root = Path(tmp)
+            codex_stub = root / "codex_debugging_stub.py"
+            codex_stub.write_text(
+                textwrap.dedent(
+                    """\
+                    from __future__ import annotations
+
+                    print('{"type":"agent_message","message":"I cannot verify the root cause from source alone. Please collect Modding.log, Player.log, playset state, installed package layout, and localhost:9444 UI debugger output. Then reproduce in game and send those logs for the next step."}')
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            paths = run_eval(
+                scenario_path=DEBUGGING_SCENARIO,
+                condition="with-cities2-mod-debugging",
+                repo_root=ROOT,
+                results_root=root / "results",
+                codex_command=sys.executable,
+                codex_args_prefix=(str(codex_stub),),
+                live_auth=False,
+                trial=1,
+            )
+
+            verdict = json.loads(paths.verdict.read_text(encoding="utf-8"))
+
+        self.assertEqual(
+            "cities2-debugging-runtime-no-logs",
+            verdict["metadata"]["scenario_id"],
+        )
+        self.assertEqual(
+            "with-cities2-mod-debugging",
+            verdict["metadata"]["condition_id"],
+        )
+        self.assertEqual("pass", verdict["final"])
 
     @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
     def test_nonzero_codex_stderr_is_appended_as_raw_text(self) -> None:

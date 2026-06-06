@@ -74,6 +74,11 @@ def _host_env_value(name: str) -> str | None:
     return None
 
 
+def _default_host_codex_home() -> Path:
+    configured = _host_env_value("CODEX_HOME")
+    return Path(configured) if configured else Path.home() / ".codex"
+
+
 def minimal_codex_env(
     *, codex_home: Path, repo_root: Path, include_auth: bool
 ) -> dict[str, str]:
@@ -90,10 +95,21 @@ def minimal_codex_env(
     return env
 
 
-def seed_codex_auth(*, codex_home: Path, env: dict[str, str]) -> None:
+def seed_codex_auth(
+    *,
+    codex_home: Path,
+    env: dict[str, str],
+    host_codex_home: Path | None = None,
+) -> None:
     api_key = env.get("OPENAI_API_KEY")
     if not api_key:
-        raise CodexAdapterError("OPENAI_API_KEY is required for live Codex evals")
+        source_auth = (host_codex_home or _default_host_codex_home()) / "auth.json"
+        if not source_auth.is_file():
+            raise CodexAdapterError(
+                "OPENAI_API_KEY or local Codex auth is required for live Codex evals"
+            )
+        shutil.copy2(source_auth, codex_home / "auth.json")
+        return
     command_env = dict(env)
     command_env["CODEX_HOME"] = str(codex_home)
     command_env.pop("OPENAI_API_KEY", None)
