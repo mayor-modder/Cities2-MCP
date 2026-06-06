@@ -1,8 +1,6 @@
 # Contributing
 
-Thanks for helping improve Cities2 MCP and Modding Toolkit. This project is a
-local MCP server and agent skill bundle for Cities: Skylines II knowledge and
-modding workflows.
+Thanks for helping improve Cities2 MCP and Modding Toolkit. This project is a local MCP server and agent skill bundle for Cities: Skylines II knowledge and modding workflows.
 
 ## Before you start
 
@@ -19,15 +17,13 @@ Use Python 3.10 or newer. From the repository root:
 py -3 -m unittest discover -s tests -v
 ```
 
-If you change packaged skills, plugin files, templates, or integration payloads,
-also run:
+If you change packaged skills, plugin files, templates, or integration payloads, also run:
 
 ```sh
 py -3 -m cities2_mcp.plugin_packages check
 ```
 
-If the package check reports stale generated plugin payloads, run the sync
-command it recommends, review the resulting diff, and run the check again.
+If the package check reports stale generated plugin payloads, run the sync command it recommends, review the resulting diff, and run the check again.
 
 ## What to keep out of commits
 
@@ -36,37 +32,27 @@ Do not commit:
 - local MCP client config with machine-specific paths
 - extracted game encyclopedia cache files
 - `Locale.cok` or other local game files
-- built packages, virtual environments, dependency folders, or temporary smoke
-  test workspaces
+- built packages, virtual environments, dependency folders, or temporary smoke test workspaces
 - personal paths, tokens, or private tool output
 
-The repository includes generated plugin payloads where needed for distribution,
-but local caches and machine-specific settings should stay local.
+The repository includes generated plugin payloads where needed for distribution, but local caches and machine-specific settings should stay local.
 
 ## Contribution standards
 
-- Preserve filesystem boundaries. Workflow tools must not read or write outside
-  configured trusted workspaces.
-- Prefer documented CS2 modding best practices over generic coding advice when
-  they apply.
+- Preserve filesystem boundaries. Workflow tools must not read or write outside configured trusted workspaces.
+- Prefer documented CS2 modding best practices over generic coding advice when they apply.
 - Keep agent skills specific, direct, and useful in real modding sessions.
 - Generated mod templates should build cleanly and avoid unnecessary complexity.
-- User-facing docs should be plain English. Avoid internal terms unless the user
-  needs them to configure or troubleshoot the tool.
-- Add or update tests when behavior, packaging, safety checks, skills, or docs
-  expectations change.
+- User-facing docs should be plain English. Avoid internal terms unless the user needs them to configure or troubleshoot the tool.
+- Add or update tests when behavior, packaging, safety checks, skills, or docs expectations change.
 
 ## Agent prerequisites
 
-Agent contributors working on skills should have access to Superpowers.
-Before editing `SKILL.md` files, use `superpowers:writing-skills`,
-then follow the documented skill-testing protocol.
+Agent contributors working on skills should have access to Superpowers. Before editing `SKILL.md` files, use `superpowers:writing-skills`, then follow the documented skill-testing protocol.
 
 ## Agent skills and plugin packages
 
-The root `skills/` directory is the source of truth for bundled agent skills.
-Generated copies under plugin or integration directories must stay in sync with
-the source skills and packaged server code.
+The root `skills/` directory is the source of truth for bundled agent skills. Generated copies under plugin or integration directories must stay in sync with the source skills and packaged server code.
 
 When changing skills:
 
@@ -84,5 +70,4 @@ Before opening a pull request:
 3. Review the diff for private paths, generated cache files, and unrelated churn.
 4. Summarize what changed and how you verified it.
 
-Version bumps, release tags, registry publishing, and marketplace updates are
-handled by maintainers unless explicitly requested.
+Version bumps, release tags, registry publishing, and marketplace updates are handled by maintainers unless explicitly requested.

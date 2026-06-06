@@ -16,8 +16,7 @@ Run these inside Claude Code:
 /plugin install cities2-mcp@cities2-mcp
 ```
 
-Start a new Claude Code session in your mod project folder. The plugin starts
-`cities2-mcp` there so workflow tools can scaffold, read, write, build, and package files.
+Start a new Claude Code session in your mod project folder. The plugin starts `cities2-mcp` there so workflow tools can scaffold, read, write, build, and package files.
 
 ### Install in Claude desktop
 
@@ -58,8 +57,7 @@ Then start Codex from your project folder:
 codex
 ```
 
-Enter `/plugin`, install **Cities2 MCP and Modding Toolkit**, then restart
-Codex in the same folder.
+Enter `/plugin`, install **Cities2 MCP and Modding Toolkit**, then restart Codex in the same folder.
 
 ### Install in the Codex app
 
@@ -86,11 +84,7 @@ $cities2-mcp:cities2-mod-review Review this Cities: Skylines II mod before I ins
 
 You can also check available skills with `/skills` and type `$` to pick one.
 
-Known Codex behavior: plugin-bundled MCP servers currently launch from the
-installed plugin cache, so direct MCP workflow tools may be allowlist-blocked.
-The bundled `cities2-modding` skill handles this by copying the bundled template
-as an explicit fallback, building with normal Codex workspace access, and
-stopping after build verification.
+Known Codex behavior: plugin-bundled MCP servers currently launch from the installed plugin cache, so direct MCP workflow tools may be allowlist-blocked. The bundled `cities2-modding` skill handles this by copying the bundled template as an explicit fallback, building with normal Codex workspace access, and stopping after build verification.
 
 ## Google Antigravity
 
@@ -110,15 +104,11 @@ New-Item -ItemType Directory -Force (Split-Path $plugin) | Out-Null
 Copy-Item -Recurse -LiteralPath (Join-Path $repo "plugins\cities2-mcp") -Destination $plugin
 ```
 
-Then restart the Google Antigravity app, or open Antigravity CLI with `agy` from
-your mod workspace. Both apps read plugins from this folder.
+Then restart the Google Antigravity app, or open Antigravity CLI with `agy` from your mod workspace. Both apps read plugins from this folder.
 
-If you download the GitHub ZIP instead, copy the extracted `plugins/cities2-mcp`
-folder to the Antigravity plugin folder. `plugin.json` should be directly inside it.
+If you download the GitHub ZIP instead, copy the extracted `plugins/cities2-mcp` folder to the Antigravity plugin folder. `plugin.json` should be directly inside it.
 
-To update later, replace only the existing `cities2-mcp` plugin folder. Do not
-clear the parent Antigravity `plugins` folder.
-Direct URL installs are not currently supported for this plugin.
+To update later, replace only the existing `cities2-mcp` plugin folder. Do not clear the parent Antigravity `plugins` folder. Direct URL installs are not currently supported for this plugin.
 
 ### Using skills in Google Antigravity
 
@@ -138,37 +128,29 @@ Type `/cities2` and choose one of the Cities2 skills.
 
 ## Workspace access
 
-Game knowledge and encyclopedia lookup work immediately. Mod workflow tools need
-a trusted workspace, and Claude and Codex usually use the project you opened:
+Game knowledge and encyclopedia lookup work immediately. Mod workflow tools need a trusted workspace, and Claude and Codex usually use the project you opened:
 
 - In Claude Code and Codex CLI, start the client from the mod project folder.
-- If a tool reports `Path must stay inside configured workspaces`, add the mod
-  project folder or a trusted parent folder and restart the client.
+- If a tool reports `Path must stay inside configured workspaces`, add the mod project folder or a trusted parent folder and restart the client.
 - In Claude desktop, that setting is called **Trusted mod projects folder**.
 
-Codex plugin MCP servers may launch from the plugin cache. If a direct workflow tool is
-allowlist-blocked, invoke `cities2-modding`; it has a bundled-template fallback.
+Codex plugin MCP servers may launch from the plugin cache. If a direct workflow tool is allowlist-blocked, invoke `cities2-modding`; it has a bundled-template fallback.
 
 Builds run project commands through `npm`, `dotnet`, and packaging steps; only build projects you trust.
 
 ## Optional build prerequisites
 
-Knowledge, encyclopedia, and scaffold tools do not require the Cities: Skylines II
-modding toolchain. Builds may need:
+Knowledge, encyclopedia, and scaffold tools do not require the Cities: Skylines II modding toolchain. Builds may need:
 
 - UI-only mods need Node.js and npm.
-- C# and hybrid mods need the Cities: Skylines II modding toolchain installed
-  from inside the game.
-- C# and hybrid builds also need `dotnet` on `PATH` and
-  `Microsoft.NETCore.App 6.` in `dotnet --list-runtimes`.
+- C# and hybrid mods need the Cities: Skylines II modding toolchain installed from inside the game.
+- C# and hybrid builds also need `dotnet` on `PATH` and `Microsoft.NETCore.App 6.` in `dotnet --list-runtimes`.
 
-If a build prerequisite is missing, the agent should stop, explain what is missing,
-and ask whether you want to install it, keep the scaffold, or continue with edits.
+If a build prerequisite is missing, the agent should stop, explain what is missing, and ask whether you want to install it, keep the scaffold, or continue with edits.
 
 ## Direct MCP command
 
-The plugin marketplace path is recommended. Use a direct MCP command only for a
-client that cannot install plugins:
+The plugin marketplace path is recommended. Use a direct MCP command only for a client that cannot install plugins:
 
 ```json
 {
@@ -185,8 +167,7 @@ client that cannot install plugins:
 }
 ```
 
-The package includes wiki data, so `--data-dir` is not needed. Omit `--workspace`
-when you only want wiki and local encyclopedia tools.
+The package includes wiki data, so `--data-dir` is not needed. Omit `--workspace` when you only want wiki and local encyclopedia tools.
 
 To check or pin the package:
 
@@ -195,8 +176,7 @@ uvx cities2-mcp --version
 uvx --refresh cities2-mcp --version
 ```
 
-Some clients can load local agent skills separately from MCP server settings.
-For those clients, install the bundled skills with:
+Some clients can load local agent skills separately from MCP server settings. For those clients, install the bundled skills with:
 
 ```sh
 uvx cities2-mcp install-agent-assets

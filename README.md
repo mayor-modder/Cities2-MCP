@@ -12,8 +12,7 @@ It gives AI agents access to a local, searchable version of the Cities: Skylines
 
 Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [Codex app](INSTALL.md#install-in-the-codex-app) | [Google Antigravity](INSTALL.md#install-in-google-antigravity)
 
-See [INSTALL.md](INSTALL.md) for full installation details, direct MCP config,
-workspace setup, build prerequisites, and troubleshooting.
+See [INSTALL.md](INSTALL.md) for full installation details, direct MCP config, workspace setup, build prerequisites, and troubleshooting.
 
 ## What it can do
 
@@ -55,13 +54,10 @@ The modding quality skills use documented CS2 best practices and negative constr
 
 ## Privacy
 
-The MCP server runs locally and does not collect telemetry. See
-[PRIVACY.md](PRIVACY.md) for details.
+The MCP server runs locally and does not collect telemetry. See [PRIVACY.md](PRIVACY.md) for details.
 
 ## Licensing
 
 The MCP server code is licensed under the MIT License. The included `cities2_mcp/data` corpus is licensed under Creative Commons Attribution-ShareAlike 3.0; source attribution and transformation notes are in `cities2_mcp/data/ATTRIBUTION.md`.
 
-This project is not developed by, endorsed by, reviewed by, or approved by
-Paradox Interactive, Iceflake Studios, Colossal Order, Paradox Wikis, or any
-related company. Cities: Skylines II and related names are used referentially.
+This project is not developed by, endorsed by, reviewed by, or approved by Paradox Interactive, Iceflake Studios, Colossal Order, Paradox Wikis, or any related company. Cities: Skylines II and related names are used referentially.
