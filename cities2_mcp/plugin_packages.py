@@ -6,13 +6,9 @@ import tempfile
 from pathlib import Path
 from typing import Iterable
 
-SKILL_NAMES = (
-    "cities2-knowledge",
-    "cities2-modding",
-    "cities2-mod-review",
-    "cities2-mod-debugging",
-    "cities2-mod-release",
-)
+from cities2_mcp import plugin_metadata
+from cities2_mcp.plugin_metadata import SKILL_NAMES
+
 
 PACKAGE_ROOTS = (
     Path("integrations/anthropic/claude-plugin"),
