@@ -37,7 +37,10 @@ Observed tool-name shape: no normalized tool calls were emitted in this calibrat
 
 Check helper update needed: suffix-tolerant matching was still added so future server-prefixed MCP names remain supported.
 
+Calibration caveat: this run did not validate an actual MCP tool-call name shape. Treat suffix-tolerant matching as defensive support until a future live run emits MCP tool calls.
+
 ## Review notes
 
 - Do not edit `SKILL.md` files as part of recording this baseline.
 - If checks fail because live Codex trace tool names differ from stub names, update the deterministic checks in a separate reviewed branch before trusting the baseline.
+- Generated agent homes can contain live Codex credentials. Never commit, paste, or share generated `evals/results/` contents.
