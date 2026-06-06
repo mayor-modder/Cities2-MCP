@@ -42,6 +42,8 @@ UNVERIFIED_CLAIM_NEGATIONS = (
     "can't verify the root cause",
     "cannot confirm the root cause",
     "can't confirm the root cause",
+    "root cause is unverified",
+    "root cause is still unverified",
 )
 EDIT_TOOL_NAMES = ("apply_patch", "write", "edit", "shell_command")
 SHELL_EDIT_MARKERS = (
