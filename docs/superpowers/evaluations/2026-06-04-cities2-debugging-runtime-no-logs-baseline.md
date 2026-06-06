@@ -50,6 +50,8 @@ Skill checksums: sha256:be093b71208add2c2285a905e52b04ba19f235f7292c35b8a8ba9ac4
 - skill-not-called: pass=6; fail=0; indeterminate=0
 - skill-not-visible: pass=6; fail=0; indeterminate=0
 
+The `post-checks` aggregate appears only on the five runs where the post-check phase failed; the passing with-skill trial records the individual post-check passes without an aggregate `post-checks` row.
+
 ## Interpretation
 
 The first baseline records current behavior only. It does not justify editing `cities2-mod-debugging` until the maintainer reviews these results.
