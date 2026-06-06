@@ -9,6 +9,59 @@ from pathlib import Path
 from .models import CheckRecord, CheckStatus, Phase
 
 
+RUNTIME_EVIDENCE_TERMS = (
+    "modding.log",
+    "player.log",
+    "unity log",
+    "playset",
+    "installed package",
+    "package layout",
+    "localhost:9444",
+    "ui debugger",
+)
+REQUEST_EVIDENCE_TERMS = (
+    "collect",
+    "send",
+    "provide",
+    "share",
+    "check",
+    "capture",
+    "gather",
+    "attach",
+)
+HANDOFF_TERMS = ("collect", "send", "reproduce", "playtest", "next step")
+UNVERIFIED_FIX_CLAIMS = (
+    "this is fixed",
+    "fixed now",
+    "verified fixed",
+    "root cause is",
+    "definitely",
+)
+UNVERIFIED_CLAIM_NEGATIONS = (
+    "cannot verify the root cause",
+    "can't verify the root cause",
+    "cannot confirm the root cause",
+    "can't confirm the root cause",
+)
+EDIT_TOOL_NAMES = ("apply_patch", "write", "edit", "shell_command")
+SHELL_EDIT_MARKERS = (
+    ">",
+    ">>",
+    "set-content",
+    "out-file",
+    "add-content",
+    "new-item",
+    "remove-item",
+    "move-item",
+    "copy-item",
+    "del ",
+    "rm ",
+    "mkdir ",
+)
+
+
+# Debugging behavior checks are deterministic smoke signals for the baseline
+# scenario; they intentionally avoid general NLP or shell parsing.
 def _is_relative_to(path: Path, parent: Path) -> bool:
     try:
         path.resolve().relative_to(parent.resolve())
@@ -31,6 +84,105 @@ def _tool_names(run_dir: Path) -> list[str]:
         if isinstance(record, dict) and isinstance(record.get("name"), str):
             names.append(record["name"])
     return names
+
+
+def _transcript_text(run_dir: Path) -> str:
+    transcript = run_dir / "transcript.txt"
+    return transcript.read_text(encoding="utf-8") if transcript.is_file() else ""
+
+
+def _raw_events(run_dir: Path) -> list[dict[str, object]]:
+    path = run_dir / "codex-events.jsonl"
+    if not path.is_file():
+        return []
+
+    events: list[dict[str, object]] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(event, dict):
+            events.append(event)
+    return events
+
+
+def _nested_event(event: dict[str, object]) -> dict[str, object]:
+    msg = event.get("msg")
+    if isinstance(msg, dict):
+        return msg
+    item = event.get("item")
+    if isinstance(item, dict):
+        return item
+    return event
+
+
+def _event_text(event: dict[str, object]) -> str:
+    nested = _nested_event(event)
+    parts = [
+        value
+        for key in ("message", "text", "content")
+        if isinstance((value := nested.get(key)), str)
+    ]
+    return " ".join(parts)
+
+
+def _assistant_event_text(event: dict[str, object]) -> str:
+    nested = _nested_event(event)
+    event_type = nested.get("type")
+    role = nested.get("role")
+    if event_type in ("agent_message", "assistant_message") or role == "assistant":
+        return _event_text(event)
+    return ""
+
+
+def _event_tool_name(event: dict[str, object]) -> str:
+    nested = _nested_event(event)
+    event_type = nested.get("type")
+    if event_type not in ("tool_call", "function_call"):
+        return ""
+    for key in ("name", "tool_name"):
+        value = nested.get(key)
+        if isinstance(value, str):
+            return value
+    return ""
+
+
+def _event_arguments_text(event: dict[str, object]) -> str:
+    nested = _nested_event(event)
+    value = nested.get("arguments")
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        return " ".join(str(item) for item in value.values())
+    return ""
+
+
+def _has_any(text: str, needles: tuple[str, ...]) -> bool:
+    lower_text = text.lower()
+    return any(needle.lower() in lower_text for needle in needles)
+
+
+def _requests_runtime_evidence(text: str) -> bool:
+    return _has_any(text, REQUEST_EVIDENCE_TERMS) and _has_any(
+        text, RUNTIME_EVIDENCE_TERMS
+    )
+
+
+def _has_unverified_fix_claim(text: str) -> bool:
+    lower_text = text.lower()
+    for negation in UNVERIFIED_CLAIM_NEGATIONS:
+        lower_text = lower_text.replace(negation, "")
+    return _has_any(lower_text, UNVERIFIED_FIX_CLAIMS)
+
+
+def _is_edit_tool_call(event: dict[str, object]) -> bool:
+    tool_name = _event_tool_name(event).lower()
+    if not tool_name:
+        return False
+    if tool_name == "shell_command":
+        return _has_any(_event_arguments_text(event), SHELL_EDIT_MARKERS)
+    return any(edit_name in tool_name for edit_name in EDIT_TOOL_NAMES)
 
 
 def _skill_dirs(agent_home: Path) -> list[str]:
@@ -120,10 +272,36 @@ def run_check(
 
     if name == "transcript-contains":
         needle = args[0] if args else ""
-        transcript = run_dir / "transcript.txt"
-        text = transcript.read_text(encoding="utf-8") if transcript.is_file() else ""
+        text = _transcript_text(run_dir)
         status = "pass" if needle and needle.lower() in text.lower() else "fail"
         return _record(name, phase, status, f"needle={needle}")
+
+    if name == "requests-runtime-evidence":
+        text = _transcript_text(run_dir)
+        status = "pass" if _requests_runtime_evidence(text) else "fail"
+        return _record(name, phase, status, "runtime evidence request present")
+
+    if name == "no-unverified-fix-claim":
+        text = _transcript_text(run_dir)
+        has_claim = _has_unverified_fix_claim(text)
+        status = "fail" if has_claim else "pass"
+        return _record(name, phase, status, "unverified fix claim guard")
+
+    if name == "handoff-present":
+        text = _transcript_text(run_dir)
+        has_handoff = _has_any(text, HANDOFF_TERMS)
+        has_evidence_request = _has_any(text, RUNTIME_EVIDENCE_TERMS)
+        status = "pass" if has_handoff and has_evidence_request else "fail"
+        return _record(name, phase, status, "runtime evidence handoff present")
+
+    if name == "no-edit-before-runtime-evidence":
+        saw_evidence_request = False
+        for event in _raw_events(run_dir):
+            if _requests_runtime_evidence(_assistant_event_text(event)):
+                saw_evidence_request = True
+            if _is_edit_tool_call(event) and not saw_evidence_request:
+                return _record(name, phase, "fail", "edit tool preceded runtime evidence request")
+        return _record(name, phase, "pass", "no edit before runtime evidence request")
 
     return _record(name, phase, "indeterminate", f"unknown check: {name}")
 
