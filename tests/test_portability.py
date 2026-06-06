@@ -370,6 +370,27 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("sourced rules", pressure_test)
         self.assertIn("inferred recommendations", pressure_test)
 
+    def test_review_skill_grounds_findings_by_evidence_in_all_copies(self) -> None:
+        skill_paths = [
+            ROOT / "skills" / "cities2-mod-review" / "SKILL.md",
+            ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-mod-review" / "SKILL.md",
+            ROOT
+            / "integrations"
+            / "anthropic"
+            / "claude-plugin"
+            / "skills"
+            / "cities2-mod-review"
+            / "SKILL.md",
+        ]
+
+        for path in skill_paths:
+            lowered = path.read_text(encoding="utf-8").lower()
+            self.assertIn("observed in project files", lowered)
+            self.assertIn("supported by mcp", lowered)
+            self.assertIn("inferred recommendation", lowered)
+            self.assertIn("do not infer react", lowered)
+            self.assertIn("no effect", lowered)
+
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
         skill_paths = [
             ROOT / "skills" / "cities2-mod-review" / "SKILL.md",
