@@ -248,6 +248,25 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual(["pass", "pass", "pass", "pass"], [record.status for record in records])
 
+    def test_no_unverified_fix_claim_allows_explicit_unverified_root_cause(self) -> None:
+        record = _run_debugging_check(
+            "no-unverified-fix-claim",
+            transcript=(
+                "The root cause is unverified from source alone. "
+                "A source edit would be a guess until runtime evidence is available."
+            ),
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_no_unverified_fix_claim_allows_still_unverified_root_cause(self) -> None:
+        record = _run_debugging_check(
+            "no-unverified-fix-claim",
+            transcript="The root cause is still unverified without logs or installed state.",
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_requests_runtime_evidence_fails_without_runtime_terms(self) -> None:
         record = _run_debugging_check(
             "requests-runtime-evidence",
