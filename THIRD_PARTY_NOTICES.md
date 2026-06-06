@@ -10,8 +10,3 @@ https://github.com/obra/superpowers
 
 The adapted Superpowers material is used under Superpowers' MIT License:
 https://github.com/obra/superpowers/blob/main/LICENSE
-
-## Markdown style guidance
-
-The repository's Markdown style guidance adapts typographic principles from Robert Bringhurst's
-*The Elements of Typographic Style*, 4th ed., version 4.3, Hartley & Marks, 2019.
