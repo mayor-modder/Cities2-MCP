@@ -28,6 +28,8 @@ def _condition_skills(condition: str) -> tuple[str, ...]:
         return ()
     if condition == "with-cities2-knowledge":
         return ("cities2-knowledge",)
+    if condition == "with-cities2-mod-debugging":
+        return ("cities2-mod-debugging",)
     raise ValueError(f"unsupported condition: {condition}")
 
 
@@ -269,7 +271,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("scenario_path", type=Path)
     parser.add_argument(
         "--condition",
-        choices=("no-skill", "with-cities2-knowledge"),
+        choices=(
+            "no-skill",
+            "with-cities2-knowledge",
+            "with-cities2-mod-debugging",
+        ),
         required=True,
     )
     parser.add_argument("--results-root", type=Path, default=Path("evals/results"))
