@@ -25,6 +25,20 @@ class EvalScenarioLoaderTests(unittest.TestCase):
         self.assertEqual(scenario.setup, SCENARIO.resolve() / "setup.sh")
         self.assertEqual(scenario.checks, SCENARIO.resolve() / "checks.sh")
 
+    def test_loads_committed_debugging_runtime_no_logs_baseline(self) -> None:
+        from evals.runner.scenario import load_scenario
+
+        scenario = load_scenario(
+            ROOT
+            / "evals"
+            / "scenarios"
+            / "baseline"
+            / "cities2-debugging-runtime-no-logs"
+        )
+
+        self.assertEqual("cities2-debugging-runtime-no-logs", scenario.id)
+        self.assertEqual("Cities2 debugging runtime no logs", scenario.title)
+
     def test_rejects_missing_required_files(self) -> None:
         from evals.runner.scenario import ScenarioError, load_scenario
 
