@@ -514,8 +514,11 @@ class PackagingTests(unittest.TestCase):
             output = stdout.getvalue()
             self.assertEqual(exit_code, 1)
             self.assertIn("generated copies differ from canonical sources", output)
-            self.assertIn("skills/", output)
-            self.assertIn("cities2_mcp/", output)
+            self.assertIn("Canonical sources: skills/ and cities2_mcp/", output)
+            self.assertIn(
+                "Generated copies: integrations/anthropic/claude-plugin/ and plugins/cities2-mcp/",
+                output,
+            )
             self.assertIn("python -m cities2_mcp.plugin_packages sync", output)
             self.assertIn(str(stale_skill), output)
 
