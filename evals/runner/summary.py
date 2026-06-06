@@ -17,6 +17,7 @@ def summarize_verdicts(paths: Iterable[Path]) -> str:
     verdicts = [_load(path) for path in paths]
     counts: dict[tuple[str, str], Counter[str]] = defaultdict(Counter)
     checks: dict[str, Counter[str]] = defaultdict(Counter)
+    backends: set[str] = set()
     commits: set[str] = set()
     checksums: set[str] = set()
 
@@ -28,6 +29,9 @@ def summarize_verdicts(paths: Iterable[Path]) -> str:
         condition = str(metadata.get("condition_id", "unknown-condition"))
         final = str(verdict.get("final", "unknown"))
         counts[(scenario, condition)][final] += 1
+        backend = metadata.get("backend_name")
+        if isinstance(backend, str) and backend:
+            backends.add(backend)
         repo_commit = metadata.get("repo_commit")
         if isinstance(repo_commit, str) and repo_commit:
             commits.add(repo_commit)
@@ -44,6 +48,7 @@ def summarize_verdicts(paths: Iterable[Path]) -> str:
 
     lines = ["# Cities2 debugging runtime-no-logs baseline summary", ""]
     lines.append(f"Verdicts summarized: {len(verdicts)}")
+    lines.append(f"Backends: {', '.join(sorted(backends)) if backends else 'unknown'}")
     lines.append(f"Repository commits: {', '.join(sorted(commits)) if commits else 'unknown'}")
     lines.append(f"Skill checksums: {', '.join(sorted(checksums)) if checksums else 'none'}")
     lines.append("")

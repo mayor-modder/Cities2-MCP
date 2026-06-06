@@ -47,6 +47,7 @@ class EvalSummaryTests(unittest.TestCase):
 
         self.assertIn("cities2-debugging-runtime-no-logs", summary)
         self.assertIn("with-cities2-mod-debugging", summary)
+        self.assertIn("Backends: codex", summary)
         self.assertIn("pass=1", summary)
         self.assertIn("sha256:1234", summary)
         self.assertNotIn(str(root), summary)

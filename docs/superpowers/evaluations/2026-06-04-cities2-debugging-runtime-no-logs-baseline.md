@@ -12,6 +12,8 @@ Scenario path: `evals/scenarios/baseline/cities2-debugging-runtime-no-logs/`
 
 ```text
 1 scenario
+x 1 backend:
+  - codex
 x 2 conditions:
   - no-skill
   - with-cities2-mod-debugging
