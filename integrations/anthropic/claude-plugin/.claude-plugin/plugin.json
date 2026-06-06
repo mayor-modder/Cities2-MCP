@@ -26,13 +26,13 @@
     "game_dir": {
       "type": "directory",
       "title": "Cities: Skylines II install folder",
-          "description": "Optional. The plugin normally discovers Steam installs automatically; set this only if encyclopedia search cannot find your game.",
+      "description": "Optional. The plugin normally discovers Steam installs automatically; set this only if encyclopedia search cannot find your game.",
       "required": false
     },
     "locale_cok": {
       "type": "file",
       "title": "Locale.cok file",
-          "description": "Optional. Direct path to Locale.cok; use only when automatic game discovery cannot find the in-game encyclopedia file.",
+      "description": "Optional. Direct path to Locale.cok; use only when automatic game discovery cannot find the in-game encyclopedia file.",
       "required": false
     }
   },

@@ -495,6 +495,11 @@ class PackagingTests(unittest.TestCase):
 
             self.assertIn(stale_skill, stale)
 
+    def test_repo_metadata_in_sync(self) -> None:
+        from cities2_mcp import plugin_packages
+
+        self.assertEqual(plugin_packages.check_packages(ROOT), ())
+
     def test_plugin_package_sync_updates_stale_payload(self) -> None:
         from cities2_mcp import plugin_packages
 

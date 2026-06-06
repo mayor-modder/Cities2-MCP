@@ -4,20 +4,36 @@ import argparse
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Iterable
+from typing import Callable, Iterable
 
-SKILL_NAMES = (
-    "cities2-knowledge",
-    "cities2-modding",
-    "cities2-mod-review",
-    "cities2-mod-debugging",
-    "cities2-mod-release",
-)
+from cities2_mcp import plugin_metadata
+from cities2_mcp.plugin_metadata import SKILL_NAMES
+
 
 PACKAGE_ROOTS = (
     Path("integrations/anthropic/claude-plugin"),
     Path("plugins/cities2-mcp"),
 )
+
+METADATA_FILES: dict[Path, tuple[tuple[Path, Callable[[], str]], ...]] = {
+    Path("integrations/anthropic/claude-plugin"): (
+        (
+            Path("integrations/anthropic/claude-plugin/.claude-plugin/plugin.json"),
+            plugin_metadata.claude_plugin_json,
+        ),
+        (Path("integrations/anthropic/claude-plugin/.mcp.json"), plugin_metadata.claude_mcp_json),
+        (Path("integrations/anthropic/claude-plugin/README.md"), plugin_metadata.claude_readme_md),
+        (Path(".claude-plugin/marketplace.json"), plugin_metadata.claude_marketplace_json),
+    ),
+    Path("plugins/cities2-mcp"): (
+        (Path("plugins/cities2-mcp/.codex-plugin/plugin.json"), plugin_metadata.codex_plugin_json),
+        (Path("plugins/cities2-mcp/.mcp.json"), plugin_metadata.codex_mcp_json),
+        (Path("plugins/cities2-mcp/README.md"), plugin_metadata.codex_readme_md),
+        (Path(".agents/plugins/marketplace.json"), plugin_metadata.codex_marketplace_json),
+        (Path("plugins/cities2-mcp/plugin.json"), plugin_metadata.antigravity_plugin_json),
+        (Path("plugins/cities2-mcp/mcp_config.json"), plugin_metadata.antigravity_mcp_config_json),
+    ),
+}
 
 MANAGED_DIRS = ("skills", "vendor")
 MANAGED_FILES = (Path("bin") / "cities2-mcp-launcher.js",)
@@ -168,6 +184,7 @@ def sync_packages(
             _write_payload(root, expected_root)
             changed.extend(_changed_paths(expected_root, actual_root))
             _replace_payload(expected_root, actual_root)
+            changed.extend(_sync_metadata(root, package_rel))
     return tuple(sorted(set(changed)))
 
 
@@ -185,6 +202,7 @@ def check_packages(
             actual_root = root / package_rel
             _write_payload(root, expected_root)
             changed.extend(_changed_paths(expected_root, actual_root))
+            changed.extend(_check_metadata(root, package_rel))
     return tuple(sorted(set(changed)))
 
 
@@ -225,6 +243,29 @@ def _replace_payload(expected_root: Path, actual_root: Path) -> None:
         target = actual_root / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(expected_root / rel, target)
+
+
+def _sync_metadata(repo_root: Path, package_rel: Path) -> list[Path]:
+    changed: list[Path] = []
+    for rel, builder in METADATA_FILES.get(package_rel, ()):
+        target = repo_root / rel
+        content = builder()
+        current = target.read_text(encoding="utf-8") if target.is_file() else None
+        if current != content:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content, encoding="utf-8")
+            changed.append(target)
+    return changed
+
+
+def _check_metadata(repo_root: Path, package_rel: Path) -> list[Path]:
+    stale: list[Path] = []
+    for rel, builder in METADATA_FILES.get(package_rel, ()):
+        target = repo_root / rel
+        current = target.read_text(encoding="utf-8") if target.is_file() else None
+        if current != builder():
+            stale.append(target)
+    return stale
 
 
 def _changed_paths(expected_root: Path, actual_root: Path) -> tuple[Path, ...]:
