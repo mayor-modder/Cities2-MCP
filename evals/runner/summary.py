@@ -1,9 +1,32 @@
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Iterable
+
+
+_PRIVATE_ARTIFACT_PATTERNS = [
+    re.compile(r"file:(?://localhost)?/*[A-Za-z]:/Users/[^/\s]+", re.IGNORECASE),
+    re.compile(r"file:(?://localhost)?/*/(home|Users)/[^/\s]+", re.IGNORECASE),
+    re.compile(r"[A-Za-z]:[\\/]+Users[\\/]+[^\\/]+", re.IGNORECASE),
+    re.compile(r"(?<![A-Za-z0-9:/])/home/[^/\s]+", re.IGNORECASE),
+    re.compile(r"(?<![A-Za-z0-9:/])/Users/[^/\s]+", re.IGNORECASE),
+    re.compile(r"auth\.json", re.IGNORECASE),
+    re.compile(r"coding-agent-config", re.IGNORECASE),
+]
+
+
+def _reject_private_artifacts(text: str) -> None:
+    if any(pattern.search(text) for pattern in _PRIVATE_ARTIFACT_PATTERNS):
+        raise ValueError("digest contains private artifact")
+
+
+def write_digest(text: str, path: Path) -> None:
+    _reject_private_artifacts(text)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
 
 
 def _load(path: Path) -> dict[str, object]:

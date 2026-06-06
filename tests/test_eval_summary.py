@@ -7,6 +7,54 @@ from pathlib import Path
 
 
 class EvalSummaryTests(unittest.TestCase):
+    def test_write_digest_rejects_private_paths(self) -> None:
+        from evals.runner.summary import write_digest
+
+        private_texts = [
+            "see C:\\Users\\Example\\AppData\\Roaming\\state.db\n",
+            "see /home/example/.config/state.db\n",
+            "see /Users/example/.config/state.db\n",
+            "see file:/home/example/.config/state.db\n",
+            "see file:///home/example/.config/state.db\n",
+            "see file://localhost/home/example/.config/state.db\n",
+            "see file:/C:/Users/Example/AppData/Roaming/state.db\n",
+            "see file:///C:/Users/Example/AppData/Roaming/state.db\n",
+            "see file://localhost/C:/Users/Example/AppData/Roaming/state.db\n",
+            "see auth.json\n",
+            "see coding-agent-config\n",
+        ]
+        for private_text in private_texts:
+            with self.subTest(private_text=private_text):
+                with tempfile.TemporaryDirectory(prefix="cities2-eval-summary-") as tmp:
+                    output = Path(tmp) / "digest.md"
+
+                    with self.assertRaisesRegex(ValueError, "private artifact"):
+                        write_digest(private_text, output)
+
+                    self.assertFalse(output.exists())
+
+    def test_write_digest_allows_safe_home_url_text(self) -> None:
+        from evals.runner.summary import write_digest
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-summary-") as tmp:
+            output = Path(tmp) / "digest.md"
+            text = "See https://example.test/home/report for public docs.\n"
+
+            write_digest(text, output)
+
+            self.assertEqual(text, output.read_text(encoding="utf-8"))
+
+    def test_write_digest_writes_safe_text(self) -> None:
+        from evals.runner.summary import write_digest
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-summary-") as tmp:
+            output = Path(tmp) / "nested" / "digest.md"
+            text = "# Eval results digest\n\nsafe\n"
+
+            write_digest(text, output)
+
+            self.assertEqual(text, output.read_text(encoding="utf-8"))
+
     def test_generates_reviewable_digest_from_verdicts(self) -> None:
         from evals.runner.summary import generate_digest
 
