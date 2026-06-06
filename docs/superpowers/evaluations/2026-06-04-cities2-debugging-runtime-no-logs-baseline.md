@@ -29,6 +29,14 @@ Raw traces, full transcripts, generated workdirs, and generated agent homes rema
 
 Baseline results are not recorded yet. Fill this section only after the six-run matrix has been executed and reviewed.
 
+## Codex trace-name calibration
+
+One local calibration run was used to inspect the shape of Codex tool names. Raw trace output remains under gitignored `evals/results/` and is not committed.
+
+Observed tool-name shape: no normalized tool calls were emitted in this calibration run.
+
+Check helper update needed: suffix-tolerant matching was still added so future server-prefixed MCP names remain supported.
+
 ## Review notes
 
 - Do not edit `SKILL.md` files as part of recording this baseline.
