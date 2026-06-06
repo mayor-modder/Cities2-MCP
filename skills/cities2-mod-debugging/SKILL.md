@@ -53,12 +53,22 @@ only facts available, hand the user a playtesting/log collection step and mark
 the root cause unverified. Do not patch a likely selector, import, path, timing,
 or binding issue first and ask for logs only if it fails.
 
+## Missing Runtime Evidence Handoff
+
+When runtime, UI, save, or gameplay behavior fails only in game and the available facts are source files, build output, package metadata, generated bundles, or pasted snippets, do not patch or prescribe a source edit yet. In the final response, say the root cause is unverified, say a source edit would be a guess until runtime evidence or the real relevant source file is available, ask for the smallest useful runtime evidence, and give one concrete reproduce-and-return step.
+
+Choose the smallest useful runtime evidence from `Modding.log`, `Player.log`, Unity logs, installed package layout and file timestamps, enabled playset/load state, `localhost:9444` UI debugger state, exact reproduction steps, screenshots, or the actual lifecycle/source file.
+
+Do not say "the root cause is <diagnosis>", "this is fixed", "definitely", "verified", or equivalent fix-claim language unless relevant runtime evidence has been inspected. It is fine to name a hypothesis, but label it as a hypothesis and stop before editing.
+
 ## Red Flags - STOP
 
 If you catch yourself thinking any of these, return to evidence before editing:
 
 - "Quick scan, then patch."
 - "It is probably just the selector/import/path/timing."
+- "The pasted snippet is enough to diagnose."
+- "Give the likely fix and ask for logs too."
 - "The build passed, so source and bundle inspection are enough."
 - "Patch now and ask for logs if it still fails."
 - "The user is waiting, so make the likely fix first."
