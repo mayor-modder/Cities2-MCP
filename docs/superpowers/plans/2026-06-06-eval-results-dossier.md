@@ -1,4 +1,4 @@
-# Eval Results Dossier Implementation Plan
+# Eval results dossier implementation plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -100,19 +100,19 @@ Add these tests to `EvalDocsTests`:
         dossier = DEBUGGING_DOSSIER.read_text(encoding="utf-8")
 
         forbidden = [
-            "coding-agent-tool-calls.jsonl",
-            "transcript.txt",
-            "verdict.json",
+            "<raw tool-call artifact filename>",
+            "<raw transcript artifact filename>",
+            "<raw summary artifact filename>",
             "generated workdir",
             "generated agent home",
             "C:" + "\\" + "Users",
             "\\" + "Users" + "\\",
             "/" + "Users" + "/",
             "OPENAI_API_KEY" + "=",
-            "sk-",
         ]
         for needle in forbidden:
             self.assertNotIn(needle, dossier)
+        self.assertIsNone(re.search(r"sk-[A-Za-z0-9_-]{20,}", dossier))
 ```
 
 - [ ] **Step 2: Run the focused tests and verify they fail**
@@ -132,89 +132,25 @@ Preferred for this repo: do not commit red tests separately. Keep the red output
 ## Task 2: inspect local baseline artifacts and prepare private notes
 
 **Files:**
-- Read only: `evals/results/**/verdict.json`
-- Read only: ignored transcript files referenced by the six selected verdicts
-- Do not commit: any generated notes under `evals/results/`
+- Read only: ignored local run summary artifacts for the six selected results.
+- Read only: ignored local assistant-response artifacts referenced by those summaries.
+- Do not commit: any generated notes under `evals/results/`.
 
 - [ ] **Step 1: Confirm exactly six Task 7 verdicts are available**
 
-Run:
+Run a local-only inspection command over ignored `cities2-debugging-runtime-no-logs` result summaries, excluding the trial-99 calibration run.
 
-```powershell
-@'
-from pathlib import Path
-
-paths = sorted(Path("evals/results").glob("cities2-debugging-runtime-no-logs-*/verdict.json"))
-selected = [
-    path for path in paths
-    if "-trial-99-" not in str(path)
-]
-for path in selected:
-    print(path.as_posix())
-print(f"selected={len(selected)}")
-'@ | python -
-```
-
-Expected: six paths are printed and the final line is `selected=6`. If fewer than six are present, rerun the missing trials from the merged baseline plan before continuing.
+Expected: six selected results are counted. If fewer than six are present, rerun the missing trials from the merged baseline plan before continuing.
 
 - [ ] **Step 2: Print check outcomes without raw transcripts**
 
-Run:
-
-```powershell
-@'
-import json
-from pathlib import Path
-
-paths = sorted(
-    path for path in Path("evals/results").glob("cities2-debugging-runtime-no-logs-*/verdict.json")
-    if "-trial-99-" not in str(path)
-)
-for path in paths:
-    verdict = json.loads(path.read_text(encoding="utf-8"))
-    metadata = verdict["metadata"]
-    condition = metadata["condition_id"]
-    trial = metadata["trial"]
-    final = verdict["final"]
-    failed = [
-        check["name"]
-        for check in verdict["checks"]
-        if check.get("status") == "fail"
-    ]
-    print(f"{condition} trial {trial}: {final}; failed={', '.join(failed) if failed else 'none'}")
-'@ | python -
-```
+Run a local-only inspection command that prints only condition, trial number, final status, and failed check names from the ignored run summaries.
 
 Expected: six concise lines, with no absolute local paths.
 
 - [ ] **Step 3: Inspect assistant-message excerpts locally**
 
-Run:
-
-```powershell
-@'
-import json
-from pathlib import Path
-
-paths = sorted(
-    path for path in Path("evals/results").glob("cities2-debugging-runtime-no-logs-*/verdict.json")
-    if "-trial-99-" not in str(path)
-)
-for path in paths:
-    verdict = json.loads(path.read_text(encoding="utf-8"))
-    metadata = verdict["metadata"]
-    transcript_path = path.parent / str(verdict.get("transcript_path", "transcript.txt"))
-    print()
-    print(f"## {metadata['condition_id']} trial {metadata['trial']} ({verdict['final']})")
-    if transcript_path.exists():
-        text = transcript_path.read_text(encoding="utf-8", errors="replace")
-        lines = [line.strip() for line in text.splitlines() if line.strip()]
-        for line in lines[:12]:
-            print(line[:240])
-    else:
-        print("transcript unavailable")
-'@ | python -
-```
+Run a local-only inspection command that reads assistant-message artifacts referenced by the selected summaries and prints short excerpts for human review.
 
 Expected: local-only excerpts for human inspection. Do not paste this raw output directly into the committed dossier.
 
@@ -361,16 +297,13 @@ $privacyPatterns = @(
     ('C:' + '/Users'),
     ('C:' + '\\Users'),
     ('OPENAI_API' + '_KEY='),
-    ('s' + 'k-'),
-    ('auth' + '.json'),
-    'coding-agent-tool-calls.jsonl',
-    'transcript.txt',
-    'verdict.json'
+    ('auth' + '.json')
 )
-git diff -- tests/test_eval_docs.py docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md | Select-String -Pattern $privacyPatterns -SimpleMatch -CaseSensitive
+git diff -- docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md docs/superpowers/plans/2026-06-06-eval-results-dossier.md docs/superpowers/specs/2026-06-06-eval-results-dossier-design.md | Select-String -Pattern $privacyPatterns -SimpleMatch -CaseSensitive
+git diff -- docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md docs/superpowers/plans/2026-06-06-eval-results-dossier.md docs/superpowers/specs/2026-06-06-eval-results-dossier-design.md | Select-String -Pattern 'sk-[A-Za-z0-9_-]{20,}' -CaseSensitive
 ```
 
-Expected: no output.
+Expected: no output. If checking exact raw artifact filenames from ignored local results, keep those local-only scan needles out of repo-visible docs.
 
 - [ ] **Step 3: Run whitespace check**
 
