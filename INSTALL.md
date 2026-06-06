@@ -1,8 +1,5 @@
 # Install Cities2 MCP and Modding Toolkit
 
-The Cities2 MCP and Modding Toolkit adds Cities: Skylines II knowledge and
-modding workflows to Claude, the Codex app, and Google Antigravity.
-
 Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [Codex app](INSTALL.md#install-in-the-codex-app) | [Google Antigravity](INSTALL.md#install-in-google-antigravity)
 
 ## Claude
@@ -76,7 +73,7 @@ Codex in the same folder.
 ### Using skills in Codex
 
 ```text
-$cities2-mcp:cities2-knowledge How can I make a subway line carry more passengers?
+$cities2-mcp:cities2-knowledge How can I get more people to use my subway line?
 ```
 
 ```text
@@ -128,7 +125,7 @@ Direct URL installs are not currently supported for this plugin.
 Type `/cities2` and choose one of the Cities2 skills.
 
 ```text
-/cities2-knowledge Why are my industrial companies complaining about not enough customers?
+/cities2-knowledge Why are my commercial companies complaining about not enough customers?
 ```
 
 ```text
