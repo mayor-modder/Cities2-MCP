@@ -125,6 +125,33 @@ class EvalCheckToolTests(unittest.TestCase):
             self.assertEqual("pass", contains.status)
             self.assertEqual("fail", missing.status)
 
+    def test_tool_called_accepts_mcp_server_prefix(self) -> None:
+        from evals.runner.check_tool import run_check
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-check-") as tmp:
+            run_dir = Path(tmp)
+            workdir = run_dir / "coding-agent-workdir"
+            agent_home = run_dir / "coding-agent-config"
+            workdir.mkdir()
+            agent_home.mkdir()
+            (run_dir / "coding-agent-tool-calls.jsonl").write_text(
+                json.dumps({"name": "cities2-mcp__source_status", "arguments": {}})
+                + "\n",
+                encoding="utf-8",
+            )
+
+            record = run_check(
+                "tool-called",
+                ["source_status"],
+                run_dir=run_dir,
+                workdir=workdir,
+                agent_home=agent_home,
+                condition="with-cities2-mod-debugging",
+                phase="post",
+            )
+
+        self.assertEqual("pass", record.status)
+
     def test_skill_not_visible_fails_when_visible_skill_contains_needle(self) -> None:
         from evals.runner.check_tool import run_check
 
