@@ -500,6 +500,38 @@ class PackagingTests(unittest.TestCase):
 
         self.assertEqual(plugin_packages.check_packages(ROOT), ())
 
+    def test_check_detects_and_sync_restores_each_metadata_file(self) -> None:
+        from cities2_mcp import plugin_packages
+
+        flattened = [
+            rel
+            for entries in plugin_packages.METADATA_FILES.values()
+            for rel, _builder in entries
+        ]
+        self.assertEqual(len(flattened), 10)  # guards the spec's "10 metadata files"
+        self.assertEqual(len(set(flattened)), 10)  # no duplicate registrations
+
+        for package_rel, entries in plugin_packages.METADATA_FILES.items():
+            for rel, _builder in entries:
+                with self.subTest(metadata=str(rel)):
+                    with tempfile.TemporaryDirectory(prefix="cities2-mcp-meta-drift-") as tmp:
+                        root = Path(tmp)
+                        self._write_plugin_sync_fixture(root)
+                        plugin_packages.sync_packages(root, package_roots=(package_rel,))
+
+                        target = root / rel
+                        self.assertTrue(target.is_file())
+                        target.write_text("DRIFT\n", encoding="utf-8")
+
+                        stale = plugin_packages.check_packages(root, package_roots=(package_rel,))
+                        self.assertIn(target, stale)
+
+                        restored = plugin_packages.sync_packages(root, package_roots=(package_rel,))
+                        self.assertIn(target, restored)
+                        self.assertEqual(
+                            plugin_packages.check_packages(root, package_roots=(package_rel,)), ()
+                        )
+
     def test_plugin_package_sync_updates_stale_payload(self) -> None:
         from cities2_mcp import plugin_packages
 
