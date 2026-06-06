@@ -45,9 +45,18 @@
   unless a human explicitly directs that exact action.
 - Never bump MCP server or plugin version numbers unless a human explicitly
   directs that exact action.
-- This repository uses squash merging.
-  Unless the user explicitly requests a different allowed strategy,
-  use `gh pr merge <number> --squash`.
+- Squash merging is the default for ordinary PRs.
+- Merge commits are allowed for explicitly stacked PRs.
+  A stacked PR must name its parent PR or branch in the PR description,
+  using a line such as `Stacked on: #123` or
+  `Stacked on: branch-name`.
+- Use a merge commit for a stacked PR when landing it with squash would
+  force dependent branches to be restacked.
+  For GitHub CLI merges, use `gh pr merge <number> --merge`.
+- Do not squash a PR that has dependent open PRs unless the stack owner
+  has already restacked them or explicitly asks for the squash.
+- Unless a PR is explicitly marked as stacked, or the user requests a
+  different allowed strategy, use `gh pr merge <number> --squash`.
 - Do not manually delete branches unless asked.
 
 ## Required test gates
@@ -82,12 +91,8 @@
 
 ## Markdown style
 
-- Use sentence case for Markdown headings while preserving proper nouns,
-  product names, acronyms, and code identifiers.
-- For Markdown prose, use fixed-width wrapping at a comfortable measure.
-  Prefer natural sentence or clause boundaries.
-  Avoid orphaned single-word lines.
-- Follow the file's dominant wrapping style when editing existing docs.
+- Use sentence case for Markdown headings while preserving proper nouns, product names, acronyms, and code identifiers.
+- For Markdown prose, keep each paragraph on a single logical line instead of hard-wrapping at a fixed width.
+- When editing existing docs, reflow touched prose to paragraph-per-line style unless the file uses line breaks as meaningful structure.
 - Do not reflow unrelated text unless the user explicitly asks.
-- Leave these unwrapped: code blocks, tables, URLs, generated output,
-  metadata blocks, and text where line breaks are meaningful.
+- Leave these as-is: code blocks, tables, URLs, generated output, metadata blocks, lists where each line is a distinct item, and text where line breaks are meaningful.
