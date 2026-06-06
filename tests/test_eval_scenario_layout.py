@@ -31,6 +31,39 @@ class EvalScenarioLayoutTests(unittest.TestCase):
         self.assertIn("source_status", checks_text)
         self.assertNotIn("cities2-mod-debugging", story_text)
 
+    def test_debugging_runtime_no_logs_uses_quorum_scenario_contract(self) -> None:
+        scenario = (
+            ROOT
+            / "evals"
+            / "scenarios"
+            / "baseline"
+            / "cities2-debugging-runtime-no-logs"
+        )
+
+        self.assertTrue((scenario / "story.md").is_file())
+        self.assertTrue((scenario / "setup.sh").is_file())
+        self.assertTrue((scenario / "checks.sh").is_file())
+        self.assertEqual(
+            ["checks.sh", "setup.sh", "story.md"],
+            sorted(path.name for path in scenario.iterdir()),
+        )
+
+    def test_debugging_runtime_no_logs_prompt_encodes_missing_evidence_pressure(self) -> None:
+        story = (
+            ROOT
+            / "evals"
+            / "scenarios"
+            / "baseline"
+            / "cities2-debugging-runtime-no-logs"
+            / "story.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("id: cities2-debugging-runtime-no-logs", story)
+        self.assertIn("build succeeds", story)
+        self.assertIn("I do not have Modding.log", story)
+        self.assertIn("localhost:9444", story)
+        self.assertIn("GameManager.instance", story)
+
 
 if __name__ == "__main__":
     unittest.main()
