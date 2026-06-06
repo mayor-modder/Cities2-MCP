@@ -86,6 +86,10 @@ def _tool_names(run_dir: Path) -> list[str]:
     return names
 
 
+def _tool_name_matches(actual: str, expected: str) -> bool:
+    return actual == expected or actual.endswith(f"__{expected}")
+
+
 def _transcript_text(run_dir: Path) -> str:
     transcript = run_dir / "transcript.txt"
     return transcript.read_text(encoding="utf-8") if transcript.is_file() else ""
@@ -254,7 +258,8 @@ def run_check(
     if name in ("skill-called", "tool-called"):
         expected = args[0] if args else ""
         names = _tool_names(run_dir)
-        status = "pass" if expected in names else "fail"
+        called = any(_tool_name_matches(tool_name, expected) for tool_name in names)
+        status = "pass" if expected and called else "fail"
         return _record(name, phase, status, f"expected={expected}; names={names}")
 
     if name == "skill-not-called":
@@ -267,7 +272,8 @@ def run_check(
     if name == "not-tool-called":
         expected = args[0] if args else ""
         names = _tool_names(run_dir)
-        status = "pass" if expected and expected not in names else "fail"
+        called = any(_tool_name_matches(tool_name, expected) for tool_name in names)
+        status = "pass" if expected and not called else "fail"
         return _record(name, phase, status, f"expected={expected}; names={names}")
 
     if name == "transcript-contains":
