@@ -16,6 +16,17 @@ This phase uses `superpowers:writing-skills` as the governing evidence model. Sk
 
 The matrix must not treat a skill edit as justified merely because a pressure test exists or a rule appears in `SKILL.md`. A proposed skill edit needs comparative evidence showing either that no-skill behavior fails in a relevant way, with-skill behavior still fails, or the existing skill creates an unintended negative effect.
 
+## Superpowers Evals alignment
+
+This repository's eval work is inspired by `prime-radiant-inc/superpowers-evals`. The matrix should preserve the same scenario shape unless a later phase deliberately adopts more of upstream Quorum:
+
+- Scenario directories use `story.md`, `setup.sh`, and `checks.sh`.
+- `story.md` owns the tester story, prompt, and `## Acceptance Criteria`.
+- `setup.sh` creates the reproducible fixture.
+- `checks.sh` proves hard evidence from the fixture, git state, files, tool calls, skill calls, and event ordering.
+- Static runner and scenario checks are safe for ordinary development; live Codex evals are trusted-maintainer operations because they launch real agents and preserve sensitive raw artifacts.
+- Acceptance criteria remain the behavioral contract. When a conclusion needs judgment, publish a sanitized acceptance-criteria review instead of converting it into a brittle keyword gate.
+
 ## Goals
 
 - Cover all five shipped skills: `cities2-knowledge`, `cities2-modding`, `cities2-mod-review`, `cities2-mod-debugging`, and `cities2-mod-release`.
@@ -123,6 +134,10 @@ If a scenario requires MCP access, both conditions may receive the same MCP serv
 
 Each scenario should use checks that map to observable behavior rather than broad subjective quality. Checks may inspect normalized assistant text, tool-call records, generated files, and post-run artifacts where appropriate.
 
+Deterministic pass gates should prove behavior, not phrasing. A transcript substring check is not enough unless it encodes a meaningful behavior class and has adversarial tests showing that unsafe or merely keyword-stuffed responses fail. Prefer checks that verify tool use, skill invocation, edit ordering, file state, generated artifacts, web-browsing absence, source lookup, or release/debugging gate behavior.
+
+Some scenario expectations cannot be honestly automated with simple checks. Those expectations should be reviewed against the `## Acceptance Criteria` in `story.md` and reported separately from deterministic check results.
+
 Each skill receives one of these published verdicts:
 
 - `clear positive delta`: skilled trials consistently outperform no-skill trials on the scenario's core behavior.
@@ -142,16 +157,19 @@ The dossier should include:
 1. `# Cities2 Codex skill effectiveness matrix`
 2. `## Executive summary`
 3. `## Scenario matrix`
-4. `## Skill verdicts`
-5. `## Per-skill observations`
-6. `## Cross-skill patterns`
-7. `## Check and instrumentation notes`
-8. `## Next decisions`
-9. `## Artifact hygiene`
+4. `## Deterministic check results`
+5. `## Acceptance-criteria review results`
+6. `## Skill verdicts`
+7. `## Per-skill observations`
+8. `## Check and instrumentation notes`
+9. `## Next decisions`
+10. `## Artifact hygiene`
 
 The executive summary should say what this matrix can and cannot prove. It should be explicit that the matrix is directional evidence from one scenario per skill, not a guarantee of broad skill reliability.
 
 The scenario matrix should include one row per skill with scenario id, condition counts, pass/fail counts, core failed checks, and verdict.
+
+The deterministic check results should summarize pass, fail, and indeterminate check outcomes without claiming they fully grade the skill. The acceptance-criteria review results should explain any human-reviewed behavior judgments that sit outside deterministic checks.
 
 Per-skill observations should summarize all six trials in plain English. Short sanitized snippets are allowed only when needed to explain a behavior that cannot be fairly paraphrased.
 
