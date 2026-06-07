@@ -54,6 +54,29 @@ Agent contributors working on skills should have access to Superpowers. Before e
 
 The root `skills/` directory is the source of truth for bundled agent skills. Generated copies under plugin or integration directories must stay in sync with the source skills and packaged server code.
 
+### Canonical vs generated files
+
+Canonical sources — edit these:
+
+- `cities2_mcp/plugin_metadata.py` — shared plugin metadata and per-platform artifact templates (name, descriptions, URLs, keywords, user config, marketplace and interface structures, and the README text).
+- `cities2_mcp/__init__.py` — the canonical `__version__`, propagated into every distribution artifact.
+- root `skills/` — the five bundled agent skills.
+- root `cities2_mcp/` — the Python package vendored into each distribution.
+
+Generated — do not hand-edit; run `sync` and commit the result:
+
+- Claude: `integrations/anthropic/claude-plugin/.claude-plugin/plugin.json`, `integrations/anthropic/claude-plugin/.mcp.json`, `integrations/anthropic/claude-plugin/README.md`, and root `.claude-plugin/marketplace.json`.
+- Codex: `plugins/cities2-mcp/.codex-plugin/plugin.json`, `plugins/cities2-mcp/.mcp.json`, `plugins/cities2-mcp/README.md`, and root `.agents/plugins/marketplace.json`.
+- Antigravity: `plugins/cities2-mcp/plugin.json` and `plugins/cities2-mcp/mcp_config.json`.
+- Per-distribution payloads under each root: `skills/`, `vendor/`, `bin/cities2-mcp-launcher.js`, and `vendor/run_server.py`.
+
+Regenerate and verify:
+
+```sh
+py -3 -m cities2_mcp.plugin_packages sync
+py -3 -m cities2_mcp.plugin_packages check
+```
+
 When changing skills:
 
 - keep the instruction scope narrow
