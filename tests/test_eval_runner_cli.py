@@ -25,6 +25,13 @@ REVIEW_MATRIX_SCENARIO = (
     / "matrix"
     / "cities2-mod-review-tsx-no-react-evidence"
 )
+RELEASE_MATRIX_SCENARIO = (
+    ROOT
+    / "evals"
+    / "scenarios"
+    / "matrix"
+    / "cities2-mod-release-build-passed-no-playtest"
+)
 
 
 class EvalRunnerCliTests(unittest.TestCase):
@@ -363,6 +370,48 @@ class EvalRunnerCliTests(unittest.TestCase):
         )
         self.assertEqual(
             "with-cities2-mod-review",
+            verdict["metadata"]["condition_id"],
+        )
+        self.assertEqual("pass", verdict["final"])
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
+    def test_release_matrix_stub_writes_passing_verdict(self) -> None:
+        from evals.runner.__main__ import run_eval
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
+            root = Path(tmp)
+            codex_stub = root / "codex_release_stub.py"
+            codex_stub.write_text(
+                textwrap.dedent(
+                    """\
+                    from __future__ import annotations
+
+                    print('{"type":"tool_call","name":"cities2-mod-release","arguments":{}}')
+                    print('{"type":"agent_message","message":"Blocked: the package is not ready for upload now because the packaged build has not been locally playtested. A successful build and package are not enough. I need local playtest evidence, or an explicit override where you confirm you understand the risk and want a not gameplay-verified release. After playtesting, I can help prepare Release notes: and Paradox Mods description: sections."}')
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            paths = run_eval(
+                scenario_path=RELEASE_MATRIX_SCENARIO,
+                condition="with-cities2-mod-release",
+                repo_root=ROOT,
+                results_root=root / "results",
+                codex_command=sys.executable,
+                codex_args_prefix=(str(codex_stub),),
+                live_auth=False,
+                trial=1,
+            )
+
+            verdict = json.loads(paths.verdict.read_text(encoding="utf-8"))
+
+        self.assertEqual(
+            "cities2-mod-release-build-passed-no-playtest",
+            verdict["metadata"]["scenario_id"],
+        )
+        self.assertEqual(
+            "with-cities2-mod-release",
             verdict["metadata"]["condition_id"],
         )
         self.assertEqual("pass", verdict["final"])

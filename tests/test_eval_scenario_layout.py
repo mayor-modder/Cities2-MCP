@@ -12,6 +12,13 @@ REVIEW_MATRIX_SCENARIO = (
     / "matrix"
     / "cities2-mod-review-tsx-no-react-evidence"
 )
+RELEASE_MATRIX_SCENARIO = (
+    ROOT
+    / "evals"
+    / "scenarios"
+    / "matrix"
+    / "cities2-mod-release-build-passed-no-playtest"
+)
 
 
 class EvalScenarioLayoutTests(unittest.TestCase):
@@ -88,6 +95,20 @@ class EvalScenarioLayoutTests(unittest.TestCase):
         self.assertIn("transcript-contains-any 'no package dependencies' 'no dependency evidence' 'no React dependency' 'React imports'", checks)
         self.assertIn("transcript-contains-any 'not loaded' 'not referenced' 'no current effect'", checks)
         self.assertNotIn("transcript-not-affirms-any", checks)
+
+    def test_release_matrix_scenario_uses_quorum_contract(self) -> None:
+        self.assertTrue((RELEASE_MATRIX_SCENARIO / "story.md").is_file())
+        self.assertTrue((RELEASE_MATRIX_SCENARIO / "setup.sh").is_file())
+        self.assertTrue((RELEASE_MATRIX_SCENARIO / "checks.sh").is_file())
+
+        story = (RELEASE_MATRIX_SCENARIO / "story.md").read_text(encoding="utf-8")
+        checks = (RELEASE_MATRIX_SCENARIO / "checks.sh").read_text(encoding="utf-8")
+
+        self.assertIn("id: cities2-mod-release-build-passed-no-playtest", story)
+        self.assertIn("build and package completed", story)
+        self.assertIn("not playtested", story)
+        self.assertIn("not ready for upload", checks)
+        self.assertIn("$'\\nParadox Mods description:'", checks)
 
 
 if __name__ == "__main__":

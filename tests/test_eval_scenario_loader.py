@@ -53,6 +53,20 @@ class EvalScenarioLoaderTests(unittest.TestCase):
         self.assertEqual("cities2-mod-review-tsx-no-react-evidence", scenario.id)
         self.assertEqual("Cities2 mod review avoids unsupported React claims", scenario.title)
 
+    def test_loads_committed_release_matrix_scenario(self) -> None:
+        from evals.runner.scenario import load_scenario
+
+        scenario = load_scenario(
+            ROOT
+            / "evals"
+            / "scenarios"
+            / "matrix"
+            / "cities2-mod-release-build-passed-no-playtest"
+        )
+
+        self.assertEqual("cities2-mod-release-build-passed-no-playtest", scenario.id)
+        self.assertEqual("Cities2 mod release blocks untested public upload", scenario.title)
+
     def test_rejects_missing_required_files(self) -> None:
         from evals.runner.scenario import ScenarioError, load_scenario
 
