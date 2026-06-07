@@ -16,6 +16,7 @@ from evals.runner.codex_adapter import (
     prepare_codex_home,
     seed_codex_auth,
 )
+from evals.runner.conditions import CONDITION_SKILLS, condition_skills
 from evals.runner.models import CheckRecord, RunMetadata, RunPaths, Verdict
 from evals.runner.scenario import Scenario, load_scenario
 from evals.runner.summary import generate_digest, write_digest
@@ -26,13 +27,7 @@ RUNNER_VERSION = "1"
 
 
 def _condition_skills(condition: str) -> tuple[str, ...]:
-    if condition == "no-skill":
-        return ()
-    if condition == "with-cities2-knowledge":
-        return ("cities2-knowledge",)
-    if condition == "with-cities2-mod-debugging":
-        return ("cities2-mod-debugging",)
-    raise ValueError(f"unsupported condition: {condition}")
+    return condition_skills(condition)
 
 
 def _prompt_from_story(story: Path) -> str:
@@ -273,11 +268,7 @@ def _run_eval_command(argv: list[str] | None = None) -> int:
     parser.add_argument("scenario_path", type=Path)
     parser.add_argument(
         "--condition",
-        choices=(
-            "no-skill",
-            "with-cities2-knowledge",
-            "with-cities2-mod-debugging",
-        ),
+        choices=tuple(CONDITION_SKILLS),
         required=True,
     )
     parser.add_argument("--results-root", type=Path, default=Path("evals/results"))

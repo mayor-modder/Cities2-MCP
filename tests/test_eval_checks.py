@@ -224,6 +224,98 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertEqual("pass", record.status)
         self.assertIn("cities2-mod-debugging", record.detail)
 
+    def test_condition_skill_set_supports_all_matrix_target_conditions(self) -> None:
+        from evals.runner.check_tool import run_check
+
+        expected = {
+            "no-skill": [],
+            "with-cities2-knowledge": ["cities2-knowledge"],
+            "with-cities2-modding": ["cities2-modding"],
+            "with-cities2-mod-review": ["cities2-mod-review"],
+            "with-cities2-mod-debugging": ["cities2-mod-debugging"],
+            "with-cities2-mod-release": ["cities2-mod-release"],
+        }
+
+        for condition, skills in expected.items():
+            with self.subTest(condition=condition):
+                with tempfile.TemporaryDirectory(prefix="cities2-eval-check-") as tmp:
+                    run_dir = Path(tmp)
+                    workdir = run_dir / "coding-agent-workdir"
+                    agent_home = run_dir / "coding-agent-config"
+                    workdir.mkdir()
+                    for skill in skills:
+                        (agent_home / "skills" / skill).mkdir(parents=True)
+
+                    record = run_check(
+                        "condition-skill-set",
+                        [],
+                        run_dir=run_dir,
+                        workdir=workdir,
+                        agent_home=agent_home,
+                        condition=condition,
+                        phase="pre",
+                    )
+
+                self.assertEqual("pass", record.status)
+
+    def test_generic_transcript_contains_all_any_and_not_contains_any(self) -> None:
+        from evals.runner.check_tool import run_check
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-check-") as tmp:
+            run_dir = Path(tmp)
+            workdir = run_dir / "coding-agent-workdir"
+            agent_home = run_dir / "coding-agent-config"
+            workdir.mkdir()
+            agent_home.mkdir()
+            (run_dir / "transcript.txt").write_text(
+                "Findings: observed files show a TSX file. "
+                "There is not enough evidence to require React. "
+                "The CSS file is not loaded, so it has no current effect.",
+                encoding="utf-8",
+            )
+
+            contains_all = run_check(
+                "transcript-contains-all",
+                ["Findings", "observed", "CSS"],
+                run_dir=run_dir,
+                workdir=workdir,
+                agent_home=agent_home,
+                condition="with-cities2-mod-review",
+                phase="post",
+            )
+            contains_any = run_check(
+                "transcript-contains-any",
+                ["playtested package", "not enough evidence"],
+                run_dir=run_dir,
+                workdir=workdir,
+                agent_home=agent_home,
+                condition="with-cities2-mod-review",
+                phase="post",
+            )
+            not_contains_any = run_check(
+                "transcript-not-contains-any",
+                ["install React", "ready for upload now"],
+                run_dir=run_dir,
+                workdir=workdir,
+                agent_home=agent_home,
+                condition="with-cities2-mod-review",
+                phase="post",
+            )
+            missing_all = run_check(
+                "transcript-contains-all",
+                ["Findings", "playtested package"],
+                run_dir=run_dir,
+                workdir=workdir,
+                agent_home=agent_home,
+                condition="with-cities2-mod-review",
+                phase="post",
+            )
+
+        self.assertEqual("pass", contains_all.status)
+        self.assertEqual("pass", contains_any.status)
+        self.assertEqual("pass", not_contains_any.status)
+        self.assertEqual("fail", missing_all.status)
+
     def test_debugging_behavior_checks_pass_for_evidence_request_handoff(self) -> None:
         records = _run_debugging_checks(
             [

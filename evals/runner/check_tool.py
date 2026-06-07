@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from .conditions import condition_skills
 from .models import CheckRecord, CheckStatus, Phase
 
 
@@ -169,6 +170,16 @@ def _has_any(text: str, needles: tuple[str, ...]) -> bool:
     return any(needle.lower() in lower_text for needle in needles)
 
 
+def _contains_all(text: str, needles: list[str]) -> bool:
+    lower_text = text.lower()
+    return bool(needles) and all(needle.lower() in lower_text for needle in needles)
+
+
+def _contains_any_arg(text: str, needles: list[str]) -> bool:
+    lower_text = text.lower()
+    return bool(needles) and any(needle.lower() in lower_text for needle in needles)
+
+
 def _requests_runtime_evidence(text: str) -> bool:
     return _has_any(text, REQUEST_EVIDENCE_TERMS) and _has_any(
         text, RUNTIME_EVIDENCE_TERMS
@@ -218,20 +229,17 @@ def run_check(
         return _record(name, phase, status, f"agent_home={agent_home}")
 
     if name == "condition-skill-set":
-        expected_by_condition = {
-            "no-skill": [],
-            "with-cities2-knowledge": ["cities2-knowledge"],
-            "with-cities2-mod-debugging": ["cities2-mod-debugging"],
-        }
-        expected = expected_by_condition.get(condition)
-        actual = _skill_dirs(agent_home)
-        if expected is None:
+        try:
+            expected = list(condition_skills(condition))
+        except ValueError:
+            actual = _skill_dirs(agent_home)
             return _record(
                 name,
                 phase,
                 "indeterminate",
                 f"unknown condition={condition}; actual={actual}",
             )
+        actual = _skill_dirs(agent_home)
         status = "pass" if actual == expected else "fail"
         return _record(name, phase, status, f"expected={expected}; actual={actual}")
 
@@ -283,6 +291,21 @@ def run_check(
         text = _transcript_text(run_dir)
         status = "pass" if needle and needle.lower() in text.lower() else "fail"
         return _record(name, phase, status, f"needle={needle}")
+
+    if name == "transcript-contains-all":
+        text = _transcript_text(run_dir)
+        status = "pass" if _contains_all(text, args) else "fail"
+        return _record(name, phase, status, f"needles={args}")
+
+    if name == "transcript-contains-any":
+        text = _transcript_text(run_dir)
+        status = "pass" if _contains_any_arg(text, args) else "fail"
+        return _record(name, phase, status, f"needles={args}")
+
+    if name == "transcript-not-contains-any":
+        text = _transcript_text(run_dir)
+        status = "pass" if args and not _contains_any_arg(text, args) else "fail"
+        return _record(name, phase, status, f"needles={args}")
 
     if name == "requests-runtime-evidence":
         text = _transcript_text(run_dir)

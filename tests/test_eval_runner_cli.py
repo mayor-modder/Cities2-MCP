@@ -112,6 +112,21 @@ class EvalRunnerCliTests(unittest.TestCase):
             _condition_skills("with-cities2-mod-debugging"),
         )
 
+    def test_condition_skills_supports_all_matrix_target_conditions(self) -> None:
+        from evals.runner.__main__ import _condition_skills
+
+        expected = {
+            "no-skill": (),
+            "with-cities2-knowledge": ("cities2-knowledge",),
+            "with-cities2-modding": ("cities2-modding",),
+            "with-cities2-mod-review": ("cities2-mod-review",),
+            "with-cities2-mod-debugging": ("cities2-mod-debugging",),
+            "with-cities2-mod-release": ("cities2-mod-release",),
+        }
+        for condition, skills in expected.items():
+            with self.subTest(condition=condition):
+                self.assertEqual(skills, _condition_skills(condition))
+
     def test_run_setup_reports_missing_bash(self) -> None:
         from evals.runner.__main__ import _run_setup
 
