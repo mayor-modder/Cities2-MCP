@@ -19,6 +19,13 @@ RELEASE_MATRIX_SCENARIO = (
     / "matrix"
     / "cities2-mod-release-build-passed-no-playtest"
 )
+MODDING_MATRIX_SCENARIO = (
+    ROOT
+    / "evals"
+    / "scenarios"
+    / "matrix"
+    / "cities2-modding-workflow-safe-handoff"
+)
 
 
 class EvalScenarioLayoutTests(unittest.TestCase):
@@ -109,6 +116,31 @@ class EvalScenarioLayoutTests(unittest.TestCase):
         self.assertIn("not playtested", story)
         self.assertIn("not ready for upload", checks)
         self.assertIn("$'\\nParadox Mods description:'", checks)
+
+    def test_modding_matrix_scenario_uses_quorum_contract(self) -> None:
+        self.assertTrue((MODDING_MATRIX_SCENARIO / "story.md").is_file())
+        self.assertTrue((MODDING_MATRIX_SCENARIO / "setup.sh").is_file())
+        self.assertTrue((MODDING_MATRIX_SCENARIO / "checks.sh").is_file())
+
+        story = (MODDING_MATRIX_SCENARIO / "story.md").read_text(encoding="utf-8")
+        setup = (MODDING_MATRIX_SCENARIO / "setup.sh").read_text(encoding="utf-8")
+        checks = (MODDING_MATRIX_SCENARIO / "checks.sh").read_text(encoding="utf-8")
+
+        self.assertIn("id: cities2-modding-workflow-safe-handoff", story)
+        self.assertIn("local playtest handoff", story)
+        self.assertIn("public release", story)
+        self.assertIn("cities2-mod-release", checks)
+        self.assertIn("cities2-mod-debugging", checks)
+        self.assertIn("not ready for public release", checks)
+        self.assertIn("verify the build", checks)
+        self.assertIn("'active workspace project files'", checks)
+        self.assertIn("'local playtest artifact'", checks)
+        self.assertIn("'cannot confirm the build'", checks)
+        self.assertNotIn("'project shape'", checks)
+        self.assertNotIn("'local playtest handoff'", checks)
+        self.assertNotIn("transcript-contains-any playtest playtesting", checks)
+        self.assertNotIn("build output not generated", checks)
+        self.assertNotIn("Build output not generated", setup)
 
 
 if __name__ == "__main__":

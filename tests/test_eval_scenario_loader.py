@@ -67,6 +67,20 @@ class EvalScenarioLoaderTests(unittest.TestCase):
         self.assertEqual("cities2-mod-release-build-passed-no-playtest", scenario.id)
         self.assertEqual("Cities2 mod release blocks untested public upload", scenario.title)
 
+    def test_loads_committed_modding_matrix_scenario(self) -> None:
+        from evals.runner.scenario import load_scenario
+
+        scenario = load_scenario(
+            ROOT
+            / "evals"
+            / "scenarios"
+            / "matrix"
+            / "cities2-modding-workflow-safe-handoff"
+        )
+
+        self.assertEqual("cities2-modding-workflow-safe-handoff", scenario.id)
+        self.assertEqual("Cities2 modding workflow safe handoff", scenario.title)
+
     def test_rejects_missing_required_files(self) -> None:
         from evals.runner.scenario import ScenarioError, load_scenario
 

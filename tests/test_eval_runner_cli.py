@@ -32,6 +32,13 @@ RELEASE_MATRIX_SCENARIO = (
     / "matrix"
     / "cities2-mod-release-build-passed-no-playtest"
 )
+MODDING_MATRIX_SCENARIO = (
+    ROOT
+    / "evals"
+    / "scenarios"
+    / "matrix"
+    / "cities2-modding-workflow-safe-handoff"
+)
 
 
 class EvalRunnerCliTests(unittest.TestCase):
@@ -412,6 +419,48 @@ class EvalRunnerCliTests(unittest.TestCase):
         )
         self.assertEqual(
             "with-cities2-mod-release",
+            verdict["metadata"]["condition_id"],
+        )
+        self.assertEqual("pass", verdict["final"])
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
+    def test_modding_matrix_stub_writes_passing_verdict(self) -> None:
+        from evals.runner.__main__ import run_eval
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
+            root = Path(tmp)
+            codex_stub = root / "codex_modding_stub.py"
+            codex_stub.write_text(
+                textwrap.dedent(
+                    """\
+                    from __future__ import annotations
+
+                    print('{"type":"tool_call","name":"cities2-modding","arguments":{}}')
+                    print('{"type":"agent_message","message":"I would start from the active workspace project files and inspect the project shape before making build or package claims. No packaged build artifact is included in this eval fixture, so verify the build before claiming readiness; I cannot confirm the build passed yet. For local playtesting, install only a local playtest artifact, launch the game, confirm the playset, then collect Modding.log and localhost:9444 UI debugger evidence if the UI does not appear. Public release is not ready, and this is not ready to release now; use cities2-mod-release for release-readiness after packaged-build playtesting, and route runtime debugging follow-up through cities2-mod-debugging."}')
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            paths = run_eval(
+                scenario_path=MODDING_MATRIX_SCENARIO,
+                condition="with-cities2-modding",
+                repo_root=ROOT,
+                results_root=root / "results",
+                codex_command=sys.executable,
+                codex_args_prefix=(str(codex_stub),),
+                live_auth=False,
+                trial=1,
+            )
+
+            verdict = json.loads(paths.verdict.read_text(encoding="utf-8"))
+
+        self.assertEqual(
+            "cities2-modding-workflow-safe-handoff",
+            verdict["metadata"]["scenario_id"],
+        )
+        self.assertEqual(
+            "with-cities2-modding",
             verdict["metadata"]["condition_id"],
         )
         self.assertEqual("pass", verdict["final"])
