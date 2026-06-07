@@ -495,6 +495,43 @@ class PackagingTests(unittest.TestCase):
 
             self.assertIn(stale_skill, stale)
 
+    def test_repo_metadata_in_sync(self) -> None:
+        from cities2_mcp import plugin_packages
+
+        self.assertEqual(plugin_packages.check_packages(ROOT), ())
+
+    def test_check_detects_and_sync_restores_each_metadata_file(self) -> None:
+        from cities2_mcp import plugin_packages
+
+        flattened = [
+            rel
+            for entries in plugin_packages.METADATA_FILES.values()
+            for rel, _builder in entries
+        ]
+        self.assertEqual(len(flattened), 10)  # guards the spec's "10 metadata files"
+        self.assertEqual(len(set(flattened)), 10)  # no duplicate registrations
+
+        for package_rel, entries in plugin_packages.METADATA_FILES.items():
+            for rel, _builder in entries:
+                with self.subTest(metadata=str(rel)):
+                    with tempfile.TemporaryDirectory(prefix="cities2-mcp-meta-drift-") as tmp:
+                        root = Path(tmp)
+                        self._write_plugin_sync_fixture(root)
+                        plugin_packages.sync_packages(root, package_roots=(package_rel,))
+
+                        target = root / rel
+                        self.assertTrue(target.is_file())
+                        target.write_text("DRIFT\n", encoding="utf-8")
+
+                        stale = plugin_packages.check_packages(root, package_roots=(package_rel,))
+                        self.assertIn(target, stale)
+
+                        restored = plugin_packages.sync_packages(root, package_roots=(package_rel,))
+                        self.assertIn(target, restored)
+                        self.assertEqual(
+                            plugin_packages.check_packages(root, package_roots=(package_rel,)), ()
+                        )
+
     def test_plugin_package_sync_updates_stale_payload(self) -> None:
         from cities2_mcp import plugin_packages
 
@@ -512,6 +549,86 @@ class PackagingTests(unittest.TestCase):
             self.assertIn(stale_skill, changed)
             self.assertEqual(stale, ())
             self.assertEqual(stale_skill.read_text(encoding="utf-8"), "canonical cities2-knowledge\n")
+
+    def test_metadata_builders_are_deterministic(self) -> None:
+        from cities2_mcp import plugin_metadata as meta
+
+        builders = (
+            meta.claude_plugin_json,
+            meta.claude_mcp_json,
+            meta.claude_readme_md,
+            meta.claude_marketplace_json,
+            meta.codex_plugin_json,
+            meta.codex_mcp_json,
+            meta.codex_readme_md,
+            meta.codex_marketplace_json,
+            meta.antigravity_plugin_json,
+            meta.antigravity_mcp_config_json,
+        )
+        for builder in builders:
+            self.assertEqual(builder(), builder(), builder.__name__)
+
+    def test_generated_metadata_is_valid_and_canonical(self) -> None:
+        import cities2_mcp
+        from cities2_mcp import plugin_metadata as meta
+
+        json_builders = {
+            "claude_plugin_json": meta.claude_plugin_json,
+            "claude_mcp_json": meta.claude_mcp_json,
+            "claude_marketplace_json": meta.claude_marketplace_json,
+            "codex_plugin_json": meta.codex_plugin_json,
+            "codex_mcp_json": meta.codex_mcp_json,
+            "codex_marketplace_json": meta.codex_marketplace_json,
+            "antigravity_plugin_json": meta.antigravity_plugin_json,
+            "antigravity_mcp_config_json": meta.antigravity_mcp_config_json,
+        }
+        parsed = {}
+        for label, builder in json_builders.items():
+            text = builder()
+            self.assertTrue(text.endswith("\n"), label)
+            parsed[label] = json.loads(text)  # raises on invalid JSON
+
+        version = cities2_mcp.__version__
+        self.assertEqual(parsed["claude_plugin_json"]["version"], version)
+        self.assertEqual(parsed["codex_plugin_json"]["version"], version)
+        self.assertEqual(parsed["antigravity_plugin_json"]["version"], version)
+        self.assertEqual(parsed["claude_marketplace_json"]["plugins"][0]["version"], version)
+        for label in (
+            "claude_mcp_json",
+            "codex_mcp_json",
+            "antigravity_mcp_config_json",
+            "codex_marketplace_json",
+        ):
+            self.assertNotIn("version", parsed[label])
+
+        for label in (
+            "claude_plugin_json",
+            "codex_plugin_json",
+            "antigravity_plugin_json",
+            "claude_marketplace_json",
+            "codex_marketplace_json",
+        ):
+            self.assertEqual(parsed[label]["name"], meta.NAME, label)
+
+        self.assertEqual(parsed["claude_plugin_json"]["author"], meta.AUTHOR)
+        self.assertEqual(parsed["codex_plugin_json"]["author"], meta.AUTHOR)
+        self.assertEqual(parsed["claude_marketplace_json"]["owner"], meta.AUTHOR)
+        self.assertEqual(parsed["claude_plugin_json"]["keywords"], meta.KEYWORDS)
+        self.assertEqual(parsed["codex_plugin_json"]["keywords"], meta.KEYWORDS)
+        self.assertEqual(parsed["claude_plugin_json"]["repository"], meta.REPO_URL)
+        self.assertEqual(parsed["codex_plugin_json"]["repository"], meta.REPO_URL)
+        self.assertEqual(
+            parsed["codex_plugin_json"]["interface"]["privacyPolicyURL"], meta.PRIVACY_URL
+        )
+
+        for readme in (meta.claude_readme_md(), meta.codex_readme_md()):
+            self.assertIn("Generated by cities2_mcp.plugin_packages", readme)
+            for name in meta.SKILL_NAMES:
+                self.assertIn(name, readme)
+        self.assertIn(
+            "claude plugin validate integrations/anthropic/claude-plugin --strict",
+            meta.claude_readme_md(),
+        )
 
     @staticmethod
     def _write_plugin_sync_fixture(root: Path) -> None:

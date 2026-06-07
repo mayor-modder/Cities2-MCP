@@ -7,14 +7,8 @@ from pathlib import Path
 from typing import Iterable
 
 from . import package_root
+from .plugin_metadata import SKILL_NAMES
 
-SKILL_NAMES = (
-    "cities2-knowledge",
-    "cities2-modding",
-    "cities2-mod-review",
-    "cities2-mod-debugging",
-    "cities2-mod-release",
-)
 LEGACY_ASSET_NAMES = ("cities2-game-updates",)
 
 CLAUDE_COMMANDS = {

@@ -21,7 +21,7 @@
   "interface": {
     "displayName": "Cities2 MCP and Modding Toolkit",
     "shortDescription": "Cities: Skylines II knowledge and modding tools",
-  "longDescription": "Cities2 MCP and Modding Toolkit gives Codex local access to bundled Cities: Skylines II Wiki text, the user's installed in-game encyclopedia when available, and mod project workflow tools inside the current workspace.",
+    "longDescription": "Cities2 MCP and Modding Toolkit gives Codex local access to bundled Cities: Skylines II Wiki text, the user's installed in-game encyclopedia when available, and mod project workflow tools inside the current workspace.",
     "developerName": "mayor-modder",
     "category": "Coding",
     "capabilities": [
