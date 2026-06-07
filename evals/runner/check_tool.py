@@ -180,6 +180,44 @@ def _contains_any_arg(text: str, needles: list[str]) -> bool:
     return bool(needles) and any(needle.lower() in lower_text for needle in needles)
 
 
+def _rubric_record(args: list[str], text: str, phase: Phase) -> CheckRecord:
+    if len(args) < 4:
+        return _record(
+            "rubric:invalid",
+            phase,
+            "indeterminate",
+            "usage: transcript-rubric <criterion> <plain-English expectation> <all|any|none> <terms...>",
+        )
+
+    criterion, expectation, mode, *terms = args
+    lower_text = text.lower()
+    matched = [term for term in terms if term.lower() in lower_text]
+    missing = [term for term in terms if term.lower() not in lower_text]
+    if mode == "all":
+        status: CheckStatus = "pass" if terms and not missing else "fail"
+    elif mode == "any":
+        status = "pass" if matched else "fail"
+    elif mode == "none":
+        status = "pass" if terms and not matched else "fail"
+    else:
+        return _record(
+            f"rubric:{criterion}",
+            phase,
+            "indeterminate",
+            f"criterion={criterion}; expected={expectation}; unknown mode={mode}",
+        )
+
+    return _record(
+        f"rubric:{criterion}",
+        phase,
+        status,
+        (
+            f"criterion={criterion}; expected={expectation}; mode={mode}; "
+            f"matched={matched}; missing={missing}"
+        ),
+    )
+
+
 def _requests_runtime_evidence(text: str) -> bool:
     return _has_any(text, REQUEST_EVIDENCE_TERMS) and _has_any(
         text, RUNTIME_EVIDENCE_TERMS
@@ -306,6 +344,9 @@ def run_check(
         text = _transcript_text(run_dir)
         status = "pass" if args and not _contains_any_arg(text, args) else "fail"
         return _record(name, phase, status, f"needles={args}")
+
+    if name == "transcript-rubric":
+        return _rubric_record(args, _transcript_text(run_dir), phase)
 
     if name == "requests-runtime-evidence":
         text = _transcript_text(run_dir)

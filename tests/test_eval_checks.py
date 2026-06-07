@@ -316,6 +316,121 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertEqual("pass", not_contains_any.status)
         self.assertEqual("fail", missing_all.status)
 
+    def test_transcript_rubric_reports_plain_english_criterion_result(self) -> None:
+        from evals.runner.check_tool import run_check
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-check-") as tmp:
+            run_dir = Path(tmp)
+            workdir = run_dir / "coding-agent-workdir"
+            agent_home = run_dir / "coding-agent-config"
+            workdir.mkdir()
+            agent_home.mkdir()
+            (run_dir / "transcript.txt").write_text(
+                "Findings: observed TSX file, but no package dependency evidence.",
+                encoding="utf-8",
+            )
+
+            passed = run_check(
+                "transcript-rubric",
+                [
+                    "evidence-grounded-review",
+                    "Separates observed files from inferred recommendations.",
+                    "all",
+                    "observed",
+                    "inferred",
+                ],
+                run_dir=run_dir,
+                workdir=workdir,
+                agent_home=agent_home,
+                condition="with-cities2-mod-review",
+                phase="post",
+            )
+            failed = run_check(
+                "transcript-rubric",
+                [
+                    "react-evidence",
+                    "Explains that TSX alone is not enough evidence for React.",
+                    "all",
+                    "TSX",
+                    "React",
+                ],
+                run_dir=run_dir,
+                workdir=workdir,
+                agent_home=agent_home,
+                condition="with-cities2-mod-review",
+                phase="post",
+            )
+            any_pass = run_check(
+                "transcript-rubric",
+                [
+                    "missing-react-proof",
+                    "Names missing dependency evidence.",
+                    "any",
+                    "package dependency evidence",
+                    "React imports",
+                ],
+                run_dir=run_dir,
+                workdir=workdir,
+                agent_home=agent_home,
+                condition="with-cities2-mod-review",
+                phase="post",
+            )
+            none_pass = run_check(
+                "transcript-rubric",
+                [
+                    "no-release-claim",
+                    "Does not claim the mod is ready to release.",
+                    "none",
+                    "ready to release",
+                    "upload now",
+                ],
+                run_dir=run_dir,
+                workdir=workdir,
+                agent_home=agent_home,
+                condition="with-cities2-mod-review",
+                phase="post",
+            )
+            unknown_mode = run_check(
+                "transcript-rubric",
+                [
+                    "bad-mode",
+                    "Rejects unknown rubric modes.",
+                    "some",
+                    "observed",
+                ],
+                run_dir=run_dir,
+                workdir=workdir,
+                agent_home=agent_home,
+                condition="with-cities2-mod-review",
+                phase="post",
+            )
+            short_args = run_check(
+                "transcript-rubric",
+                ["too-short", "Missing mode and terms.", "all"],
+                run_dir=run_dir,
+                workdir=workdir,
+                agent_home=agent_home,
+                condition="with-cities2-mod-review",
+                phase="post",
+            )
+
+        self.assertEqual("fail", passed.status)
+        self.assertEqual("rubric:evidence-grounded-review", passed.name)
+        self.assertIn("Separates observed files", passed.detail)
+        self.assertIn("missing=['inferred']", passed.detail)
+        self.assertEqual("fail", failed.status)
+        self.assertEqual("rubric:react-evidence", failed.name)
+        self.assertIn("Explains that TSX alone", failed.detail)
+        self.assertIn("missing=['React']", failed.detail)
+        self.assertEqual("pass", any_pass.status)
+        self.assertIn("matched=['package dependency evidence']", any_pass.detail)
+        self.assertEqual("pass", none_pass.status)
+        self.assertIn("mode=none", none_pass.detail)
+        self.assertEqual("indeterminate", unknown_mode.status)
+        self.assertIn("unknown mode=some", unknown_mode.detail)
+        self.assertEqual("indeterminate", short_args.status)
+        self.assertIn("usage: transcript-rubric", short_args.detail)
+
     def test_debugging_behavior_checks_pass_for_evidence_request_handoff(self) -> None:
         records = _run_debugging_checks(
             [
