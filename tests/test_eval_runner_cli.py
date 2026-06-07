@@ -18,6 +18,13 @@ SCENARIO = ROOT / "evals" / "scenarios" / "spike" / "cities2-knowledge-office-de
 DEBUGGING_SCENARIO = (
     ROOT / "evals" / "scenarios" / "baseline" / "cities2-debugging-runtime-no-logs"
 )
+REVIEW_MATRIX_SCENARIO = (
+    ROOT
+    / "evals"
+    / "scenarios"
+    / "matrix"
+    / "cities2-mod-review-tsx-no-react-evidence"
+)
 
 
 class EvalRunnerCliTests(unittest.TestCase):
@@ -314,6 +321,48 @@ class EvalRunnerCliTests(unittest.TestCase):
         )
         self.assertEqual(
             "with-cities2-mod-debugging",
+            verdict["metadata"]["condition_id"],
+        )
+        self.assertEqual("pass", verdict["final"])
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
+    def test_review_matrix_stub_writes_passing_verdict(self) -> None:
+        from evals.runner.__main__ import run_eval
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
+            root = Path(tmp)
+            codex_stub = root / "codex_review_stub.py"
+            codex_stub.write_text(
+                textwrap.dedent(
+                    """\
+                    from __future__ import annotations
+
+                    print('{"type":"tool_call","name":"cities2-mod-review","arguments":{}}')
+                    print('{"type":"agent_message","message":"Findings: observed project files show OptionsPanel.tsx and an unreferenced CSS file. Inferred recommendation: treat TSX alone as not enough evidence for React because there are no package dependencies or React imports. The CSS file is not loaded or referenced, so it has no current effect."}')
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            paths = run_eval(
+                scenario_path=REVIEW_MATRIX_SCENARIO,
+                condition="with-cities2-mod-review",
+                repo_root=ROOT,
+                results_root=root / "results",
+                codex_command=sys.executable,
+                codex_args_prefix=(str(codex_stub),),
+                live_auth=False,
+                trial=1,
+            )
+
+            verdict = json.loads(paths.verdict.read_text(encoding="utf-8"))
+
+        self.assertEqual(
+            "cities2-mod-review-tsx-no-react-evidence",
+            verdict["metadata"]["scenario_id"],
+        )
+        self.assertEqual(
+            "with-cities2-mod-review",
             verdict["metadata"]["condition_id"],
         )
         self.assertEqual("pass", verdict["final"])

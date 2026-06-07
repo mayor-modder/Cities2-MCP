@@ -5,6 +5,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENARIO = ROOT / "evals" / "scenarios" / "spike" / "cities2-knowledge-office-demand"
+REVIEW_MATRIX_SCENARIO = (
+    ROOT
+    / "evals"
+    / "scenarios"
+    / "matrix"
+    / "cities2-mod-review-tsx-no-react-evidence"
+)
 
 
 class EvalScenarioLayoutTests(unittest.TestCase):
@@ -63,6 +70,24 @@ class EvalScenarioLayoutTests(unittest.TestCase):
         self.assertIn("I do not have Modding.log", story)
         self.assertIn("localhost:9444", story)
         self.assertIn("GameManager.instance", story)
+
+    def test_review_matrix_scenario_uses_quorum_contract(self) -> None:
+        self.assertTrue((REVIEW_MATRIX_SCENARIO / "story.md").is_file())
+        self.assertTrue((REVIEW_MATRIX_SCENARIO / "setup.sh").is_file())
+        self.assertTrue((REVIEW_MATRIX_SCENARIO / "checks.sh").is_file())
+
+        story = (REVIEW_MATRIX_SCENARIO / "story.md").read_text(encoding="utf-8")
+        checks = (REVIEW_MATRIX_SCENARIO / "checks.sh").read_text(encoding="utf-8")
+
+        self.assertIn("id: cities2-mod-review-tsx-no-react-evidence", story)
+        self.assertIn("OptionsPanel.tsx", story)
+        self.assertIn("theme.css", story)
+        self.assertIn("transcript-contains-all observed inferred", checks)
+        self.assertIn("transcript-contains-all TSX React evidence", checks)
+        self.assertIn("transcript-contains-any 'TSX alone' 'TSX extension'", checks)
+        self.assertIn("transcript-contains-any 'no package dependencies' 'no dependency evidence' 'no React dependency' 'React imports'", checks)
+        self.assertIn("transcript-contains-any 'not loaded' 'not referenced' 'no current effect'", checks)
+        self.assertNotIn("transcript-not-affirms-any", checks)
 
 
 if __name__ == "__main__":
