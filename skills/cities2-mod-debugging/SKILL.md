@@ -61,6 +61,18 @@ Choose the smallest useful runtime evidence from `Modding.log`, `Player.log`, Un
 
 Do not say "the root cause is <diagnosis>", "this is fixed", "definitely", "verified", or equivalent fix-claim language unless relevant runtime evidence has been inspected. It is fine to name a hypothesis, but label it as a hypothesis and stop before editing.
 
+## Workspace And Installed-State Boundaries
+
+Start in the current workspace and explicitly authorized target paths. Runtime evidence often matters, but broader local access still needs a narrow reason and user approval before you read outside the target project.
+
+- Before reading game logs, launcher configuration, local game files, or installed mod folders, explain why that evidence is needed and name the narrow path or artifact you want.
+- Never inspect unrelated installed mods, third-party assemblies, or working mods as reference implementations unless the user explicitly names that mod or approves that comparison.
+- Never broad-search the user's home directory, temp folders, game install, or local Mods folder for possible matching projects.
+- Never write into a local game Mods folder, installed mod folder, or game/config directory without an explicit approval step that names the exact destination and action.
+- Scratch scripts and temporary comparison projects stay under the current test workspace unless the user approves another scratch location.
+
+If needed installed-state evidence is not authorized, stop at a diagnosis, state what remains unverified, and give the user a focused log, debugger, install-layout, or playtesting collection step.
+
 ## Red Flags - STOP
 
 If you catch yourself thinking any of these, return to evidence before editing:
@@ -73,6 +85,8 @@ If you catch yourself thinking any of these, return to evidence before editing:
 - "Patch now and ask for logs if it still fails."
 - "The user is waiting, so make the likely fix first."
 - "This is not blind because I checked `dist/ui.js`."
+- "I'll compare against another installed mod as an example."
+- "I'll copy it into the Mods folder so they can test quickly."
 
 All of these are guesses for CS2 runtime/UI failures. A fast source scan is not
 root-cause evidence when the missing evidence is installed state, logs, playset
@@ -86,10 +100,7 @@ state, or debugger state.
 - Screenshots, reproduction steps, user playtesting notes, save copies, and version/build numbers.
 - MCP server wiki/reference results for API, toolchain, UI, localization, packaging, and compatibility checks.
 
-For runtime or UI behavior that fails only in game, first distinguish package
-layout, installed files, playset/load state, game logs, UI debugger state, and
-source code. Do not use "quick scan, then patch" as a compromise when the
-missing evidence is exactly what separates a plausible guess from root cause.
+For runtime or UI behavior that fails only in game, first distinguish package layout, the target mod's authorized installed package files, playset/load state, authorized game logs, UI debugger state, and source code. Do not use "quick scan, then patch" as a compromise when the missing evidence is exactly what separates a plausible guess from root cause.
 
 ## CS2 Failure Categories
 

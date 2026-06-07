@@ -332,6 +332,12 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("documented best practices", review.lower())
         self.assertIn("negative constraints", review.lower())
         self.assertIn("best practice", review.lower())
+        self.assertIn("observed in project files", review.lower())
+        self.assertIn("supported by mcp", review.lower())
+        self.assertIn("inferred recommendation", review.lower())
+        self.assertIn("do not infer react", review.lower())
+        self.assertIn(".tsx", review)
+        self.assertIn("no effect", review.lower())
         self.assertIn("playtesting handoff", debugging.lower())
         self.assertIn("Missing Runtime Evidence Handoff", debugging)
         self.assertIn("root cause is unverified", debugging)
@@ -344,6 +350,10 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("playtesting steps", debugging.lower())
         self.assertIn("close Cities: Skylines II", debugging)
         self.assertIn("must be closed", debugging)
+        self.assertIn("explicitly authorized target paths", debugging)
+        self.assertIn("Never inspect unrelated installed mods", debugging)
+        self.assertIn("Never write into a local game Mods folder", debugging)
+        self.assertIn("Scratch scripts and temporary comparison projects", debugging)
         self.assertIn("successful build is not enough", release.lower())
         self.assertIn("local playtesting", release.lower())
         self.assertIn("explicitly confirms they understand that risk", release.lower())
@@ -401,6 +411,87 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("casual request", pressure_test)
         self.assertIn("final package text", pressure_test)
         self.assertIn("not gameplay-verified", pressure_test)
+
+    def test_debugging_installed_state_boundaries_in_all_copies(self) -> None:
+        skill_paths = [
+            ROOT / "skills" / "cities2-mod-debugging" / "SKILL.md",
+            ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-mod-debugging" / "SKILL.md",
+            ROOT
+            / "integrations"
+            / "anthropic"
+            / "claude-plugin"
+            / "skills"
+            / "cities2-mod-debugging"
+            / "SKILL.md",
+        ]
+
+        for path in skill_paths:
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("explicitly authorized target paths", text)
+            self.assertIn("Never inspect unrelated installed mods", text)
+            self.assertIn("Never broad-search", text)
+            self.assertIn("Never write into a local game Mods folder", text)
+            self.assertIn("Scratch scripts and temporary comparison projects", text)
+            self.assertIn("target mod's authorized installed package files", text)
+
+    def test_debugging_installed_mod_pressure_test_encodes_scope_boundary(self) -> None:
+        path = (
+            ROOT
+            / "docs"
+            / "superpowers"
+            / "pressure-tests"
+            / "cs2-modding-quality"
+            / "debugging-installed-mod-scope-boundary.md"
+        )
+        self.assertTrue(path.exists(), "installed mod scope pressure test is missing")
+        pressure_test = path.read_text(encoding="utf-8")
+
+        self.assertIn("Installed Mod Scope Boundary", pressure_test)
+        self.assertIn("explicitly authorized target paths", pressure_test)
+        self.assertIn("Do not inspect unrelated installed mods", pressure_test)
+        self.assertIn("Do not write into a local game Mods folder", pressure_test)
+        self.assertIn("Stay scoped and ask for explicit authorization", pressure_test)
+
+    def test_review_skill_grounds_findings_by_evidence_in_all_copies(self) -> None:
+        skill_paths = [
+            ROOT / "skills" / "cities2-mod-review" / "SKILL.md",
+            ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-mod-review" / "SKILL.md",
+            ROOT
+            / "integrations"
+            / "anthropic"
+            / "claude-plugin"
+            / "skills"
+            / "cities2-mod-review"
+            / "SKILL.md",
+        ]
+
+        for path in skill_paths:
+            lowered = path.read_text(encoding="utf-8").lower()
+            self.assertIn("observed in project files", lowered)
+            self.assertIn("supported by mcp", lowered)
+            self.assertIn("inferred recommendation", lowered)
+            self.assertIn("do not infer react", lowered)
+            self.assertIn(".tsx", lowered)
+            self.assertIn("no effect", lowered)
+
+    def test_review_tsx_pressure_test_encodes_evidence_grounding(self) -> None:
+        path = (
+            ROOT
+            / "docs"
+            / "superpowers"
+            / "pressure-tests"
+            / "cs2-modding-quality"
+            / "review-tsx-no-react-evidence.md"
+        )
+        self.assertTrue(path.exists(), "review evidence pressure test is missing")
+        pressure_test = path.read_text(encoding="utf-8")
+
+        self.assertIn("not describe the scaffold as React-based", pressure_test)
+        self.assertIn("observed facts", pressure_test)
+        self.assertIn("sourced rules", pressure_test)
+        self.assertIn("inferred recommendations", pressure_test)
+        self.assertIn("CSS file exists", pressure_test)
+        self.assertIn("not imported", pressure_test)
 
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
         skill_paths = [
