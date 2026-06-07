@@ -344,6 +344,10 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("playtesting steps", debugging.lower())
         self.assertIn("close Cities: Skylines II", debugging)
         self.assertIn("must be closed", debugging)
+        self.assertIn("explicitly authorized target paths", debugging)
+        self.assertIn("Never inspect unrelated installed mods", debugging)
+        self.assertIn("Never write into a local game Mods folder", debugging)
+        self.assertIn("Scratch scripts and temporary comparison projects", debugging)
         self.assertIn("successful build is not enough", release.lower())
         self.assertIn("local playtesting", release.lower())
         self.assertIn("explicitly confirms they understand that risk", release.lower())
@@ -401,6 +405,46 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("casual request", pressure_test)
         self.assertIn("final package text", pressure_test)
         self.assertIn("not gameplay-verified", pressure_test)
+
+    def test_debugging_installed_state_boundaries_in_all_copies(self) -> None:
+        skill_paths = [
+            ROOT / "skills" / "cities2-mod-debugging" / "SKILL.md",
+            ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-mod-debugging" / "SKILL.md",
+            ROOT
+            / "integrations"
+            / "anthropic"
+            / "claude-plugin"
+            / "skills"
+            / "cities2-mod-debugging"
+            / "SKILL.md",
+        ]
+
+        for path in skill_paths:
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("explicitly authorized target paths", text)
+            self.assertIn("Never inspect unrelated installed mods", text)
+            self.assertIn("Never broad-search", text)
+            self.assertIn("Never write into a local game Mods folder", text)
+            self.assertIn("Scratch scripts and temporary comparison projects", text)
+            self.assertIn("target mod's authorized installed package files", text)
+
+    def test_debugging_installed_mod_pressure_test_encodes_scope_boundary(self) -> None:
+        path = (
+            ROOT
+            / "docs"
+            / "superpowers"
+            / "pressure-tests"
+            / "cs2-modding-quality"
+            / "debugging-installed-mod-scope-boundary.md"
+        )
+        self.assertTrue(path.exists(), "installed mod scope pressure test is missing")
+        pressure_test = path.read_text(encoding="utf-8")
+
+        self.assertIn("Installed Mod Scope Boundary", pressure_test)
+        self.assertIn("explicitly authorized target paths", pressure_test)
+        self.assertIn("Do not inspect unrelated installed mods", pressure_test)
+        self.assertIn("Do not write into a local game Mods folder", pressure_test)
+        self.assertIn("Stay scoped and ask for explicit authorization", pressure_test)
 
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
         skill_paths = [
