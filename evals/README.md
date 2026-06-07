@@ -33,4 +33,16 @@ python -m evals.runner evals/scenarios/spike/cities2-knowledge-office-demand --c
 python -m evals.runner evals/scenarios/spike/cities2-knowledge-office-demand --condition no-skill --trial 1
 ```
 
+## Summarize local verdicts
+
+Raw run artifacts remain under gitignored `evals/results/`. To create a committed review artifact, generate a sanitized digest from explicit verdict files:
+
+```powershell
+$output = "docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-digest.md"
+$verdict = Get-ChildItem "evals/results/cities2-debugging-runtime-no-logs-with-cities2-mod-debugging-trial-*/verdict.json" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+python -m evals.runner summarize --output $output $verdict
+```
+
+Review the generated digest before committing it. The digest writer rejects obvious private paths and generated agent config markers, but it is not a substitute for the repository privacy review.
+
 The runner creates a fresh `CODEX_HOME` inside each run directory and installs only the skill files declared by the condition. Future client adapters should preserve the same isolation contract for `codex`, `claude`, and `agy`.

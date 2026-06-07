@@ -6,6 +6,7 @@ import hashlib
 import json
 import shlex
 import subprocess
+import sys
 from pathlib import Path
 
 from evals.runner.checks import _bash_path, _is_wsl_bash, run_checks_phase
@@ -17,6 +18,7 @@ from evals.runner.codex_adapter import (
 )
 from evals.runner.models import CheckRecord, RunMetadata, RunPaths, Verdict
 from evals.runner.scenario import Scenario, load_scenario
+from evals.runner.summary import generate_digest, write_digest
 from evals.runner.trace import normalize_codex_events
 
 
@@ -266,7 +268,7 @@ def run_eval(
     return paths
 
 
-def main(argv: list[str] | None = None) -> int:
+def _run_eval_command(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m evals.runner")
     parser.add_argument("scenario_path", type=Path)
     parser.add_argument(
@@ -300,6 +302,24 @@ def main(argv: list[str] | None = None) -> int:
     if verdict["final"] == "fail":
         return 1
     return 2
+
+
+def _run_summarize_command(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="python -m evals.runner summarize")
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("verdicts", type=Path, nargs="+")
+    args = parser.parse_args(argv)
+
+    write_digest(generate_digest(args.verdicts), args.output)
+    print(args.output)
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = sys.argv[1:] if argv is None else argv
+    if args and args[0] == "summarize":
+        return _run_summarize_command(args[1:])
+    return _run_eval_command(args)
 
 
 if __name__ == "__main__":

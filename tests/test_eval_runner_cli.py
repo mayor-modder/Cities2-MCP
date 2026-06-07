@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import shutil
 import sys
@@ -19,6 +21,45 @@ DEBUGGING_SCENARIO = (
 
 
 class EvalRunnerCliTests(unittest.TestCase):
+    def test_summarize_subcommand_writes_digest(self) -> None:
+        from evals.runner.__main__ import main
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
+            root = Path(tmp)
+            verdict = root / "verdict.json"
+            output = root / "digest.md"
+            verdict.write_text(
+                json.dumps(
+                    {
+                        "metadata": {
+                            "scenario_id": "cities2-debugging-runtime-no-logs",
+                            "condition_id": "no-skill",
+                            "trial": 1,
+                            "backend_name": "codex",
+                            "repo_commit": "abc123",
+                            "run_started_at": "2026-06-06T17:00:00Z",
+                            "skill_checksums": {},
+                        },
+                        "final": "pass",
+                        "final_reason": "all checks passed",
+                        "checks": [],
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                status = main(["summarize", "--output", str(output), str(verdict)])
+
+            digest = output.read_text(encoding="utf-8")
+
+        self.assertEqual(0, status)
+        self.assertEqual(f"{output}\n", stdout.getvalue())
+        self.assertIn("# Eval results digest", digest)
+        self.assertIn("Verdicts summarized: 1", digest)
+
     def test_utc_timestamp_works_without_datetime_utc_alias(self) -> None:
         from evals.runner import __main__ as runner
 

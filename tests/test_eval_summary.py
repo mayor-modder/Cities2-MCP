@@ -7,6 +7,146 @@ from pathlib import Path
 
 
 class EvalSummaryTests(unittest.TestCase):
+    def test_write_digest_rejects_private_paths(self) -> None:
+        from evals.runner.summary import write_digest
+
+        private_texts = [
+            "see C:\\Users\\Example\\AppData\\Roaming\\state.db\n",
+            "see /home/example/.config/state.db\n",
+            "see /Users/example/.config/state.db\n",
+            "see file:/home/example/.config/state.db\n",
+            "see file:///home/example/.config/state.db\n",
+            "see file://localhost/home/example/.config/state.db\n",
+            "see file:/C:/Users/Example/AppData/Roaming/state.db\n",
+            "see file:///C:/Users/Example/AppData/Roaming/state.db\n",
+            "see file://localhost/C:/Users/Example/AppData/Roaming/state.db\n",
+            "see auth.json\n",
+            "see coding-agent-config\n",
+        ]
+        for private_text in private_texts:
+            with self.subTest(private_text=private_text):
+                with tempfile.TemporaryDirectory(prefix="cities2-eval-summary-") as tmp:
+                    output = Path(tmp) / "digest.md"
+
+                    with self.assertRaisesRegex(ValueError, "private artifact"):
+                        write_digest(private_text, output)
+
+                    self.assertFalse(output.exists())
+
+    def test_write_digest_allows_safe_home_url_text(self) -> None:
+        from evals.runner.summary import write_digest
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-summary-") as tmp:
+            output = Path(tmp) / "digest.md"
+            text = "See https://example.test/home/report for public docs.\n"
+
+            write_digest(text, output)
+
+            self.assertEqual(text, output.read_text(encoding="utf-8"))
+
+    def test_write_digest_writes_safe_text(self) -> None:
+        from evals.runner.summary import write_digest
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-summary-") as tmp:
+            output = Path(tmp) / "nested" / "digest.md"
+            text = "# Eval results digest\n\nsafe\n"
+
+            write_digest(text, output)
+
+            self.assertEqual(text, output.read_text(encoding="utf-8"))
+
+    def test_generates_reviewable_digest_from_verdicts(self) -> None:
+        from evals.runner.summary import generate_digest
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-summary-") as tmp:
+            root = Path(tmp)
+            first = root / "first" / "verdict.json"
+            second = root / "second" / "verdict.json"
+            first.parent.mkdir()
+            second.parent.mkdir()
+            first.write_text(
+                json.dumps(
+                    {
+                        "metadata": {
+                            "scenario_id": "cities2-debugging-runtime-no-logs",
+                            "condition_id": "with-cities2-mod-debugging",
+                            "trial": 2,
+                            "backend_name": "codex",
+                            "repo_commit": "abc123",
+                            "run_started_at": "2026-06-06T18:00:00Z",
+                            "skill_checksums": {
+                                "cities2-mod-debugging": "sha256:skill",
+                            },
+                        },
+                        "final": "fail",
+                        "final_reason": "one or more post-checks failed",
+                        "checks": [
+                            {
+                                "name": "handoff-present",
+                                "phase": "post",
+                                "status": "fail",
+                                "detail": "no concrete next evidence handoff",
+                            },
+                            {
+                                "name": "requests-runtime-evidence",
+                                "phase": "post",
+                                "status": "pass",
+                                "detail": "asked for Modding.log",
+                            },
+                        ],
+                        "trace_path": "coding-agent-tool-calls.jsonl",
+                        "transcript_path": "transcript.txt",
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            second.write_text(
+                json.dumps(
+                    {
+                        "metadata": {
+                            "scenario_id": "cities2-debugging-runtime-no-logs",
+                            "condition_id": "no-skill",
+                            "trial": 1,
+                            "backend_name": "codex",
+                            "repo_commit": "abc123",
+                            "run_started_at": "2026-06-06T17:00:00Z",
+                            "skill_checksums": {},
+                        },
+                        "final": "pass",
+                        "final_reason": "all checks passed",
+                        "checks": [],
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            digest = generate_digest([first, second])
+
+        self.assertIn("# Eval results digest", digest)
+        self.assertIn("## Short version", digest)
+        self.assertIn("Verdicts summarized: 2", digest)
+        no_skill_row = (
+            "| codex | cities2-debugging-runtime-no-logs | no-skill | 1 | pass | none |"
+        )
+        with_skill_row = (
+            "| codex | cities2-debugging-runtime-no-logs | with-cities2-mod-debugging | 2 | fail | handoff-present |"
+        )
+        self.assertIn(no_skill_row, digest)
+        self.assertIn(with_skill_row, digest)
+        self.assertLess(digest.index(no_skill_row), digest.index(with_skill_row))
+        self.assertIn("- `handoff-present`: fail=1", digest)
+        self.assertIn("## Failure patterns", digest)
+        self.assertIn("## Representative behavior", digest)
+        self.assertIn("## Interpretation", digest)
+        self.assertIn("## Follow-up status", digest)
+        self.assertIn("## Privacy note", digest)
+        self.assertIn("These results cover only the listed backend runs.", digest)
+        self.assertNotIn(str(root), digest)
+        self.assertNotIn("coding-agent-tool-calls.jsonl", digest)
+        self.assertNotIn("transcript.txt", digest)
+
     def test_summarizes_verdicts_without_raw_paths(self) -> None:
         from evals.runner.summary import summarize_verdicts
 
