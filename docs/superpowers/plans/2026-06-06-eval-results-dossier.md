@@ -4,7 +4,7 @@
 
 **Goal:** Build a repo-visible, privacy-preserving results dossier that makes the six `cities2-debugging-runtime-no-logs` baseline runs understandable to a maintainer.
 
-**Architecture:** Add a focused documentation artifact under `docs/superpowers/evaluations/`, guarded by lightweight tests in `tests/test_eval_docs.py`. Use local ignored `evals/results/` artifacts only as source evidence; commit curated prose and short sanitized snippets only.
+**Architecture:** Add a focused documentation artifact under `evals/reports/`, guarded by lightweight tests in `tests/test_eval_docs.py`. Use local ignored `evals/results/` artifacts only as source evidence; commit curated prose and short sanitized snippets only.
 
 **Tech Stack:** Markdown, Python `unittest`, existing `evals.runner.summary` verdict data, GitHub PR review workflow.
 
@@ -14,7 +14,7 @@
 
 - Modify: `tests/test_eval_docs.py`
   - Add constants and tests that require the dossier to exist, include the agreed sections, include all six condition/trial labels, and avoid repo-visible privacy leaks.
-- Create: `docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md`
+- Create: `evals/reports/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md`
   - Curated human-readable dossier for the six-run Codex debugging baseline.
 - Do not modify: `skills/**/SKILL.md`, `integrations/**/skills/**/SKILL.md`, `plugins/**/skills/**/SKILL.md`
   - This phase records and interprets results only.
@@ -44,7 +44,7 @@ If the spec commit `8778fe2` is still unmerged, branch from `codex/evals-results
 
 **Files:**
 - Modify: `tests/test_eval_docs.py`
-- Create later: `docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md`
+- Create later: `evals/reports/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md`
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -53,9 +53,8 @@ Add this constant near the existing `EVALUATION` constant:
 ```python
 DEBUGGING_DOSSIER = (
     ROOT
-    / "docs"
-    / "superpowers"
-    / "evaluations"
+    / "evals"
+    / "reports"
     / "2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md"
 )
 ```
@@ -170,12 +169,12 @@ Expected: `git status --short evals/results` may show nothing because the direct
 ## Task 3: create the curated results dossier
 
 **Files:**
-- Create: `docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md`
+- Create: `evals/reports/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md`
 - Test: `tests/test_eval_docs.py`
 
 - [ ] **Step 1: Create the dossier Markdown file**
 
-Create `docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md` with the required sections from the spec. Use the local inspection output from Task 2 to write final prose on the first pass; do not add scaffold sentences that need later replacement.
+Create `evals/reports/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md` with the required sections from the spec. Use the local inspection output from Task 2 to write final prose on the first pass; do not add scaffold sentences that need later replacement.
 
 The document must start with this exact heading:
 
@@ -255,7 +254,7 @@ $patterns = @(
     'Observation: .*$',
     'What this suggests: .*$'
 )
-Select-String -Path docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md -Pattern $patterns -SimpleMatch
+Select-String -Path evals/reports/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md -Pattern $patterns -SimpleMatch
 ```
 
 Expected: no output.
@@ -274,7 +273,7 @@ Expected: all `EvalDocsTests` pass.
 
 **Files:**
 - Modify: `tests/test_eval_docs.py`
-- Create: `docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md`
+- Create: `evals/reports/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md`
 - Do not add: `evals/results/**`
 
 - [ ] **Step 1: Verify no raw results are tracked**
@@ -299,8 +298,8 @@ $privacyPatterns = @(
     ('OPENAI_API' + '_KEY='),
     ('auth' + '.json')
 )
-git diff -- docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md docs/superpowers/plans/2026-06-06-eval-results-dossier.md docs/superpowers/specs/2026-06-06-eval-results-dossier-design.md | Select-String -Pattern $privacyPatterns -SimpleMatch -CaseSensitive
-git diff -- docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md docs/superpowers/plans/2026-06-06-eval-results-dossier.md docs/superpowers/specs/2026-06-06-eval-results-dossier-design.md | Select-String -Pattern 'sk-[A-Za-z0-9_-]{20,}' -CaseSensitive
+git diff -- evals/reports/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md docs/superpowers/plans/2026-06-06-eval-results-dossier.md docs/superpowers/specs/2026-06-06-eval-results-dossier-design.md | Select-String -Pattern $privacyPatterns -SimpleMatch -CaseSensitive
+git diff -- evals/reports/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md docs/superpowers/plans/2026-06-06-eval-results-dossier.md docs/superpowers/specs/2026-06-06-eval-results-dossier-design.md | Select-String -Pattern 'sk-[A-Za-z0-9_-]{20,}' -CaseSensitive
 ```
 
 Expected: no output. If checking exact raw artifact filenames from ignored local results, keep those local-only scan needles out of repo-visible docs.
@@ -339,14 +338,14 @@ Expected: `Plugin package payloads are in sync.`
 
 **Files:**
 - Commit: `tests/test_eval_docs.py`
-- Commit: `docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md`
+- Commit: `evals/reports/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md`
 
 - [ ] **Step 1: Commit the dossier**
 
 Run:
 
 ```powershell
-git add tests/test_eval_docs.py docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md
+git add tests/test_eval_docs.py evals/reports/2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md
 git commit -m "Record debugging baseline results dossier"
 ```
 
@@ -423,7 +422,7 @@ After reviews finish, replace the pending review bullets with exact reviewer nam
 
 The phase is complete only when the repository has:
 
-- a committed results dossier under `docs/superpowers/evaluations/`,
+- a committed results dossier under `evals/reports/`,
 - all six baseline runs represented by condition and trial,
 - plain-English per-run observations,
 - cross-run pattern interpretation,

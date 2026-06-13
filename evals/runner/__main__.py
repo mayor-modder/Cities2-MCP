@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from evals.runner.checks import _bash_path, _is_wsl_bash, run_checks_phase
+from evals.runner.conditions import CONDITION_SKILLS, condition_skills
 from evals.runner.codex_adapter import (
     build_codex_exec_command,
     minimal_codex_env,
@@ -23,16 +24,12 @@ from evals.runner.trace import normalize_codex_events
 
 
 RUNNER_VERSION = "1"
+KNOWLEDGE_MCP_PREFLIGHT_TOOLS = ("source_status", "search")
+MCP_PREFLIGHT_TIMEOUT_SECONDS = 45
 
 
 def _condition_skills(condition: str) -> tuple[str, ...]:
-    if condition == "no-skill":
-        return ()
-    if condition == "with-cities2-knowledge":
-        return ("cities2-knowledge",)
-    if condition == "with-cities2-mod-debugging":
-        return ("cities2-mod-debugging",)
-    raise ValueError(f"unsupported condition: {condition}")
+    return condition_skills(condition)
 
 
 def _prompt_from_story(story: Path) -> str:
@@ -138,8 +135,12 @@ def _metadata(
 def _final_status(
     pre_records: list[CheckRecord], all_records: list[CheckRecord]
 ) -> tuple[str, str]:
+    if any(record.status == "indeterminate" for record in pre_records):
+        return "indeterminate", "one or more pre-checks were indeterminate"
     if any(record.status != "pass" for record in pre_records):
         return "indeterminate", "one or more pre-checks failed"
+    if any(record.status == "indeterminate" for record in all_records):
+        return "indeterminate", "one or more checks were indeterminate"
     if all(record.status == "pass" for record in all_records):
         return "pass", "all checks passed"
     return "fail", "one or more post-checks failed"
@@ -157,6 +158,133 @@ def _codex_command_with_prefix(
 def _append_stderr(raw_events: Path, stderr: str) -> None:
     with raw_events.open("a", encoding="utf-8") as stream:
         stream.write(stderr)
+
+
+def _mcp_preflight_tools(condition: str) -> tuple[str, ...]:
+    if condition == "with-cities2-knowledge":
+        return KNOWLEDGE_MCP_PREFLIGHT_TOOLS
+    return ()
+
+
+def _tool_name_matches(actual: str, expected: str) -> bool:
+    return actual == expected or actual.endswith(f"__{expected}")
+
+
+def _trace_tool_names(tool_calls: Path) -> list[str]:
+    if not tool_calls.is_file():
+        return []
+    names: list[str] = []
+    for line in tool_calls.read_text(encoding="utf-8").splitlines():
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(record, dict) and isinstance(record.get("name"), str):
+            names.append(record["name"])
+    return names
+
+
+def _mcp_error_messages(raw_events: Path) -> list[str]:
+    if not raw_events.is_file():
+        return []
+    messages: list[str] = []
+    for line in raw_events.read_text(encoding="utf-8").splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(event, dict):
+            continue
+        item = event.get("item")
+        if not isinstance(item, dict):
+            continue
+        error = item.get("error")
+        if not isinstance(error, dict):
+            continue
+        message = error.get("message")
+        if isinstance(message, str) and message:
+            messages.append(message)
+    return messages
+
+
+def _run_codex_mcp_tool_preflight(
+    *,
+    paths: RunPaths,
+    condition: str,
+    repo_root: Path,
+    codex_command: str,
+    codex_args_prefix: tuple[str, ...],
+    env: dict[str, str],
+) -> CheckRecord | None:
+    expected_tools = _mcp_preflight_tools(condition)
+    if not expected_tools:
+        return None
+
+    raw_events = paths.run_dir / "codex-preflight-events.jsonl"
+    tool_calls = paths.run_dir / "codex-preflight-tool-calls.jsonl"
+    transcript = paths.run_dir / "codex-preflight-transcript.txt"
+    prompt = (
+        "Eval plumbing preflight. Use $cities2-knowledge and the cities2-mcp MCP "
+        "server. Call source_status(), then call search(query=\"office demand\", "
+        "limit=1). Do not run shell commands, inspect files, or diagnose the "
+        "workspace. If either MCP tool is unavailable or fails, stop immediately "
+        "and answer with only MCP preflight failed. After both tool calls succeed, "
+        "answer with only MCP preflight passed."
+    )
+    command = _codex_command_with_prefix(
+        codex_command=codex_command,
+        codex_args_prefix=codex_args_prefix,
+        workdir=paths.workdir,
+        prompt=prompt,
+    )
+    try:
+        with raw_events.open("w", encoding="utf-8") as stdout:
+            result = subprocess.run(
+                command,
+                cwd=repo_root,
+                env=env,
+                text=True,
+                stdout=stdout,
+                stderr=subprocess.PIPE,
+                timeout=MCP_PREFLIGHT_TIMEOUT_SECONDS,
+            )
+    except subprocess.TimeoutExpired:
+        normalize_codex_events(raw_events, tool_calls, transcript)
+        names = _trace_tool_names(tool_calls)
+        errors = _mcp_error_messages(raw_events)
+        detail = (
+            f"expected={list(expected_tools)}; names={names}; "
+            f"timeout={MCP_PREFLIGHT_TIMEOUT_SECONDS}s"
+        )
+        if errors:
+            detail += f"; errors={errors[:3]}"
+        return CheckRecord(
+            name="codex-mcp-tool-exposure",
+            phase="pre",
+            status="indeterminate",
+            detail=detail,
+        )
+    if result.returncode != 0:
+        _append_stderr(raw_events, result.stderr or "")
+    normalize_codex_events(raw_events, tool_calls, transcript)
+
+    names = _trace_tool_names(tool_calls)
+    has_expected = all(
+        any(_tool_name_matches(tool_name, expected) for tool_name in names)
+        for expected in expected_tools
+    )
+    detail = f"expected={list(expected_tools)}; names={names}"
+    errors = _mcp_error_messages(raw_events)
+    if errors:
+        detail += f"; errors={errors[:3]}"
+    if result.returncode != 0:
+        detail += f"; exit={result.returncode}"
+    return CheckRecord(
+        name="codex-mcp-tool-exposure",
+        phase="pre",
+        status="pass" if has_expected and result.returncode == 0 else "indeterminate",
+        detail=detail,
+    )
 
 
 def run_eval(
@@ -185,6 +313,12 @@ def run_eval(
         skills=skills,
     )
     _run_setup(scenario.setup.resolve(), paths.workdir)
+    env = minimal_codex_env(
+        codex_home=paths.agent_home, repo_root=repo_root, include_auth=live_auth
+    )
+    if live_auth:
+        seed_codex_auth(codex_home=paths.agent_home, env=env)
+
     pre_records = run_checks_phase(
         scenario.checks,
         "pre",
@@ -194,12 +328,17 @@ def run_eval(
         condition=condition,
         repo_root=repo_root,
     )
-
-    env = minimal_codex_env(
-        codex_home=paths.agent_home, repo_root=repo_root, include_auth=live_auth
-    )
-    if live_auth:
-        seed_codex_auth(codex_home=paths.agent_home, env=env)
+    if all(record.status == "pass" for record in pre_records):
+        preflight = _run_codex_mcp_tool_preflight(
+            paths=paths,
+            condition=condition,
+            repo_root=repo_root,
+            codex_command=codex_command,
+            codex_args_prefix=codex_args_prefix,
+            env=env,
+        )
+        if preflight is not None:
+            pre_records.append(preflight)
 
     codex_return_code: int | None = None
     if all(record.status == "pass" for record in pre_records):
@@ -225,15 +364,17 @@ def run_eval(
         paths.raw_events.write_text("", encoding="utf-8")
 
     normalize_codex_events(paths.raw_events, paths.tool_calls, paths.transcript)
-    post_records = run_checks_phase(
-        scenario.checks,
-        "post",
-        run_dir=paths.run_dir,
-        workdir=paths.workdir,
-        agent_home=paths.agent_home,
-        condition=condition,
-        repo_root=repo_root,
-    )
+    post_records: list[CheckRecord] = []
+    if all(record.status == "pass" for record in pre_records):
+        post_records = run_checks_phase(
+            scenario.checks,
+            "post",
+            run_dir=paths.run_dir,
+            workdir=paths.workdir,
+            agent_home=paths.agent_home,
+            condition=condition,
+            repo_root=repo_root,
+        )
     if codex_return_code not in (None, 0):
         post_records.append(
             CheckRecord(
@@ -273,11 +414,7 @@ def _run_eval_command(argv: list[str] | None = None) -> int:
     parser.add_argument("scenario_path", type=Path)
     parser.add_argument(
         "--condition",
-        choices=(
-            "no-skill",
-            "with-cities2-knowledge",
-            "with-cities2-mod-debugging",
-        ),
+        choices=tuple(CONDITION_SKILLS),
         required=True,
     )
     parser.add_argument("--results-root", type=Path, default=Path("evals/results"))

@@ -32,7 +32,7 @@ Raw artifacts remain under ignored `evals/results/`. The committed dossier may u
 
 ## Dossier structure
 
-Create a repo-visible Markdown document under `docs/superpowers/evaluations/` with a filename that clearly identifies the debugging baseline and dossier purpose.
+Create a repo-visible Markdown document under `evals/reports/` with a filename that clearly identifies the debugging baseline and dossier purpose.
 
 The document should use this structure:
 

@@ -38,7 +38,7 @@ python -m evals.runner evals/scenarios/spike/cities2-knowledge-office-demand --c
 Raw run artifacts remain under gitignored `evals/results/`. To create a committed review artifact, generate a sanitized digest from explicit verdict files:
 
 ```powershell
-$output = "docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-digest.md"
+$output = "evals/reports/2026-06-06-cities2-debugging-runtime-no-logs-digest.md"
 $verdict = Get-ChildItem "evals/results/cities2-debugging-runtime-no-logs-with-cities2-mod-debugging-trial-*/verdict.json" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 python -m evals.runner summarize --output $output $verdict
 ```

@@ -52,7 +52,7 @@ Create or modify these files:
 - Modify `tests/test_eval_runner_cli.py`: add an offline Codex-stub smoke for the debugging baseline.
 - Create `evals/runner/summary.py`: summarize curated verdict metadata from a baseline matrix without exposing raw trace or local paths.
 - Create `tests/test_eval_summary.py`: cover summary behavior and privacy.
-- Create `docs/superpowers/evaluations/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md`: curated baseline summary template, completed only after the six local runs.
+- Create `evals/reports/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md`: curated baseline summary template, completed only after the six local runs.
 
 ## Task 1: baseline scenario fixture
 
@@ -947,7 +947,7 @@ Base branch: `main` after Task 4 is merged.
 
 - Create: `evals/runner/summary.py`
 - Create: `tests/test_eval_summary.py`
-- Modify: `docs/superpowers/evaluations/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md`
+- Modify: `evals/reports/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md`
 
 - [ ] **Step 1: create the branch**
 
@@ -1112,7 +1112,7 @@ def summarize_verdicts(paths: Iterable[Path]) -> str:
 
 - [ ] **Step 5: add a baseline summary template**
 
-Create `docs/superpowers/evaluations/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md`:
+Create `evals/reports/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md`:
 
 ```markdown
 # Cities2 debugging runtime-no-logs baseline
@@ -1176,7 +1176,7 @@ Expected: both commands pass.
 Run:
 
 ```powershell
-git add evals/runner/summary.py tests/test_eval_summary.py docs/superpowers/evaluations/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md
+git add evals/runner/summary.py tests/test_eval_summary.py evals/reports/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md
 git commit -m "Add debugging baseline summary helper"
 ```
 
@@ -1190,7 +1190,7 @@ Base branch: `main` after Task 5 is merged.
 
 **Files:**
 
-- Modify: `docs/superpowers/evaluations/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md`
+- Modify: `evals/reports/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md`
 - Modify: `evals/runner/check_tool.py`
 - Modify: `tests/test_eval_checks.py`
 
@@ -1287,7 +1287,7 @@ def test_tool_called_accepts_mcp_server_prefix(self) -> None:
 
 - [ ] **Step 5: record calibration outcome without raw data**
 
-Append one of these exact snippets to `docs/superpowers/evaluations/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md`.
+Append one of these exact snippets to `evals/reports/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md`.
 
 Use this snippet when the calibration run shows server-prefixed MCP tool names:
 
@@ -1334,14 +1334,14 @@ Expected: tests and plugin check pass, `git ls-files evals/results` prints no tr
 If only docs changed:
 
 ```powershell
-git add docs/superpowers/evaluations/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md
+git add evals/reports/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md
 git commit -m "Record Codex eval trace calibration"
 ```
 
 If code and tests changed:
 
 ```powershell
-git add evals/runner/check_tool.py tests/test_eval_checks.py docs/superpowers/evaluations/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md
+git add evals/runner/check_tool.py tests/test_eval_checks.py evals/reports/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md
 git commit -m "Calibrate eval checks for Codex trace names"
 ```
 
@@ -1355,7 +1355,7 @@ Base branch: `main` after Task 6 is merged.
 
 **Files:**
 
-- Modify: `docs/superpowers/evaluations/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md`
+- Modify: `evals/reports/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md`
 - Do not add: `evals/results/**`
 
 - [ ] **Step 1: create the branch**
@@ -1414,7 +1414,7 @@ Expected: a curated summary with six verdicts and no local absolute paths.
 
 - [ ] **Step 5: update the baseline summary document**
 
-Replace the `## Baseline results` section in `docs/superpowers/evaluations/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md` with the exact curated summary output from Step 4. Add this interpretation text below the generated check counts:
+Replace the `## Baseline results` section in `evals/reports/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md` with the exact curated summary output from Step 4. Add this interpretation text below the generated check counts:
 
 ```markdown
 ## Interpretation
@@ -1452,7 +1452,7 @@ Expected: all commands pass.
 Run:
 
 ```powershell
-git add docs/superpowers/evaluations/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md
+git add evals/reports/2026-06-04-cities2-debugging-runtime-no-logs-baseline.md
 git commit -m "Record debugging runtime baseline results"
 ```
 
@@ -1467,7 +1467,7 @@ The phase is complete only when the repository can report:
 - Three no-skill Codex trials and three with-skill Codex trials.
 - A `verdict.json` for every trial under gitignored `evals/results/`.
 - Deterministic checks for runtime evidence request, edit avoidance before runtime evidence, no unverified fix claim, and concrete handoff.
-- A curated baseline summary committed under `docs/superpowers/evaluations/`.
+- A curated baseline summary committed under `evals/reports/`.
 - No `SKILL.md` edits.
 - No raw eval traces, full transcripts, generated workdirs, generated agent homes, local paths, usernames, or secrets in committed files.
 

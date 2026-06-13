@@ -16,7 +16,7 @@
 - Modify `evals/runner/__main__.py`: add a `summarize` subcommand while preserving the existing scenario-run command.
 - Modify `tests/test_eval_summary.py`: add tests for digest sections, verdict table details, deterministic ordering, and privacy rejection.
 - Modify `tests/test_eval_runner_cli.py`: add a CLI test for `python -m evals.runner summarize --output <path> <verdict.json>`.
-- Later stacked PR only: add one sanitized committed digest under `docs/superpowers/evaluations/`.
+- Later stacked PR only: add one sanitized committed digest under `evals/reports/`.
 
 ## Task 1: Digest generation from explicit verdict files
 
@@ -529,7 +529,7 @@ Add this section to `evals/README.md` after the existing runner CLI examples:
 Raw run artifacts remain under gitignored `evals/results/`. To create a committed review artifact, generate a sanitized digest from explicit verdict files:
 
 ```powershell
-$output = "docs/superpowers/evaluations/2026-06-06-cities2-debugging-runtime-no-logs-digest.md"
+$output = "evals/reports/2026-06-06-cities2-debugging-runtime-no-logs-digest.md"
 $verdict = Get-ChildItem "evals/results/cities2-debugging-runtime-no-logs-with-cities2-mod-debugging-trial-*/verdict.json" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 python -m evals.runner summarize --output $output $verdict
 ```
@@ -654,7 +654,7 @@ Expected: base is `codex/eval-results-digest-plan`; files are limited to runner 
 Do this only after the implementation PR is reviewed or the maintainer explicitly asks to stack the digest immediately.
 
 **Files:**
-- Create: `docs/superpowers/evaluations/YYYY-MM-DD-cities2-debugging-runtime-no-logs-digest.md`
+- Create: `evals/reports/YYYY-MM-DD-cities2-debugging-runtime-no-logs-digest.md`
 
 - [ ] **Step 1: Print branch point**
 

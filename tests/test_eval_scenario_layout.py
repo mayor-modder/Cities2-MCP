@@ -5,6 +5,24 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENARIO = ROOT / "evals" / "scenarios" / "spike" / "cities2-knowledge-office-demand"
+REVIEW_MATRIX_SCENARIO = (
+    ROOT / "evals" / "scenarios" / "matrix" / "cities2-mod-review-tsx-no-react-evidence"
+)
+RELEASE_MATRIX_SCENARIO = (
+    ROOT
+    / "evals"
+    / "scenarios"
+    / "matrix"
+    / "cities2-mod-release-build-passed-no-playtest"
+)
+MODDING_MATRIX_SCENARIO = (
+    ROOT / "evals" / "scenarios" / "matrix" / "cities2-modding-workflow-safe-handoff"
+)
+MATRIX_SCENARIOS = (
+    REVIEW_MATRIX_SCENARIO,
+    RELEASE_MATRIX_SCENARIO,
+    MODDING_MATRIX_SCENARIO,
+)
 
 
 class EvalScenarioLayoutTests(unittest.TestCase):
@@ -63,6 +81,71 @@ class EvalScenarioLayoutTests(unittest.TestCase):
         self.assertIn("I do not have Modding.log", story)
         self.assertIn("localhost:9444", story)
         self.assertIn("GameManager.instance", story)
+
+    def test_matrix_scenarios_use_quorum_contract_and_behavior_checks(self) -> None:
+        forbidden_checks = (
+            "transcript-contains",
+            "transcript-contains-any",
+            "transcript-contains-all",
+            "transcript-not-contains-any",
+        )
+        expected_checks = {
+            REVIEW_MATRIX_SCENARIO: (
+                "project-files-inspected OptionsPanel.tsx theme.css",
+                "review-unsupported-claims-absent",
+            ),
+            RELEASE_MATRIX_SCENARIO: ("release-gate-held",),
+            MODDING_MATRIX_SCENARIO: (
+                "project-files-inspected WorkflowHandoffMod/README.md WorkflowHandoffMod/src/Mod.cs",
+                "no-unverified-build-claim",
+                "local-playtest-handoff-present",
+                "routes-debug-release-followups",
+                "public-readiness-guarded",
+            ),
+        }
+
+        for scenario in MATRIX_SCENARIOS:
+            with self.subTest(scenario=scenario.name):
+                story = scenario / "story.md"
+                setup = scenario / "setup.sh"
+                checks = scenario / "checks.sh"
+                for path in (story, setup, checks):
+                    self.assertTrue(path.is_file(), f"missing {path}")
+
+                story_text = story.read_text(encoding="utf-8")
+                checks_text = checks.read_text(encoding="utf-8")
+                self.assertIn("## Acceptance Criteria", story_text)
+                self.assertIn("pre()", checks_text)
+                self.assertIn("post()", checks_text)
+                for forbidden in forbidden_checks:
+                    self.assertNotIn(forbidden, checks_text)
+                for expected in expected_checks[scenario]:
+                    self.assertIn(expected, checks_text)
+
+    def test_release_matrix_scenario_encodes_readiness_honesty_gate(self) -> None:
+        story = (RELEASE_MATRIX_SCENARIO / "story.md").read_text(encoding="utf-8")
+
+        self.assertIn("id: cities2-mod-release-build-passed-no-playtest", story)
+        self.assertIn("not locally playtested", story.lower())
+        self.assertIn("advise against public upload", story.lower())
+        self.assertIn("draft or unvalidated", story.lower())
+        self.assertIn("do not claim the mod is ready", story.lower())
+
+    def test_review_matrix_scenario_encodes_unsupported_react_bait(self) -> None:
+        story = (REVIEW_MATRIX_SCENARIO / "story.md").read_text(encoding="utf-8")
+
+        self.assertIn("id: cities2-mod-review-tsx-no-react-evidence", story)
+        self.assertIn("OptionsPanel.tsx", story)
+        self.assertIn("theme.css", story)
+        self.assertIn("unsupported React", story)
+
+    def test_modding_matrix_scenario_encodes_workflow_handoff(self) -> None:
+        story = (MODDING_MATRIX_SCENARIO / "story.md").read_text(encoding="utf-8")
+
+        self.assertIn("id: cities2-modding-workflow-safe-handoff", story)
+        self.assertIn("project shape", story)
+        self.assertIn("local playtest", story)
+        self.assertIn("public release", story)
 
 
 if __name__ == "__main__":
