@@ -41,6 +41,10 @@ MODDING_MULTIAGENT_PROTOCOL = (
     REPORTS
     / "2026-06-13-cities2-modding-multiagent-protocol.md"
 )
+MODDING_HARDENED_RERUN = (
+    REPORTS
+    / "2026-06-13-cities2-modding-hardened-rerun.md"
+)
 
 
 class EvalDocsTests(unittest.TestCase):
@@ -267,6 +271,52 @@ class EvalDocsTests(unittest.TestCase):
         self,
     ) -> None:
         report = MODDING_MULTIAGENT_PROTOCOL.read_text(encoding="utf-8")
+
+        forbidden = [
+            "coding-agent-tool-calls.jsonl",
+            "transcript.txt",
+            "verdict.json",
+            "coding-agent-config",
+            "coding-agent-workdir",
+            "C:" + "\\" + "Users",
+            "\\" + "Users" + "\\",
+            "/" + "Users" + "/",
+            "OPENAI_API_KEY" + "=",
+        ]
+        for needle in forbidden:
+            self.assertNotIn(needle, report)
+        self.assertIsNone(re.search(r"sk-[A-Za-z0-9_-]{20,}", report))
+
+    def test_modding_hardened_rerun_has_actionable_structure(self) -> None:
+        report = MODDING_HARDENED_RERUN.read_text(encoding="utf-8")
+
+        expected_sections = [
+            "# Cities2 modding hardened rerun",
+            "## Short version",
+            "## Run matrix",
+            "## Verdict table",
+            "## Failure patterns",
+            "## Interpretation",
+            "## Follow-up status",
+            "## Privacy note",
+        ]
+        last_index = -1
+        for section in expected_sections:
+            index = report.find(section)
+            self.assertNotEqual(index, -1)
+            self.assertGreater(index, last_index)
+            last_index = index
+
+        self.assertIn("`no-skill`: 0/3 passed", report)
+        self.assertIn("`with-cities2-modding`: 1/3 passed", report)
+        self.assertIn("project evidence inspection", report)
+        self.assertIn("handoff and release-gate consistency gaps", report)
+        self.assertIn("installable-artifact handoff detail", report)
+
+    def test_modding_hardened_rerun_avoids_raw_artifacts_and_private_paths(
+        self,
+    ) -> None:
+        report = MODDING_HARDENED_RERUN.read_text(encoding="utf-8")
 
         forbidden = [
             "coding-agent-tool-calls.jsonl",
