@@ -290,11 +290,15 @@ def _search_segment_reads_path(
 
     command = Path(tokens[0]).name
     if command in ("select-string",):
+        path_arguments: list[str] = []
         for index, token in enumerate(tokens[:-1]):
-            if token in ("-path", "-literalpath") and _path_candidate_matches(
-                tokens[index + 1], expected, allow_embedded=allow_embedded
-            ):
-                return True
+            if token in ("-path", "-literalpath"):
+                path_arguments.append(tokens[index + 1])
+        if path_arguments:
+            return any(
+                _path_candidate_matches(path_arg, expected, allow_embedded=allow_embedded)
+                for path_arg in path_arguments
+            )
         positional = [token for token in tokens[1:] if not token.startswith("-")]
         return any(
             _path_candidate_matches(token, expected, allow_embedded=allow_embedded)

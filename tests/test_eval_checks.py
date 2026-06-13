@@ -907,6 +907,24 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertEqual("fail", rg_record.status)
         self.assertEqual("fail", select_string_record.status)
 
+    def test_project_files_inspected_rejects_select_string_path_search_for_filename(self) -> None:
+        record = _run_behavior_check(
+            "project-files-inspected",
+            args=["WorkflowHandoffMod/README.md"],
+            events=[
+                {
+                    "type": "tool_call",
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": "Select-String -Path . -Pattern WorkflowHandoffMod/README.md"
+                    },
+                },
+            ],
+            condition="with-cities2-modding",
+        )
+
+        self.assertEqual("fail", record.status)
+
     def test_project_files_inspected_accepts_tool_call_record_reads(self) -> None:
         record = _run_behavior_check(
             "project-files-inspected",
@@ -1144,6 +1162,14 @@ class EvalCheckToolTests(unittest.TestCase):
             "local-playtest-handoff-present",
             transcript="For local playtesting, collect Modding.log after testing.",
         )
+        negated_package_output = _run_behavior_check(
+            "local-playtest-handoff-present",
+            transcript=(
+                "For local playtesting, no generated package output is present. "
+                "Launch the game, confirm the playset, collect Modding.log, and "
+                "capture the UI debugger at localhost:9444."
+            ),
+        )
         complete = _run_behavior_check(
             "local-playtest-handoff-present",
             transcript=(
@@ -1154,6 +1180,7 @@ class EvalCheckToolTests(unittest.TestCase):
         )
 
         self.assertEqual("fail", shallow.status)
+        self.assertEqual("fail", negated_package_output.status)
         self.assertEqual("pass", complete.status)
 
     def test_knowledge_office_demand_grounding_requires_sources_and_practical_answer(self) -> None:

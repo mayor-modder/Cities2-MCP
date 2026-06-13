@@ -356,14 +356,12 @@ def no_unverified_build_claim(text: str) -> BehaviorVerdict:
 
 def local_playtest_handoff_present(text: str) -> BehaviorVerdict:
     local_playtest = _has_any(text, ("local playtest", "local playtesting", "locally playtest"))
-    package_step = _has_any(
+    package_step = _matches_any(
         text,
         (
-            "install a local package",
-            "installed package",
-            "local package",
-            "package artifact",
-            "package output",
+            r"\binstall\b.{0,40}\b(local\s+)?package\b",
+            r"\b(local\s+)?package\b.{0,40}\binstall(ed|ation)?\b",
+            r"\b(create|generate|build|produce)\b.{0,40}\b(package|package artifact|package output)\b",
         ),
     )
     launch_step = _has_any(text, ("launch the game", "start the game", "load the game"))
