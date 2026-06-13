@@ -33,12 +33,12 @@ The current `evals.runner.summary` helper reports counts from `verdict.json` fil
 
 ## Digest location
 
-Committed digests should live under `docs/superpowers/evaluations/` because they are maintainer-facing evaluation records, not runnable eval assets.
+Committed digests should live under `evals/reports/` because they are maintainer-facing evaluation records, not runnable eval assets.
 
 Use a filename that records the date the digest is written and the scenario or phase being summarized:
 
 ```text
-docs/superpowers/evaluations/YYYY-MM-DD-<scenario-or-phase>-digest.md
+evals/reports/YYYY-MM-DD-<scenario-or-phase>-digest.md
 ```
 
 The digest may link to repo-relative scenario paths and runner files. It must not include absolute local checkout paths, user home paths, generated result directory names that embed local timing details unless needed for maintainer-local lookup, or credential-bearing file names.
@@ -96,7 +96,7 @@ The existing `evals.runner.summary` helper should grow into a digest generator r
 The proposed command shape is:
 
 ```powershell
-python -m evals.runner summarize --output docs/superpowers/evaluations/YYYY-MM-DD-<scenario>-digest.md <verdict paths or result dirs>
+python -m evals.runner summarize --output evals/reports/YYYY-MM-DD-<scenario>-digest.md <verdict paths or result dirs>
 ```
 
 The implementation may start smaller if that is easier to review. A first step can accept explicit `verdict.json` paths and produce only the required sections that can be derived from verdict metadata and check details. Later steps can add result-directory discovery, transcript-derived behavior snippets, and multi-backend comparison tables.

@@ -50,7 +50,7 @@ Before creating scenarios, interpreting live runs, or publishing the dossier, th
 - Create `evals/scenarios/matrix/cities2-mod-review-tsx-no-react-evidence/{story.md,setup.sh,checks.sh}`.
 - Create `evals/scenarios/matrix/cities2-mod-release-build-passed-no-playtest/{story.md,setup.sh,checks.sh}`.
 - Create `evals/scenarios/matrix/cities2-modding-workflow-safe-handoff/{story.md,setup.sh,checks.sh}`.
-- Create `docs/superpowers/evaluations/YYYY-MM-DD-cities2-codex-skill-effectiveness-matrix.md` only after the live runs complete.
+- Create `evals/reports/YYYY-MM-DD-cities2-codex-skill-effectiveness-matrix.md` only after the live runs complete.
 
 ## Branch shape
 
@@ -887,7 +887,7 @@ git commit -m "Add matrix scenario runner smoke coverage"
 
 **Files:**
 
-- Create: `docs/superpowers/evaluations/YYYY-MM-DD-cities2-codex-skill-effectiveness-matrix.md`
+- Create: `evals/reports/YYYY-MM-DD-cities2-codex-skill-effectiveness-matrix.md`
 - Modify: `tests/test_eval_docs.py`
 - Do not add: `evals/results/**`
 
@@ -949,7 +949,7 @@ Exit code `0`, `1`, or `2` may occur for individual runs. The verdict files are 
 Generate a local, uncommitted digest from explicit verdict files:
 
 ```powershell
-$output = "docs/superpowers/evaluations/matrix-local-digest-do-not-commit.md"
+$output = "evals/reports/matrix-local-digest-do-not-commit.md"
 $verdicts = Get-ChildItem "evals/results/*/verdict.json" | Sort-Object FullName
 python -m evals.runner summarize --output $output @($verdicts.FullName)
 ```
@@ -958,7 +958,7 @@ Use the digest only for counts and failed-check names. Review sanitized transcri
 
 - [ ] **Step 4: Write the matrix dossier**
 
-Create `docs/superpowers/evaluations/YYYY-MM-DD-cities2-codex-skill-effectiveness-matrix.md` using the actual run date.
+Create `evals/reports/YYYY-MM-DD-cities2-codex-skill-effectiveness-matrix.md` using the actual run date.
 
 Use this section structure:
 
@@ -1042,7 +1042,7 @@ $patterns = @(
     'github' + '_pat_',
     'gh' + 'p_'
 )
-Select-String -Path "docs/superpowers/evaluations/YYYY-MM-DD-cities2-codex-skill-effectiveness-matrix.md" -Pattern $patterns
+Select-String -Path "evals/reports/YYYY-MM-DD-cities2-codex-skill-effectiveness-matrix.md" -Pattern $patterns
 ```
 
 Expected: no matches after replacing `YYYY-MM-DD` with the actual run date.
@@ -1052,7 +1052,7 @@ Expected: no matches after replacing `YYYY-MM-DD` with the actual run date.
 Run:
 
 ```powershell
-git add docs/superpowers/evaluations/YYYY-MM-DD-cities2-codex-skill-effectiveness-matrix.md tests/test_eval_docs.py
+git add evals/reports/YYYY-MM-DD-cities2-codex-skill-effectiveness-matrix.md tests/test_eval_docs.py
 git commit -m "Publish Codex skill effectiveness matrix"
 ```
 

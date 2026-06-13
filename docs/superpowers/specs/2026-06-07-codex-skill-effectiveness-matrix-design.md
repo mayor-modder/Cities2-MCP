@@ -33,7 +33,7 @@ This repository's eval work is inspired by `prime-radiant-inc/superpowers-evals`
 - Use Codex only for the first effectiveness matrix.
 - Run one representative scenario per skill.
 - Run three no-skill trials and three with-target-skill trials per scenario.
-- Publish one sanitized, repo-visible matrix dossier under `docs/superpowers/evaluations/`.
+- Publish one sanitized, repo-visible matrix dossier under `evals/reports/`.
 - Classify each skill's observed delta with conservative plain-English verdicts.
 - Preserve raw traces and generated run artifacts under ignored `evals/results/`.
 
@@ -150,7 +150,7 @@ Verdicts must separate skill behavior from check reliability. If a check is brit
 
 ## Published dossier
 
-Create one repo-visible dossier under `docs/superpowers/evaluations/`, named with the run date and matrix purpose, for example `YYYY-MM-DD-cities2-codex-skill-effectiveness-matrix.md`.
+Create one repo-visible dossier under `evals/reports/`, named with the run date and matrix purpose, for example `YYYY-MM-DD-cities2-codex-skill-effectiveness-matrix.md`.
 
 The dossier should include:
 

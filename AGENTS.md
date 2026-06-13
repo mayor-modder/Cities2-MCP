@@ -38,7 +38,7 @@
 - Plugin payload changes require: `python -m cities2_mcp.plugin_packages check`.
 - Plugin metadata files such as `plugin.json`, `.mcp.json`, plugin `README.md`, `marketplace.json`, and `mcp_config.json` are generated from `cities2_mcp/plugin_metadata.py`; run `python -m cities2_mcp.plugin_packages sync` instead of editing them by hand.
 - Skill behavior changes require the relevant pressure tests in: `docs/superpowers/pressure-tests/cs2-modding-quality/`.
-- For plugin install or client-integration changes, run the client install and all-skills smoke process documented in: `docs/superpowers/evaluations/`.
+- For plugin install or client-integration changes, run the client install and all-skills smoke process documented in: `evals/reports/`.
 - The all-skills smoke test means installing the plugin in the affected client, confirming the MCP server starts, and exercising `cities2-knowledge`, `cities2-modding`, `cities2-mod-review`, `cities2-mod-debugging`, and `cities2-mod-release`.
 - If the needed evaluation document is absent, stop and ask where the current documented procedure lives.
 

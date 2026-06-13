@@ -5,18 +5,13 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+REPORTS = ROOT / "evals" / "reports"
 EVALUATION = (
-    ROOT
-    / "docs"
-    / "superpowers"
-    / "evaluations"
+    REPORTS
     / "2026-06-04-cities2-knowledge-runner-spike.md"
 )
 DEBUGGING_DOSSIER = (
-    ROOT
-    / "docs"
-    / "superpowers"
-    / "evaluations"
+    REPORTS
     / "2026-06-06-cities2-debugging-runtime-no-logs-results-dossier.md"
 )
 DEBUGGING_DOSSIER_PLAN = (
@@ -35,10 +30,7 @@ DEBUGGING_DOSSIER_DOCS = (
     DEBUGGING_DOSSIER_SPEC,
 )
 SKILL_MATRIX_DOSSIER = (
-    ROOT
-    / "docs"
-    / "superpowers"
-    / "evaluations"
+    REPORTS
     / "2026-06-07-cities2-codex-skill-effectiveness-matrix.md"
 )
 
