@@ -201,6 +201,23 @@ def _tool_argument_events(run_dir: Path) -> list[tuple[str, str]]:
     ]
 
 
+def _tool_call_argument_events(run_dir: Path) -> list[tuple[str, str]]:
+    events: list[tuple[str, str]] = []
+    for record in _tool_call_records(run_dir):
+        name = record.get("name")
+        if not isinstance(name, str):
+            continue
+        arguments = record.get("arguments")
+        if isinstance(arguments, dict):
+            text = " ".join(str(value) for value in arguments.values())
+        elif isinstance(arguments, str):
+            text = arguments
+        else:
+            text = ""
+        events.append((name.lower(), text.lower()))
+    return events
+
+
 def _tool_call_records(run_dir: Path) -> list[dict[str, object]]:
     path = run_dir / "coding-agent-tool-calls.jsonl"
     if not path.is_file():
@@ -245,19 +262,81 @@ def _shell_command_segments(arguments: str) -> list[str]:
     ]
 
 
-def _shell_segment_reads_path(segment: str, expected: str) -> bool:
-    if expected not in segment:
+def _shell_tokens(segment: str) -> list[str]:
+    return [
+        token.strip("\"'")
+        for token in re.findall(r'"[^"]*"|\'[^\']*\'|\S+', segment)
+        if token.strip("\"'")
+    ]
+
+
+def _path_candidate_matches(text: str, candidate: str, *, allow_embedded: bool) -> bool:
+    if allow_embedded:
+        return candidate in text
+    return bool(
+        re.search(
+            rf"(?<![a-z0-9_./-]){re.escape(candidate)}(?![a-z0-9_./-])",
+            text,
+        )
+    )
+
+
+def _search_segment_reads_path(
+    segment: str, expected: str, *, allow_embedded: bool
+) -> bool:
+    tokens = _shell_tokens(segment)
+    if not tokens:
         return False
-    read_patterns = (
+
+    command = Path(tokens[0]).name
+    if command in ("select-string",):
+        path_arguments: list[str] = []
+        for index, token in enumerate(tokens[:-1]):
+            if token in ("-path", "-literalpath"):
+                path_arguments.append(tokens[index + 1])
+        if path_arguments:
+            return any(
+                _path_candidate_matches(path_arg, expected, allow_embedded=allow_embedded)
+                for path_arg in path_arguments
+            )
+        positional = [token for token in tokens[1:] if not token.startswith("-")]
+        return any(
+            _path_candidate_matches(token, expected, allow_embedded=allow_embedded)
+            for token in positional[1:]
+        )
+
+    if command not in ("rg", "grep"):
+        return False
+    positional = [token for token in tokens[1:] if not token.startswith("-")]
+    return any(
+        _path_candidate_matches(token, expected, allow_embedded=allow_embedded)
+        for token in positional[1:]
+    )
+
+
+def _shell_segment_reads_path(
+    segment: str, expected: str, *, allow_embedded: bool
+) -> bool:
+    if not _path_candidate_matches(segment, expected, allow_embedded=allow_embedded):
+        return False
+    direct_read_patterns = (
         r"(^|[\s\"'])get-content(\s|$)",
         r"(^|[\s\"'])gc(\s|$)",
         r"(^|[\s\"'])cat(\s|$)",
         r"(^|[\s\"'])type(\s|$)",
+    )
+    search_patterns = (
         r"(^|[\s\"'])rg\s+(-n|--line-number|--files-with-matches)\b",
         r"(^|[\s\"'])select-string\b",
         r"(^|[\s\"'])grep(\s|$)",
     )
-    return any(re.search(pattern, segment) for pattern in read_patterns)
+    if any(re.search(pattern, segment) for pattern in direct_read_patterns):
+        return True
+    if any(re.search(pattern, segment) for pattern in search_patterns):
+        return _search_segment_reads_path(
+            segment, expected, allow_embedded=allow_embedded
+        )
+    return False
 
 
 def _expected_path_candidates(expected: str) -> list[str]:
@@ -269,16 +348,27 @@ def _expected_path_candidates(expected: str) -> list[str]:
 
 
 def _looks_like_file_inspection(tool_name: str, arguments: str, expected: str) -> bool:
+    normalized_expected = re.sub(r"/+", "/", expected.replace("\\", "/")).lower()
     expected_paths = _expected_path_candidates(expected)
     normalized_arguments = re.sub(r"/+", "/", arguments.replace("\\", "/")).lower()
-    if not any(expected_path in normalized_arguments for expected_path in expected_paths):
+    allow_embedded_path = "/" not in normalized_expected
+    if not any(
+        _path_candidate_matches(
+            normalized_arguments,
+            expected_path,
+            allow_embedded=allow_embedded_path,
+        )
+        for expected_path in expected_paths
+    ):
         return False
     if any(term in tool_name for term in ("read", "open", "view")):
         return True
     if "shell_command" not in tool_name:
         return False
     return any(
-        _shell_segment_reads_path(segment, expected_path)
+        _shell_segment_reads_path(
+            segment, expected_path, allow_embedded=allow_embedded_path
+        )
         for segment in _shell_command_segments(arguments)
         for expected_path in expected_paths
     )
@@ -470,7 +560,7 @@ def run_check(
         return _record(name, phase, status, verdict.detail)
 
     if name == "project-files-inspected":
-        tool_events = _tool_argument_events(run_dir)
+        tool_events = _tool_argument_events(run_dir) + _tool_call_argument_events(run_dir)
         missing = [
             arg
             for arg in args

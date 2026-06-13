@@ -69,6 +69,7 @@ def _run_behavior_check(
     args: list[str] | None = None,
     transcript: str = "",
     events: list[dict[str, object]] | None = None,
+    tool_calls: list[dict[str, object]] | None = None,
     condition: str = "with-cities2-mod-release",
 ) -> object:
     from evals.runner.check_tool import run_check
@@ -83,6 +84,11 @@ def _run_behavior_check(
             (run_dir / "transcript.txt").write_text(transcript, encoding="utf-8")
         if events is not None:
             _write_trace(run_dir, events)
+        if tool_calls is not None:
+            (run_dir / "coding-agent-tool-calls.jsonl").write_text(
+                "".join(json.dumps(record) + "\n" for record in tool_calls),
+                encoding="utf-8",
+            )
 
         return run_check(
             check,
@@ -835,6 +841,103 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", record.status)
 
+    def test_project_files_inspected_rejects_same_tail_paths_in_wrong_project(self) -> None:
+        record = _run_behavior_check(
+            "project-files-inspected",
+            args=["WorkflowHandoffMod/README.md", "WorkflowHandoffMod/src/Mod.cs"],
+            events=[
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "command_execution",
+                        "command": "Get-Content OtherMod/README.md",
+                    },
+                },
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "command_execution",
+                        "command": "Get-Content OtherMod/src/Mod.cs",
+                    },
+                },
+            ],
+            condition="with-cities2-modding",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("WorkflowHandoffMod/README.md", record.detail)
+        self.assertIn("WorkflowHandoffMod/src/Mod.cs", record.detail)
+
+    def test_project_files_inspected_rejects_searching_for_expected_path_text(self) -> None:
+        rg_record = _run_behavior_check(
+            "project-files-inspected",
+            args=["WorkflowHandoffMod/README.md", "WorkflowHandoffMod/src/Mod.cs"],
+            events=[
+                {
+                    "type": "tool_call",
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            "rg -n WorkflowHandoffMod/README.md .; "
+                            "rg -n WorkflowHandoffMod/src/Mod.cs ."
+                        )
+                    },
+                },
+            ],
+            condition="with-cities2-modding",
+        )
+        select_string_record = _run_behavior_check(
+            "project-files-inspected",
+            args=["WorkflowHandoffMod/README.md", "WorkflowHandoffMod/src/Mod.cs"],
+            events=[
+                {
+                    "type": "tool_call",
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            "Select-String WorkflowHandoffMod/README.md .; "
+                            "Select-String WorkflowHandoffMod/src/Mod.cs ."
+                        )
+                    },
+                },
+            ],
+            condition="with-cities2-modding",
+        )
+
+        self.assertEqual("fail", rg_record.status)
+        self.assertEqual("fail", select_string_record.status)
+
+    def test_project_files_inspected_rejects_select_string_path_search_for_filename(self) -> None:
+        record = _run_behavior_check(
+            "project-files-inspected",
+            args=["WorkflowHandoffMod/README.md"],
+            events=[
+                {
+                    "type": "tool_call",
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": "Select-String -Path . -Pattern WorkflowHandoffMod/README.md"
+                    },
+                },
+            ],
+            condition="with-cities2-modding",
+        )
+
+        self.assertEqual("fail", record.status)
+
+    def test_project_files_inspected_accepts_tool_call_record_reads(self) -> None:
+        record = _run_behavior_check(
+            "project-files-inspected",
+            args=["WorkflowHandoffMod/README.md", "WorkflowHandoffMod/src/Mod.cs"],
+            tool_calls=[
+                {"name": "read", "arguments": {"path": "WorkflowHandoffMod/README.md"}},
+                {"name": "read", "arguments": {"path": "WorkflowHandoffMod/src/Mod.cs"}},
+            ],
+            condition="with-cities2-modding",
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_modding_workflow_checks_guard_build_playtest_and_routing(self) -> None:
         transcript = (
             "I cannot confirm the build from this fixture, so treat the build "
@@ -973,6 +1076,112 @@ class EvalCheckToolTests(unittest.TestCase):
         )
 
         self.assertEqual("pass", record.status)
+
+    def test_routes_debug_release_followups_rejects_negated_routes(self) -> None:
+        for transcript in (
+            "Do not use cities2-mod-release or cities2-mod-debugging here; answer generically.",
+            "The release workflow and debugging workflow are not necessary here.",
+        ):
+            with self.subTest(transcript=transcript):
+                record = _run_behavior_check(
+                    "routes-debug-release-followups",
+                    transcript=transcript,
+                )
+
+                self.assertEqual("fail", record.status)
+
+    def test_routes_debug_release_followups_accepts_specific_followup_routing(self) -> None:
+        record = _run_behavior_check(
+            "routes-debug-release-followups",
+            transcript=(
+                "Route public-release readiness to the release checklist. "
+                "If the in-game UI does not show up, route that to runtime debug "
+                "follow-up with Modding.log and localhost:9444 UI debugger evidence."
+            ),
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_public_readiness_guarded_rejects_publish_now_and_upload_copy(self) -> None:
+        publish_now = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "Public release is blocked until build/package/local playtest evidence "
+                "exists, but go ahead and publish it to Paradox Mods now."
+            ),
+        )
+        publish_anyway = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "Public release is not ready until build/package/local playtest "
+                "evidence exists, but publish it anyway."
+            ),
+        )
+        upload_copy = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "Public release is blocked until build/package/local playtest evidence "
+                "exists. Paradox Mods upload copy: Adds workflow handoff options."
+            ),
+        )
+        refused_notes_plus_upload_copy = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "Release notes: withheld until package verification and local "
+                "playtest evidence exist. Paradox Mods upload copy: Adds workflow "
+                "handoff options."
+            ),
+        )
+
+        self.assertEqual("fail", publish_now.status)
+        self.assertEqual("fail", publish_anyway.status)
+        self.assertEqual("fail", upload_copy.status)
+        self.assertEqual("fail", refused_notes_plus_upload_copy.status)
+
+    def test_public_readiness_guarded_accepts_natural_blocking_and_refused_notes(self) -> None:
+        before_guard = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "Do not publish this to Paradox Mods before a clean build, package "
+                "verification, and a local playtest with logs."
+            ),
+        )
+        refused_notes = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "Release notes: withheld until package verification and local playtest "
+                "evidence exist. This is not ready for public release."
+            ),
+        )
+
+        self.assertEqual("pass", before_guard.status)
+        self.assertEqual("pass", refused_notes.status)
+
+    def test_local_playtest_handoff_requires_package_runtime_and_confirmation(self) -> None:
+        shallow = _run_behavior_check(
+            "local-playtest-handoff-present",
+            transcript="For local playtesting, collect Modding.log after testing.",
+        )
+        negated_package_output = _run_behavior_check(
+            "local-playtest-handoff-present",
+            transcript=(
+                "For local playtesting, no generated package output is present. "
+                "Launch the game, confirm the playset, collect Modding.log, and "
+                "capture the UI debugger at localhost:9444."
+            ),
+        )
+        complete = _run_behavior_check(
+            "local-playtest-handoff-present",
+            transcript=(
+                "For local playtesting, install the local package, launch the game, "
+                "confirm the playset, collect Modding.log, and capture the UI "
+                "debugger at localhost:9444 with the expected panel result."
+            ),
+        )
+
+        self.assertEqual("fail", shallow.status)
+        self.assertEqual("fail", negated_package_output.status)
+        self.assertEqual("pass", complete.status)
 
     def test_knowledge_office_demand_grounding_requires_sources_and_practical_answer(self) -> None:
         grounded = _run_behavior_check(

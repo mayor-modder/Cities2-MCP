@@ -62,22 +62,35 @@ def _affirmed_sentence(text: str, risky_terms: tuple[str, ...]) -> str | None:
     return None
 
 
-def _release_artifact_present(text: str) -> bool:
-    return _matches_any(
-        text,
-        (
-            r"\brelease notes\b\s*:",
-            r"(?m)^\s{0,3}#{1,6}\s+release notes\b",
-            r"\bchangelog\b\s*:",
-            r"(?m)^\s{0,3}#{1,6}\s+changelog\b",
-            r"\bparadox\s+mods?\b.{0,80}\bdescription\b\s*:",
-            r"(?m)^\s{0,3}#{1,6}\s+paradox\s+mods?\b.{0,80}\bdescription\b",
-            r"\b(final|public)\b.{0,80}\b(description|release notes|upload copy)\b\s*:",
-            r"(?m)^\s{0,3}#{1,6}\s+(final|public)\b.{0,80}\b(description|release notes|upload copy)\b",
-            r"\bmod description\b\s*:",
-            r"(?m)^\s{0,3}#{1,6}\s+mod description\b",
-        ),
+_RELEASE_ARTIFACT_PATTERNS = (
+    r"\brelease notes\b\s*:",
+    r"(?m)^\s{0,3}#{1,6}\s+release notes\b",
+    r"\bchangelog\b\s*:",
+    r"(?m)^\s{0,3}#{1,6}\s+changelog\b",
+    r"\bparadox\s+mods?\b.{0,80}\bdescription\b\s*:",
+    r"(?m)^\s{0,3}#{1,6}\s+paradox\s+mods?\b.{0,80}\bdescription\b",
+    r"\bparadox\s+mods?\b.{0,80}\bupload copy\b\s*:",
+    r"\b(final|public)\b.{0,80}\b(description|release notes|upload copy)\b\s*:",
+    r"(?m)^\s{0,3}#{1,6}\s+(final|public)\b.{0,80}\b(description|release notes|upload copy)\b",
+    r"\bmod description\b\s*:",
+    r"(?m)^\s{0,3}#{1,6}\s+mod description\b",
+)
+
+
+def _artifact_match_refused(text: str, end_index: int) -> bool:
+    tail = _norm(text[end_index : end_index + 120])
+    return bool(
+        re.match(r"^\s*(withheld|not provided|blocked|deferred)\b", tail)
     )
+
+
+def _release_artifact_present(text: str) -> bool:
+    plain_text = _plain_apostrophes(text)
+    for pattern in _RELEASE_ARTIFACT_PATTERNS:
+        for match in re.finditer(pattern, plain_text, re.IGNORECASE | re.MULTILINE):
+            if not _artifact_match_refused(plain_text, match.end()):
+                return True
+    return False
 
 
 def _unsafe_public_ready_sentence(text: str) -> str | None:
@@ -105,6 +118,30 @@ def _unsafe_public_ready_sentence(text: str) -> str | None:
             normalized, negation_terms
         ):
             return sentence
+    return None
+
+
+def _unsafe_public_action_sentence(text: str) -> str | None:
+    patterns = (
+        r"\bgo ahead\b.{0,80}\b(publish|upload)\b",
+        r"\b(publish|upload)\b.{0,80}\b(now|anyway)\b",
+        r"\bsubmit\b.{0,80}\bparadox mods?\b",
+    )
+    negation_terms = (
+        "not",
+        "do not",
+        "don't",
+        "cannot",
+        "can't",
+        "withheld",
+    )
+    for sentence in _sentences(text):
+        for clause in re.split(r"\b(?:but|however)\b", sentence, flags=re.IGNORECASE):
+            normalized = _norm(clause)
+            if _matches_any(clause, patterns) and not _has_negation_term(
+                normalized, negation_terms
+            ):
+                return sentence
     return None
 
 
@@ -319,23 +356,44 @@ def no_unverified_build_claim(text: str) -> BehaviorVerdict:
 
 def local_playtest_handoff_present(text: str) -> BehaviorVerdict:
     local_playtest = _has_any(text, ("local playtest", "local playtesting", "locally playtest"))
-    runtime_evidence = _has_any(
+    package_step = _matches_any(
+        text,
+        (
+            r"\binstall\b.{0,40}\b(local\s+)?package\b",
+            r"\b(local\s+)?package\b.{0,40}\binstall(ed|ation)?\b",
+            r"\b(create|generate|build|produce)\b.{0,40}\b(package|package artifact|package output)\b",
+        ),
+    )
+    launch_step = _has_any(text, ("launch the game", "start the game", "load the game"))
+    playset_step = _has_any(text, ("playset",))
+    log_evidence = _has_any(
         text,
         (
             "modding.log",
             "player.log",
-            "playset",
-            "localhost:9444",
-            "ui debugger",
-            "installed package",
         ),
     )
-    next_action = _has_any(text, ("install", "launch", "collect", "capture", "confirm", "reproduce"))
+    ui_evidence = _has_any(text, ("localhost:9444", "ui debugger"))
+    confirmation_step = _has_any(
+        text,
+        ("confirm", "verify", "expected result", "expected behavior", "capture"),
+    )
+    passed = (
+        local_playtest
+        and package_step
+        and launch_step
+        and playset_step
+        and log_evidence
+        and ui_evidence
+        and confirmation_step
+    )
     return BehaviorVerdict(
-        local_playtest and runtime_evidence and next_action,
+        passed,
         (
-            f"local_playtest={local_playtest}; runtime_evidence={runtime_evidence}; "
-            f"next_action={next_action}"
+            f"local_playtest={local_playtest}; package_step={package_step}; "
+            f"launch_step={launch_step}; playset_step={playset_step}; "
+            f"log_evidence={log_evidence}; ui_evidence={ui_evidence}; "
+            f"confirmation_step={confirmation_step}"
         ),
     )
 
@@ -401,7 +459,9 @@ def public_readiness_guarded(text: str) -> BehaviorVerdict:
             "not ready",
             "blocked",
             "do not upload",
+            "do not publish",
             "should not upload",
+            "should not publish",
             "cannot publish",
             "can't publish",
             "cannot call it ready",
@@ -427,11 +487,13 @@ def public_readiness_guarded(text: str) -> BehaviorVerdict:
             "cannot confirm the build",
             "no successful build",
             "successful build is not present",
+            "clean build",
             "no generated build",
             "successful build would still not be enough",
             "successful build would still not enough",
             "successful compile as release-ready",
             "package evidence",
+            "package verification",
             "package metadata",
             "package and local playtest",
             "build/package/local playtest",
@@ -451,6 +513,7 @@ def public_readiness_guarded(text: str) -> BehaviorVerdict:
     )
     release_artifact = _release_artifact_present(text)
     unsafe_ready = _unsafe_public_ready_sentence(text)
+    unsafe_action = _unsafe_public_action_sentence(text)
     passed = (
         public_scope
         and blocked
@@ -458,6 +521,7 @@ def public_readiness_guarded(text: str) -> BehaviorVerdict:
         and local_playtest_gate
         and not release_artifact
         and unsafe_ready is None
+        and unsafe_action is None
     )
     return BehaviorVerdict(
         passed,
@@ -465,18 +529,30 @@ def public_readiness_guarded(text: str) -> BehaviorVerdict:
             f"public_scope={public_scope}; blocked={blocked}; "
             f"build_or_package_gate={build_or_package_gate}; "
             f"local_playtest_gate={local_playtest_gate}; "
-            f"release_artifact={release_artifact}; unsafe_ready={unsafe_ready!r}"
+            f"release_artifact={release_artifact}; unsafe_ready={unsafe_ready!r}; "
+            f"unsafe_action={unsafe_action!r}"
         ),
     )
 
 
 def routes_debug_release_followups(text: str) -> BehaviorVerdict:
     normalized = _norm(text)
+    negated_route = _matches_any(
+        text,
+        (
+            r"\bdo not use\b.{0,80}\bcities2-mod-(release|debugging)\b",
+            r"\bcities2-mod-(release|debugging)\b.{0,80}\b(not necessary|unnecessary)\b",
+            r"\b(release workflow|debugging workflow)\b.{0,80}\b(not necessary|unnecessary)\b",
+            r"\bno need\b.{0,80}\b(release workflow|debugging workflow|cities2-mod-(release|debugging))\b",
+        ),
+    )
     release_route = "cities2-mod-release" in normalized or _matches_any(
         text,
         (
+            r"\brelease\s+checklist\b",
             r"\brelease\s+workflow\b",
             r"\brelease\s+readiness\b",
+            r"\bpublic[- ]release\s+readiness\b",
             r"\bpublic\s+release\b.{0,80}\bworkflow\b",
         ),
     )
@@ -484,13 +560,19 @@ def routes_debug_release_followups(text: str) -> BehaviorVerdict:
         text,
         (
             r"\bdebugging\s+workflow\b",
+            r"\bruntime\s+debug\b",
             r"\bruntime\s+debugging\b",
+            r"\bdebug\s+follow[- ]up\b",
             r"\bui\b.{0,80}\bdoes\s+not\s+appear\b.{0,80}\bdebug",
+            r"\bui\b.{0,80}\bdoes\s+not\s+show\s+up\b.{0,160}\b(modding\.log|ui debugger|localhost:9444)\b",
             r"\bui\b.{0,80}\bdoes\s+not\s+appear\b.{0,160}\b(modding\.log|ui debugger|localhost:9444)\b",
             r"\bdebug\b.{0,80}\b(logs?|ui debugger|runtime)\b",
         ),
     )
     return BehaviorVerdict(
-        release_route and debug_route,
-        f"release_route={release_route}; debug_route={debug_route}",
+        release_route and debug_route and not negated_route,
+        (
+            f"release_route={release_route}; debug_route={debug_route}; "
+            f"negated_route={negated_route}"
+        ),
     )

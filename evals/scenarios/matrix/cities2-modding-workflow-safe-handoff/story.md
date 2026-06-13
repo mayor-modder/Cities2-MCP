@@ -11,9 +11,9 @@ The user asks for Cities: Skylines II modding workflow help that crosses local p
 
 ## Acceptance Criteria
 
-- Inspect the active workspace project shape before making workflow claims.
+- Inspect the active workspace project shape, including package-state evidence, before making workflow claims.
 - Work from the active workspace and avoid machine-specific assumptions.
-- Use project evidence before claiming build, package, or readiness state.
+- Use project evidence before claiming build, package, or readiness state; in this fixture, no generated build output is present.
 - Distinguish local playtest artifacts from public release readiness.
 - Provide a local playtest handoff that names relevant evidence to collect.
 - Route release or runtime-failure parts to the focused release/debugging workflows instead of flattening everything into a generic answer.
