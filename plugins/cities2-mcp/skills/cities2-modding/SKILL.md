@@ -25,6 +25,8 @@ Use this skill as the general entry point, then load the focused skill when the 
 - Use `cities2-mod-debugging` for build failures, package failures, runtime errors, game logs, UI debugger issues, or in-game mod behavior that does not work.
 - Use `cities2-mod-release` for public package, publish, upload, distribute, release, Paradox Mods preparation, or public sharing requests.
 
+When a general modding answer includes these follow-up areas, make the route explicit in the user-visible handoff: name `cities2-mod-release` for release readiness or public distribution follow-up, and name `cities2-mod-debugging` for runtime, log, UI debugger, or in-game failure follow-up. Do this even when you also provide immediate next steps. In the final answer, say which focused workflow should handle each follow-up, for example: "Use `cities2-mod-release` for release readiness after local playtesting" and "Use `cities2-mod-debugging` if the in-game UI does not appear."
+
 Local package/install steps after a build or fix are allowed when their purpose
 is playtesting. Treat them as playtesting handoff moments, not distribution. For
 public package, publish, upload, distribute, or release requests, require the

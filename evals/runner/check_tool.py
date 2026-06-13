@@ -249,29 +249,38 @@ def _shell_segment_reads_path(segment: str, expected: str) -> bool:
     if expected not in segment:
         return False
     read_patterns = (
-        r"(^|\s)get-content(\s|$)",
-        r"(^|\s)gc(\s|$)",
-        r"(^|\s)cat(\s|$)",
-        r"(^|\s)type(\s|$)",
-        r"(^|\s)rg\s+(-n|--line-number|--files-with-matches)\b",
-        r"(^|\s)select-string\b",
-        r"(^|\s)grep(\s|$)",
+        r"(^|[\s\"'])get-content(\s|$)",
+        r"(^|[\s\"'])gc(\s|$)",
+        r"(^|[\s\"'])cat(\s|$)",
+        r"(^|[\s\"'])type(\s|$)",
+        r"(^|[\s\"'])rg\s+(-n|--line-number|--files-with-matches)\b",
+        r"(^|[\s\"'])select-string\b",
+        r"(^|[\s\"'])grep(\s|$)",
     )
     return any(re.search(pattern, segment) for pattern in read_patterns)
 
 
+def _expected_path_candidates(expected: str) -> list[str]:
+    normalized = re.sub(r"/+", "/", expected.replace("\\", "/")).lower()
+    candidates = [normalized]
+    if "/" in normalized:
+        candidates.append(normalized.split("/", 1)[1])
+    return candidates
+
+
 def _looks_like_file_inspection(tool_name: str, arguments: str, expected: str) -> bool:
-    expected_lower = re.sub(r"/+", "/", expected.replace("\\", "/")).lower()
+    expected_paths = _expected_path_candidates(expected)
     normalized_arguments = re.sub(r"/+", "/", arguments.replace("\\", "/")).lower()
-    if expected_lower not in normalized_arguments:
+    if not any(expected_path in normalized_arguments for expected_path in expected_paths):
         return False
     if any(term in tool_name for term in ("read", "open", "view")):
         return True
     if "shell_command" not in tool_name:
         return False
     return any(
-        _shell_segment_reads_path(segment, expected_lower)
+        _shell_segment_reads_path(segment, expected_path)
         for segment in _shell_command_segments(arguments)
+        for expected_path in expected_paths
     )
 
 

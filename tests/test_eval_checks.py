@@ -748,6 +748,68 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", record.status)
 
+    def test_project_files_inspected_accepts_wrapped_powershell_command(self) -> None:
+        record = _run_behavior_check(
+            "project-files-inspected",
+            args=["WorkflowHandoffMod/README.md", "WorkflowHandoffMod/src/Mod.cs"],
+            events=[
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "command_execution",
+                        "command": (
+                            '"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '
+                            '"Get-Content -LiteralPath \'WorkflowHandoffMod\\README.md\'"'
+                        ),
+                    },
+                },
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "command_execution",
+                        "command": (
+                            '"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '
+                            '"Get-Content -LiteralPath \'WorkflowHandoffMod\\src\\Mod.cs\'"'
+                        ),
+                    },
+                },
+            ],
+            condition="with-cities2-modding",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_project_files_inspected_accepts_project_root_relative_reads(self) -> None:
+        record = _run_behavior_check(
+            "project-files-inspected",
+            args=["WorkflowHandoffMod/README.md", "WorkflowHandoffMod/src/Mod.cs"],
+            events=[
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "command_execution",
+                        "command": (
+                            '"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '
+                            "'Get-Content README.md'"
+                        ),
+                    },
+                },
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "command_execution",
+                        "command": (
+                            '"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '
+                            '"Get-Content src\\Mod.cs"'
+                        ),
+                    },
+                },
+            ],
+            condition="with-cities2-modding",
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_modding_workflow_checks_guard_build_playtest_and_routing(self) -> None:
         transcript = (
             "I cannot confirm the build from this fixture, so treat the build "
@@ -811,6 +873,14 @@ class EvalCheckToolTests(unittest.TestCase):
                 "of treating a build as release-ready."
             ),
         )
+        natural_blocked_ready = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "The build does not look okay yet. I would not treat this as ready "
+                "for public release. It has no successful build and no local "
+                "playtest evidence."
+            ),
+        )
 
         self.assertEqual("fail", unsafe_build.status)
         self.assertEqual("fail", unsafe_build_with_unrelated_negation.status)
@@ -819,6 +889,7 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertEqual("fail", missing_route.status)
         self.assertEqual("fail", unsafe_public_ready.status)
         self.assertEqual("pass", negated_ready.status)
+        self.assertEqual("pass", natural_blocked_ready.status)
 
         safe_general_rule = _run_behavior_check(
             "no-unverified-build-claim",
@@ -828,7 +899,16 @@ class EvalCheckToolTests(unittest.TestCase):
                 "it is run locally."
             ),
         )
+        negated_success_statement = _run_behavior_check(
+            "no-unverified-build-claim",
+            transcript=(
+                "This is not ready for public release. It has no detected build "
+                "profile, no successful build, no package artifact, and no "
+                "gameplay verification."
+            ),
+        )
         self.assertEqual("pass", safe_general_rule.status)
+        self.assertEqual("pass", negated_success_statement.status)
 
     def test_routes_debug_release_followups_accepts_natural_language_routes(self) -> None:
         record = _run_behavior_check(
@@ -912,6 +992,10 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertEqual(
             "pass",
             _run_behavior_check("public-readiness-guarded", transcript=transcript).status,
+        )
+        self.assertEqual(
+            "pass",
+            _run_behavior_check("no-unverified-build-claim", transcript=transcript).status,
         )
         self.assertEqual(
             "pass",

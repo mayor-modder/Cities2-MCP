@@ -279,6 +279,7 @@ def no_unverified_build_claim(text: str) -> BehaviorVerdict:
         "rather than release proof",
         "not public-release proof",
         "not release proof",
+        "no successful build",
         "local playtest artifact",
     )
     verified_build_claim = None
@@ -399,6 +400,13 @@ def public_readiness_guarded(text: str) -> BehaviorVerdict:
             "until build",
             "until package",
             "until local playtest",
+        ),
+    ) or _matches_any(
+        text,
+        (
+            r"\bnot\b.{0,80}\bready\b.{0,80}\bpublic release\b",
+            r"\bwould not treat\b.{0,80}\bready\b.{0,80}\bpublic release\b",
+            r"\bdo not treat\b.{0,80}\bready\b.{0,80}\bpublic release\b",
         ),
     )
     build_or_package_gate = _has_any(
