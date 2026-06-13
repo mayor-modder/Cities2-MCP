@@ -33,6 +33,10 @@ SKILL_MATRIX_DOSSIER = (
     REPORTS
     / "2026-06-07-cities2-codex-skill-effectiveness-matrix.md"
 )
+KNOWLEDGE_RELEASE_RERUN = (
+    REPORTS
+    / "2026-06-13-cities2-knowledge-release-rerun.md"
+)
 
 
 class EvalDocsTests(unittest.TestCase):
@@ -182,3 +186,50 @@ class EvalDocsTests(unittest.TestCase):
         for needle in forbidden:
             self.assertNotIn(needle, dossier)
         self.assertIsNone(re.search(r"sk-[A-Za-z0-9_-]{20,}", dossier))
+
+    def test_knowledge_release_rerun_report_has_actionable_structure(self) -> None:
+        report = KNOWLEDGE_RELEASE_RERUN.read_text(encoding="utf-8")
+
+        expected_sections = [
+            "# Cities2 knowledge and release focused rerun",
+            "## Executive summary",
+            "## Run matrix",
+            "## What changed",
+            "## Knowledge result",
+            "## Release result",
+            "## Next decisions",
+            "## Artifact hygiene",
+        ]
+        last_index = -1
+        for section in expected_sections:
+            index = report.find(section)
+            self.assertNotEqual(index, -1)
+            self.assertGreater(index, last_index)
+            last_index = index
+
+        self.assertIn("`cities2-knowledge`", report)
+        self.assertIn("`cities2-mod-release`", report)
+        self.assertIn("0/3", report)
+        self.assertIn("3/3", report)
+        self.assertIn("clear positive delta", report)
+        self.assertIn("mixed positive delta", report)
+
+    def test_knowledge_release_rerun_report_avoids_raw_artifacts_and_private_paths(
+        self,
+    ) -> None:
+        report = KNOWLEDGE_RELEASE_RERUN.read_text(encoding="utf-8")
+
+        forbidden = [
+            "coding-agent-tool-calls.jsonl",
+            "transcript.txt",
+            "verdict.json",
+            "coding-agent-config",
+            "coding-agent-workdir",
+            "C:" + "\\" + "Users",
+            "\\" + "Users" + "\\",
+            "/" + "Users" + "/",
+            "OPENAI_API_KEY" + "=",
+        ]
+        for needle in forbidden:
+            self.assertNotIn(needle, report)
+        self.assertIsNone(re.search(r"sk-[A-Za-z0-9_-]{20,}", report))
