@@ -2,10 +2,21 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
 
+from .behavior import (
+    knowledge_office_demand_grounded,
+    local_playtest_handoff_present,
+    no_unverified_build_claim,
+    public_readiness_guarded,
+    release_gate_held,
+    review_unsupported_claims_absent,
+    routes_debug_release_followups,
+)
+from .conditions import condition_skills
 from .models import CheckRecord, CheckStatus, Phase
 
 
@@ -92,6 +103,19 @@ def _tool_name_matches(actual: str, expected: str) -> bool:
     return actual == expected or actual.endswith(f"__{expected}")
 
 
+def _tool_exposure_unavailable(text: str) -> bool:
+    normalized = re.sub(r"\s+", " ", text.lower()).strip()
+    unavailable_patterns = (
+        r"\btools?\b.{0,80}\b(not exposed|unavailable|not available|missing)\b",
+        r"\b(not exposed|unavailable|not available|missing)\b.{0,80}\btools?\b",
+        r"\bmcp\b.{0,80}\b(not exposed|unavailable|not available|missing)\b",
+        r"\b(no|without)\b.{0,40}\b(mcp|retrieval)\b.{0,40}\btools?\b",
+        r"\bdon't have access\b.{0,80}\b(source_status|search|retrieval|mcp)\b",
+        r"\bdo not have access\b.{0,80}\b(source_status|search|retrieval|mcp)\b",
+    )
+    return any(re.search(pattern, normalized) for pattern in unavailable_patterns)
+
+
 def _transcript_text(run_dir: Path) -> str:
     transcript = run_dir / "transcript.txt"
     return transcript.read_text(encoding="utf-8") if transcript.is_file() else ""
@@ -145,9 +169,11 @@ def _assistant_event_text(event: dict[str, object]) -> str:
 def _event_tool_name(event: dict[str, object]) -> str:
     nested = _nested_event(event)
     event_type = nested.get("type")
-    if event_type not in ("tool_call", "function_call"):
+    if event_type == "command_execution":
+        return "shell_command"
+    if event_type not in ("tool_call", "function_call", "mcp_tool_call"):
         return ""
-    for key in ("name", "tool_name"):
+    for key in ("name", "tool", "tool_name"):
         value = nested.get(key)
         if isinstance(value, str):
             return value
@@ -156,12 +182,113 @@ def _event_tool_name(event: dict[str, object]) -> str:
 
 def _event_arguments_text(event: dict[str, object]) -> str:
     nested = _nested_event(event)
+    command = nested.get("command")
+    if isinstance(command, str):
+        return command
     value = nested.get("arguments")
     if isinstance(value, str):
         return value
     if isinstance(value, dict):
         return " ".join(str(item) for item in value.values())
     return ""
+
+
+def _tool_argument_events(run_dir: Path) -> list[tuple[str, str]]:
+    return [
+        (_event_tool_name(event).lower(), _event_arguments_text(event).lower())
+        for event in _raw_events(run_dir)
+        if _event_tool_name(event)
+    ]
+
+
+def _tool_call_records(run_dir: Path) -> list[dict[str, object]]:
+    path = run_dir / "coding-agent-tool-calls.jsonl"
+    if not path.is_file():
+        return []
+
+    records: list[dict[str, object]] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(record, dict):
+            records.append(record)
+    return records
+
+
+def _tool_argument_texts(run_dir: Path, expected_tool: str) -> list[str]:
+    expected = expected_tool.lower()
+    texts = [
+        text
+        for tool_name, text in _tool_argument_events(run_dir)
+        if _tool_name_matches(tool_name, expected)
+    ]
+    for record in _tool_call_records(run_dir):
+        name = record.get("name")
+        if not isinstance(name, str) or not _tool_name_matches(name.lower(), expected):
+            continue
+        arguments = record.get("arguments")
+        if isinstance(arguments, dict):
+            texts.append(" ".join(str(value).lower() for value in arguments.values()))
+        elif isinstance(arguments, str):
+            texts.append(arguments.lower())
+    return texts
+
+
+def _shell_command_segments(arguments: str) -> list[str]:
+    normalized = re.sub(r"/+", "/", arguments.replace("\\", "/")).lower()
+    return [
+        segment.strip()
+        for segment in re.split(r"\s*(?:;|&&|\|\||\||\r?\n)\s*", normalized)
+        if segment.strip()
+    ]
+
+
+def _shell_segment_reads_path(segment: str, expected: str) -> bool:
+    if expected not in segment:
+        return False
+    read_patterns = (
+        r"(^|\s)get-content(\s|$)",
+        r"(^|\s)gc(\s|$)",
+        r"(^|\s)cat(\s|$)",
+        r"(^|\s)type(\s|$)",
+        r"(^|\s)rg\s+(-n|--line-number|--files-with-matches)\b",
+        r"(^|\s)select-string\b",
+        r"(^|\s)grep(\s|$)",
+    )
+    return any(re.search(pattern, segment) for pattern in read_patterns)
+
+
+def _looks_like_file_inspection(tool_name: str, arguments: str, expected: str) -> bool:
+    expected_lower = re.sub(r"/+", "/", expected.replace("\\", "/")).lower()
+    normalized_arguments = re.sub(r"/+", "/", arguments.replace("\\", "/")).lower()
+    if expected_lower not in normalized_arguments:
+        return False
+    if any(term in tool_name for term in ("read", "open", "view")):
+        return True
+    if "shell_command" not in tool_name:
+        return False
+    return any(
+        _shell_segment_reads_path(segment, expected_lower)
+        for segment in _shell_command_segments(arguments)
+    )
+
+
+def _compact_search_query(text: str, required_terms: list[str]) -> tuple[bool, str]:
+    normalized = re.sub(r"\s+", " ", text.lower()).strip()
+    full_user_question = (
+        len(normalized) > 80
+        or "why is my city" in normalized
+        or "can i ignore" in normalized
+    )
+    has_required_terms = all(term.lower() in normalized for term in required_terms)
+    passed = bool(normalized) and has_required_terms and not full_user_question
+    detail = (
+        f"query={normalized!r}; required_terms={required_terms}; "
+        f"full_user_question={full_user_question}"
+    )
+    return passed, detail
 
 
 def _has_any(text: str, needles: tuple[str, ...]) -> bool:
@@ -218,20 +345,17 @@ def run_check(
         return _record(name, phase, status, f"agent_home={agent_home}")
 
     if name == "condition-skill-set":
-        expected_by_condition = {
-            "no-skill": [],
-            "with-cities2-knowledge": ["cities2-knowledge"],
-            "with-cities2-mod-debugging": ["cities2-mod-debugging"],
-        }
-        expected = expected_by_condition.get(condition)
-        actual = _skill_dirs(agent_home)
-        if expected is None:
+        try:
+            expected = list(condition_skills(condition))
+        except ValueError:
+            actual = _skill_dirs(agent_home)
             return _record(
                 name,
                 phase,
                 "indeterminate",
                 f"unknown condition={condition}; actual={actual}",
             )
+        actual = _skill_dirs(agent_home)
         status = "pass" if actual == expected else "fail"
         return _record(name, phase, status, f"expected={expected}; actual={actual}")
 
@@ -263,6 +387,21 @@ def run_check(
         called = any(_tool_name_matches(tool_name, expected) for tool_name in names)
         status = "pass" if expected and called else "fail"
         return _record(name, phase, status, f"expected={expected}; names={names}")
+
+    if name == "required-tool-called":
+        expected = args[0] if args else ""
+        names = _tool_names(run_dir)
+        called = any(_tool_name_matches(tool_name, expected) for tool_name in names)
+        if expected and called:
+            return _record(name, phase, "pass", f"expected={expected}; names={names}")
+        if _tool_exposure_unavailable(_transcript_text(run_dir)):
+            return _record(
+                name,
+                phase,
+                "indeterminate",
+                f"tool exposure unavailable; expected={expected}; names={names}",
+            )
+        return _record(name, phase, "fail", f"expected={expected}; names={names}")
 
     if name == "skill-not-called":
         prefix = args[0] if args else ""
@@ -310,6 +449,64 @@ def run_check(
             if _is_edit_tool_call(event) and not saw_evidence_request:
                 return _record(name, phase, "fail", "edit tool preceded runtime evidence request")
         return _record(name, phase, "pass", "no edit before runtime evidence request")
+
+    if name == "release-gate-held":
+        verdict = release_gate_held(_transcript_text(run_dir))
+        status: CheckStatus = "pass" if verdict.passed else "fail"
+        return _record(name, phase, status, verdict.detail)
+
+    if name == "review-unsupported-claims-absent":
+        verdict = review_unsupported_claims_absent(_transcript_text(run_dir))
+        status = "pass" if verdict.passed else "fail"
+        return _record(name, phase, status, verdict.detail)
+
+    if name == "project-files-inspected":
+        tool_events = _tool_argument_events(run_dir)
+        missing = [
+            arg
+            for arg in args
+            if not any(
+                _looks_like_file_inspection(tool_name, text, arg)
+                for tool_name, text in tool_events
+            )
+        ]
+        status = "fail" if missing else "pass"
+        return _record(name, phase, status, f"missing={missing}; expected={args}")
+
+    if name == "no-unverified-build-claim":
+        verdict = no_unverified_build_claim(_transcript_text(run_dir))
+        status = "pass" if verdict.passed else "fail"
+        return _record(name, phase, status, verdict.detail)
+
+    if name == "local-playtest-handoff-present":
+        verdict = local_playtest_handoff_present(_transcript_text(run_dir))
+        status = "pass" if verdict.passed else "fail"
+        return _record(name, phase, status, verdict.detail)
+
+    if name == "knowledge-office-demand-grounded":
+        verdict = knowledge_office_demand_grounded(_transcript_text(run_dir))
+        status = "pass" if verdict.passed else "fail"
+        return _record(name, phase, status, verdict.detail)
+
+    if name == "compact-search-query":
+        required_terms = args
+        candidates = _tool_argument_texts(run_dir, "search")
+        matches = [_compact_search_query(candidate, required_terms) for candidate in candidates]
+        passed = any(match_passed for match_passed, _detail in matches)
+        detail = "candidates=[]" if not matches else " | ".join(
+            match_detail for _match_passed, match_detail in matches
+        )
+        return _record(name, phase, "pass" if passed else "fail", detail)
+
+    if name == "public-readiness-guarded":
+        verdict = public_readiness_guarded(_transcript_text(run_dir))
+        status = "pass" if verdict.passed else "fail"
+        return _record(name, phase, status, verdict.detail)
+
+    if name == "routes-debug-release-followups":
+        verdict = routes_debug_release_followups(_transcript_text(run_dir))
+        status = "pass" if verdict.passed else "fail"
+        return _record(name, phase, status, verdict.detail)
 
     return _record(name, phase, "indeterminate", f"unknown check: {name}")
 

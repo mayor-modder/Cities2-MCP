@@ -32,13 +32,32 @@ def _nested_event(event: dict[str, Any]) -> dict[str, Any]:
     return event
 
 
+def _is_incomplete_item_event(event: dict[str, Any]) -> bool:
+    return event.get("type") == "item.started"
+
+
 def _tool_call(event: dict[str, Any]) -> dict[str, Any] | None:
+    if _is_incomplete_item_event(event):
+        return None
+
     candidate = _nested_event(event)
     raw_type = candidate.get("type")
-    if raw_type not in {"tool_call", "function_call"}:
+    if raw_type == "command_execution":
+        command = candidate.get("command")
+        if not isinstance(command, str):
+            return None
+        return {
+            "name": "shell_command",
+            "arguments": {"command": command},
+            "raw_type": raw_type,
+        }
+
+    if raw_type not in {"tool_call", "function_call", "mcp_tool_call"}:
         return None
 
     name = candidate.get("name")
+    if not isinstance(name, str):
+        name = candidate.get("tool")
     if not isinstance(name, str):
         name = candidate.get("tool_name")
     if not isinstance(name, str):

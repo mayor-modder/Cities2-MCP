@@ -18,6 +18,19 @@ SCENARIO = ROOT / "evals" / "scenarios" / "spike" / "cities2-knowledge-office-de
 DEBUGGING_SCENARIO = (
     ROOT / "evals" / "scenarios" / "baseline" / "cities2-debugging-runtime-no-logs"
 )
+REVIEW_MATRIX_SCENARIO = (
+    ROOT / "evals" / "scenarios" / "matrix" / "cities2-mod-review-tsx-no-react-evidence"
+)
+RELEASE_MATRIX_SCENARIO = (
+    ROOT
+    / "evals"
+    / "scenarios"
+    / "matrix"
+    / "cities2-mod-release-build-passed-no-playtest"
+)
+MODDING_MATRIX_SCENARIO = (
+    ROOT / "evals" / "scenarios" / "matrix" / "cities2-modding-workflow-safe-handoff"
+)
 
 
 class EvalRunnerCliTests(unittest.TestCase):
@@ -104,6 +117,29 @@ class EvalRunnerCliTests(unittest.TestCase):
             r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$",
         )
 
+    def test_final_status_preserves_indeterminate_post_checks(self) -> None:
+        from evals.runner.__main__ import _final_status
+        from evals.runner.models import CheckRecord
+
+        pre_records = [
+            CheckRecord("agent-home-contained", "pre", "pass", "contained"),
+        ]
+        records = [
+            *pre_records,
+            CheckRecord(
+                "required-tool-called",
+                "post",
+                "indeterminate",
+                "tool exposure unavailable",
+            ),
+            CheckRecord("knowledge-office-demand-grounded", "post", "fail", "no source"),
+        ]
+
+        final, reason = _final_status(pre_records, records)
+
+        self.assertEqual("indeterminate", final)
+        self.assertIn("indeterminate", reason)
+
     def test_condition_skills_supports_debugging_skill_condition(self) -> None:
         from evals.runner.__main__ import _condition_skills
 
@@ -111,6 +147,21 @@ class EvalRunnerCliTests(unittest.TestCase):
             ("cities2-mod-debugging",),
             _condition_skills("with-cities2-mod-debugging"),
         )
+
+    def test_condition_skills_supports_all_matrix_target_conditions(self) -> None:
+        from evals.runner.__main__ import _condition_skills
+
+        expected = {
+            "no-skill": (),
+            "with-cities2-knowledge": ("cities2-knowledge",),
+            "with-cities2-modding": ("cities2-modding",),
+            "with-cities2-mod-review": ("cities2-mod-review",),
+            "with-cities2-mod-debugging": ("cities2-mod-debugging",),
+            "with-cities2-mod-release": ("cities2-mod-release",),
+        }
+        for condition, skills in expected.items():
+            with self.subTest(condition=condition):
+                self.assertEqual(skills, _condition_skills(condition))
 
     def test_run_setup_reports_missing_bash(self) -> None:
         from evals.runner.__main__ import _run_setup
@@ -236,7 +287,7 @@ class EvalRunnerCliTests(unittest.TestCase):
                     print('{"type":"tool_call","name":"cities2-knowledge","arguments":{}}')
                     print('{"type":"tool_call","name":"source_status","arguments":{}}')
                     print('{"type":"tool_call","name":"search","arguments":{"query":"office demand jobs education"}}')
-                    print('{"type":"agent_message","message":"Office demand grows with educated workers. Source note: wiki."}')
+                    print('{"type":"agent_message","message":"Office demand grows with educated workers, enough jobs, lower office taxes, and careful zoning. Source note: wiki and game encyclopedia entries for demand and office zones."}')
                     """
                 ),
                 encoding="utf-8",
@@ -261,6 +312,94 @@ class EvalRunnerCliTests(unittest.TestCase):
             self.assertTrue(paths.raw_events.exists())
             self.assertTrue(paths.tool_calls.exists())
             self.assertTrue(paths.transcript.exists())
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
+    def test_knowledge_runner_marks_missing_mcp_tools_indeterminate(self) -> None:
+        from evals.runner.__main__ import run_eval
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
+            root = Path(tmp)
+            codex_stub = root / "codex_stub.py"
+            codex_stub.write_text(
+                textwrap.dedent(
+                    """\
+                    from __future__ import annotations
+
+                    print('{"type":"agent_message","message":"I read the Cities2 knowledge skill, but the Cities2-MCP retrieval tools are not exposed in this clean-room Codex environment."}')
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            paths = run_eval(
+                scenario_path=SCENARIO,
+                condition="with-cities2-knowledge",
+                repo_root=ROOT,
+                results_root=root / "results",
+                codex_command=sys.executable,
+                codex_args_prefix=(str(codex_stub),),
+                live_auth=False,
+                trial=1,
+            )
+
+            verdict = json.loads(paths.verdict.read_text(encoding="utf-8"))
+
+        self.assertEqual("indeterminate", verdict["final"])
+        self.assertIn("indeterminate", verdict["final_reason"])
+        self.assertIn("codex-mcp-tool-exposure", [record["name"] for record in verdict["checks"]])
+        self.assertNotIn("required-tool-called", [record["name"] for record in verdict["checks"]])
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
+    def test_knowledge_runner_stops_when_mcp_tool_preflight_is_unavailable(self) -> None:
+        from evals.runner.__main__ import run_eval
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
+            root = Path(tmp)
+            codex_stub = root / "codex_stub.py"
+            codex_stub.write_text(
+                textwrap.dedent(
+                    """\
+                    from __future__ import annotations
+
+                    print('{"type":"agent_message","message":"The Cities2-MCP retrieval tools are not exposed in this clean-room Codex environment."}')
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            paths = run_eval(
+                scenario_path=SCENARIO,
+                condition="with-cities2-knowledge",
+                repo_root=ROOT,
+                results_root=root / "results",
+                codex_command=sys.executable,
+                codex_args_prefix=(str(codex_stub),),
+                live_auth=False,
+                trial=1,
+            )
+
+            verdict = json.loads(paths.verdict.read_text(encoding="utf-8"))
+            raw_events = paths.raw_events.read_text(encoding="utf-8")
+
+        self.assertEqual("indeterminate", verdict["final"])
+        preflight = [
+            record
+            for record in verdict["checks"]
+            if record["name"] == "codex-mcp-tool-exposure"
+        ]
+        self.assertEqual(
+            [
+                {
+                    "name": "codex-mcp-tool-exposure",
+                    "phase": "pre",
+                    "status": "indeterminate",
+                    "detail": "expected=['source_status', 'search']; names=[]",
+                }
+            ],
+            preflight,
+        )
+        self.assertEqual("", raw_events)
+        self.assertNotIn("required-tool-called", [record["name"] for record in verdict["checks"]])
 
     @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
     def test_debugging_baseline_stub_writes_passing_verdict(self) -> None:
@@ -304,6 +443,116 @@ class EvalRunnerCliTests(unittest.TestCase):
         self.assertEqual("pass", verdict["final"])
 
     @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
+    def test_review_matrix_stub_exercises_harness_wiring(self) -> None:
+        from evals.runner.__main__ import run_eval
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
+            root = Path(tmp)
+            codex_stub = root / "codex_review_stub.py"
+            codex_stub.write_text(
+                textwrap.dedent(
+                    """\
+                    from __future__ import annotations
+
+                    print('{"type":"tool_call","name":"shell_command","arguments":{"command":"Get-Content ReviewBaitMod/ui/OptionsPanel.tsx; Get-Content ReviewBaitMod/ui/theme.css"}}')
+                    print('{"type":"agent_message","message":"Findings: I saw OptionsPanel.tsx and theme.css. TSX alone is not evidence that a React loader is required, and I do not have package or import evidence for a React dependency. The CSS file is unreferenced by the inspected files, so I would not treat it as active styling."}')
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            paths = run_eval(
+                scenario_path=REVIEW_MATRIX_SCENARIO,
+                condition="with-cities2-mod-review",
+                repo_root=ROOT,
+                results_root=root / "results",
+                codex_command=sys.executable,
+                codex_args_prefix=(str(codex_stub),),
+                live_auth=False,
+                trial=1,
+            )
+
+            verdict = json.loads(paths.verdict.read_text(encoding="utf-8"))
+
+        self.assertEqual("cities2-mod-review-tsx-no-react-evidence", verdict["metadata"]["scenario_id"])
+        self.assertEqual("with-cities2-mod-review", verdict["metadata"]["condition_id"])
+        self.assertEqual("pass", verdict["final"])
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
+    def test_release_matrix_stub_exercises_harness_wiring(self) -> None:
+        from evals.runner.__main__ import run_eval
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
+            root = Path(tmp)
+            codex_stub = root / "codex_release_stub.py"
+            codex_stub.write_text(
+                textwrap.dedent(
+                    """\
+                    from __future__ import annotations
+
+                    print('{"type":"agent_message","message":"The packaged mod has not been locally playtested, so I advise against public upload and would not call it release-ready. Draft Paradox Mods description, unvalidated: Adds a settings panel. Before publishing, run a local packaged smoke test."}')
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            paths = run_eval(
+                scenario_path=RELEASE_MATRIX_SCENARIO,
+                condition="with-cities2-mod-release",
+                repo_root=ROOT,
+                results_root=root / "results",
+                codex_command=sys.executable,
+                codex_args_prefix=(str(codex_stub),),
+                live_auth=False,
+                trial=1,
+            )
+
+            verdict = json.loads(paths.verdict.read_text(encoding="utf-8"))
+
+        self.assertEqual(
+            "cities2-mod-release-build-passed-no-playtest",
+            verdict["metadata"]["scenario_id"],
+        )
+        self.assertEqual("with-cities2-mod-release", verdict["metadata"]["condition_id"])
+        self.assertEqual("pass", verdict["final"])
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
+    def test_modding_matrix_stub_exercises_harness_wiring(self) -> None:
+        from evals.runner.__main__ import run_eval
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
+            root = Path(tmp)
+            codex_stub = root / "codex_modding_stub.py"
+            codex_stub.write_text(
+                textwrap.dedent(
+                    """\
+                    from __future__ import annotations
+
+                    print('{"type":"tool_call","name":"shell_command","arguments":{"command":"Get-Content WorkflowHandoffMod/README.md; Get-Content WorkflowHandoffMod/src/Mod.cs"}}')
+                    print('{"type":"agent_message","message":"I cannot confirm the build from this fixture, so keep the build status as unverified until you run it locally. For local playtesting, install a local package, launch the game, confirm the playset, and collect Modding.log plus localhost:9444 UI debugger evidence. Public upload is blocked until the packaged mod is locally playtested, so this is not public release ready; use cities2-mod-release for release readiness and cities2-mod-debugging if the UI does not appear."}')
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            paths = run_eval(
+                scenario_path=MODDING_MATRIX_SCENARIO,
+                condition="with-cities2-modding",
+                repo_root=ROOT,
+                results_root=root / "results",
+                codex_command=sys.executable,
+                codex_args_prefix=(str(codex_stub),),
+                live_auth=False,
+                trial=1,
+            )
+
+            verdict = json.loads(paths.verdict.read_text(encoding="utf-8"))
+
+        self.assertEqual("cities2-modding-workflow-safe-handoff", verdict["metadata"]["scenario_id"])
+        self.assertEqual("with-cities2-modding", verdict["metadata"]["condition_id"])
+        self.assertEqual("pass", verdict["final"])
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
     def test_nonzero_codex_stderr_is_appended_as_raw_text(self) -> None:
         from evals.runner.__main__ import run_eval
 
@@ -316,6 +565,11 @@ class EvalRunnerCliTests(unittest.TestCase):
                     from __future__ import annotations
 
                     import sys
+
+                    if "Eval plumbing preflight" in sys.argv[-1]:
+                        print('{"type":"tool_call","name":"source_status","arguments":{}}')
+                        print('{"type":"tool_call","name":"search","arguments":{"query":"office demand"}}')
+                        raise SystemExit(0)
 
                     print('{"type":"tool_call","name":"cities2-knowledge","arguments":{}}')
                     print('{"type":"tool_call","name":"source_status","arguments":{}}')

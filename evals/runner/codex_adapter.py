@@ -31,23 +31,37 @@ def _copy_skill(repo_root: Path, codex_home: Path, skill_name: str) -> None:
     shutil.copytree(source, target)
 
 
-def _write_mcp_config(codex_home: Path, workspace: Path) -> None:
+def _mcp_server_env(repo_root: Path) -> dict[str, str]:
+    env = {"PYTHONPATH": str(repo_root.resolve())}
+    for name in ("SYSTEMROOT", "WINDIR"):
+        value = _host_env_value(name)
+        if value is not None:
+            env[name] = value
+    return env
+
+
+def _write_mcp_config(codex_home: Path, workspace: Path, repo_root: Path) -> None:
     resolved_workspace = workspace.resolve()
-    config = "\n".join(
-        [
-            "[mcp_servers.cities2-mcp]",
-            f"command = {_toml_string(sys.executable)}",
-            (
-                "args = ["
-                '"-m", '
-                '"cities2_mcp.mcp_server", '
-                '"--workspace", '
-                f"{_toml_string(resolved_workspace)}"
-                "]"
-            ),
-            "",
-        ]
+    lines = [
+        "[mcp_servers.cities2-mcp]",
+        f"command = {_toml_string(sys.executable)}",
+        (
+            "args = ["
+            '"-m", '
+            '"cities2_mcp.mcp_server", '
+            '"--workspace", '
+            f"{_toml_string(resolved_workspace)}"
+            "]"
+        ),
+        "",
+        "[mcp_servers.cities2-mcp.env]",
+    ]
+    lines.extend(
+        f"{name} = {_toml_string(value)}"
+        for name, value in sorted(_mcp_server_env(repo_root).items())
     )
+    lines.append("")
+    config = "\n".join(lines)
     (codex_home / "config.toml").write_text(config, encoding="utf-8")
 
 
@@ -62,7 +76,7 @@ def prepare_codex_home(
     (codex_home / "skills").mkdir()
     for skill_name in skills:
         _copy_skill(repo_root, codex_home, skill_name)
-    _write_mcp_config(codex_home, workspace if workspace is not None else repo_root)
+    _write_mcp_config(codex_home, workspace if workspace is not None else repo_root, repo_root)
 
 
 def _host_env_value(name: str) -> str | None:
@@ -86,7 +100,16 @@ def minimal_codex_env(
         "CODEX_HOME": str(codex_home),
         "PYTHONPATH": str(repo_root),
     }
-    for name in ("PATH", "PATHEXT", "COMSPEC", "SYSTEMROOT", "WINDIR", "TEMP", "TMP"):
+    for name in (
+        "PATH",
+        "PATHEXT",
+        "COMSPEC",
+        "SYSTEMROOT",
+        "WINDIR",
+        "TEMP",
+        "TMP",
+        "USERPROFILE",
+    ):
         value = _host_env_value(name)
         if value is not None:
             env[name] = value

@@ -199,6 +199,94 @@ class EvalTraceTests(unittest.TestCase):
                 ["source_status"], [record["name"] for record in call_records]
             )
 
+    def test_normalizes_current_codex_command_and_mcp_events(self) -> None:
+        from evals.runner.trace import normalize_codex_events
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-trace-") as tmp:
+            run_dir = Path(tmp)
+            raw = run_dir / "codex-events.jsonl"
+            calls = run_dir / "coding-agent-tool-calls.jsonl"
+            transcript = run_dir / "transcript.txt"
+
+            events = [
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "command_execution",
+                        "command": "Get-Content ReviewBaitMod/ui/OptionsPanel.tsx",
+                    },
+                },
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "mcp_tool_call",
+                        "server": "cities2-mcp",
+                        "tool": "source_status",
+                        "arguments": {},
+                    },
+                },
+            ]
+            raw.write_text(
+                "".join(json.dumps(event) + "\n" for event in events),
+                encoding="utf-8",
+            )
+
+            normalize_codex_events(raw, calls, transcript)
+
+            call_records = [
+                json.loads(line)
+                for line in calls.read_text(encoding="utf-8").splitlines()
+            ]
+            self.assertEqual(["shell_command", "source_status"], [record["name"] for record in call_records])
+            self.assertEqual(
+                {"command": "Get-Content ReviewBaitMod/ui/OptionsPanel.tsx"},
+                call_records[0]["arguments"],
+            )
+
+    def test_current_codex_started_and_completed_item_records_single_tool_call(self) -> None:
+        from evals.runner.trace import normalize_codex_events
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-trace-") as tmp:
+            run_dir = Path(tmp)
+            raw = run_dir / "codex-events.jsonl"
+            calls = run_dir / "coding-agent-tool-calls.jsonl"
+            transcript = run_dir / "transcript.txt"
+
+            events = [
+                {
+                    "type": "item.started",
+                    "item": {
+                        "id": "item_1",
+                        "type": "mcp_tool_call",
+                        "server": "cities2-mcp",
+                        "tool": "source_status",
+                        "arguments": {},
+                    },
+                },
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "id": "item_1",
+                        "type": "mcp_tool_call",
+                        "server": "cities2-mcp",
+                        "tool": "source_status",
+                        "arguments": {},
+                    },
+                },
+            ]
+            raw.write_text(
+                "".join(json.dumps(event) + "\n" for event in events),
+                encoding="utf-8",
+            )
+
+            normalize_codex_events(raw, calls, transcript)
+
+            call_records = [
+                json.loads(line)
+                for line in calls.read_text(encoding="utf-8").splitlines()
+            ]
+            self.assertEqual(["source_status"], [record["name"] for record in call_records])
+
 
 if __name__ == "__main__":
     unittest.main()

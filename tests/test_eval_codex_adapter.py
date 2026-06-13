@@ -63,8 +63,26 @@ class CodexCleanRoomAdapterTests(unittest.TestCase):
             )
 
             config = (codex_home / "config.toml").read_text(encoding="utf-8")
+            server_block = config.split("[mcp_servers.cities2-mcp.env]", 1)[0]
             self.assertIn(json.dumps(str(workspace.resolve())), config)
-            self.assertNotIn(json.dumps(str(ROOT.resolve())), config)
+            self.assertNotIn(json.dumps(str(ROOT.resolve())), server_block)
+
+    def test_mcp_config_sets_repo_pythonpath_for_child_server(self) -> None:
+        from evals.runner.codex_adapter import prepare_codex_home
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-codex-") as tmp:
+            codex_home = Path(tmp) / "coding-agent-config"
+
+            prepare_codex_home(repo_root=ROOT, codex_home=codex_home, skills=())
+
+            config = (codex_home / "config.toml").read_text(encoding="utf-8")
+
+        self.assertIn("[mcp_servers.cities2-mcp.env]", config)
+        self.assertIn(f"PYTHONPATH = {json.dumps(str(ROOT.resolve()))}", config)
+        if os.environ.get("SYSTEMROOT") is not None:
+            self.assertIn("SYSTEMROOT = ", config)
+        if os.environ.get("WINDIR") is not None:
+            self.assertIn("WINDIR = ", config)
 
     def test_prepare_codex_home_rejects_path_like_skill_name(self) -> None:
         from evals.runner.codex_adapter import CodexAdapterError, prepare_codex_home
@@ -94,7 +112,7 @@ class CodexCleanRoomAdapterTests(unittest.TestCase):
                         (codex_home / "skills" / "cities2-mod-debugging").exists()
                     )
 
-    def test_minimal_codex_env_uses_generated_home_without_user_profile(self) -> None:
+    def test_minimal_codex_env_uses_generated_home_with_limited_user_profile(self) -> None:
         from evals.runner.codex_adapter import minimal_codex_env
 
         with tempfile.TemporaryDirectory(prefix="cities2-eval-codex-") as tmp:
@@ -108,7 +126,8 @@ class CodexCleanRoomAdapterTests(unittest.TestCase):
             self.assertEqual(str(codex_home), env["CODEX_HOME"])
             self.assertEqual(str(repo_root), env["PYTHONPATH"])
             self.assertIn("PATH", env)
-            self.assertNotIn("USERPROFILE", env)
+            if os.environ.get("USERPROFILE") is not None:
+                self.assertEqual(os.environ["USERPROFILE"], env["USERPROFILE"])
             self.assertNotIn("HOME", env)
             self.assertNotIn("OPENAI_API_KEY", env)
 

@@ -34,6 +34,13 @@ DEBUGGING_DOSSIER_DOCS = (
     DEBUGGING_DOSSIER_PLAN,
     DEBUGGING_DOSSIER_SPEC,
 )
+SKILL_MATRIX_DOSSIER = (
+    ROOT
+    / "docs"
+    / "superpowers"
+    / "evaluations"
+    / "2026-06-07-cities2-codex-skill-effectiveness-matrix.md"
+)
 
 
 class EvalDocsTests(unittest.TestCase):
@@ -123,3 +130,63 @@ class EvalDocsTests(unittest.TestCase):
         for needle in forbidden:
             self.assertNotIn(needle, docs)
         self.assertIsNone(re.search(r"sk-[A-Za-z0-9_-]{20,}", docs))
+
+    def test_skill_effectiveness_matrix_dossier_has_actionable_structure(self) -> None:
+        dossier = SKILL_MATRIX_DOSSIER.read_text(encoding="utf-8")
+
+        expected_sections = [
+            "# Cities2 Codex skill effectiveness matrix",
+            "## Executive summary",
+            "## Scenario matrix",
+            "## Deterministic check results",
+            "## Acceptance-criteria review results",
+            "## Skill verdicts",
+            "## Per-skill observations",
+            "## Check and instrumentation notes",
+            "## Next decisions",
+            "## Artifact hygiene",
+        ]
+        last_index = -1
+        for section in expected_sections:
+            index = dossier.find(section)
+            self.assertNotEqual(index, -1)
+            self.assertGreater(index, last_index)
+            last_index = index
+
+        for skill in (
+            "cities2-knowledge",
+            "cities2-modding",
+            "cities2-mod-review",
+            "cities2-mod-debugging",
+            "cities2-mod-release",
+        ):
+            self.assertIn(skill, dossier)
+
+        self.assertIn("directional evidence", dossier)
+        self.assertIn("not a guarantee", dossier)
+        self.assertIn("deterministic", dossier)
+        self.assertIn("acceptance criteria", dossier)
+        self.assertIn("indeterminate environment failure", dossier)
+        self.assertIn("readiness honesty", dossier)
+        self.assertIn("Scenario too weak", dossier)
+        self.assertIn("main skill-quality target", dossier)
+
+    def test_skill_effectiveness_matrix_dossier_avoids_raw_artifacts_and_private_paths(
+        self,
+    ) -> None:
+        dossier = SKILL_MATRIX_DOSSIER.read_text(encoding="utf-8")
+
+        forbidden = [
+            "coding-agent-tool-calls.jsonl",
+            "transcript.txt",
+            "verdict.json",
+            "coding-agent-config",
+            "coding-agent-workdir",
+            "C:" + "\\" + "Users",
+            "\\" + "Users" + "\\",
+            "/" + "Users" + "/",
+            "OPENAI_API_KEY" + "=",
+        ]
+        for needle in forbidden:
+            self.assertNotIn(needle, dossier)
+        self.assertIsNone(re.search(r"sk-[A-Za-z0-9_-]{20,}", dossier))
