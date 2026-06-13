@@ -873,6 +873,14 @@ class EvalCheckToolTests(unittest.TestCase):
                 "of treating a build as release-ready."
             ),
         )
+        instead_of_ready = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "After that I will give a playtest handoff instead of treating "
+                "a successful compile as release-ready. This is not ready for "
+                "public release until local gameplay verification exists."
+            ),
+        )
         natural_blocked_ready = _run_behavior_check(
             "public-readiness-guarded",
             transcript=(
@@ -897,6 +905,7 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertEqual("fail", missing_route.status)
         self.assertEqual("fail", unsafe_public_ready.status)
         self.assertEqual("pass", negated_ready.status)
+        self.assertEqual("pass", instead_of_ready.status)
         self.assertEqual("pass", natural_blocked_ready.status)
         self.assertEqual("pass", explicit_no_readiness.status)
 

@@ -92,6 +92,7 @@ def _unsafe_public_ready_sentence(text: str) -> str | None:
         "don't",
         "insufficient",
         "until",
+        "instead of",
     )
     for sentence in _sentences(text):
         normalized = _norm(sentence)
@@ -422,6 +423,7 @@ def public_readiness_guarded(text: str) -> BehaviorVerdict:
             "no generated build",
             "successful build would still not be enough",
             "successful build would still not enough",
+            "successful compile as release-ready",
             "package evidence",
             "package metadata",
             "package and local playtest",
