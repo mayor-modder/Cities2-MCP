@@ -37,6 +37,10 @@ KNOWLEDGE_RELEASE_RERUN = (
     REPORTS
     / "2026-06-13-cities2-knowledge-release-rerun.md"
 )
+MODDING_MULTIAGENT_PROTOCOL = (
+    REPORTS
+    / "2026-06-13-cities2-modding-multiagent-protocol.md"
+)
 
 
 class EvalDocsTests(unittest.TestCase):
@@ -218,6 +222,51 @@ class EvalDocsTests(unittest.TestCase):
         self,
     ) -> None:
         report = KNOWLEDGE_RELEASE_RERUN.read_text(encoding="utf-8")
+
+        forbidden = [
+            "coding-agent-tool-calls.jsonl",
+            "transcript.txt",
+            "verdict.json",
+            "coding-agent-config",
+            "coding-agent-workdir",
+            "C:" + "\\" + "Users",
+            "\\" + "Users" + "\\",
+            "/" + "Users" + "/",
+            "OPENAI_API_KEY" + "=",
+        ]
+        for needle in forbidden:
+            self.assertNotIn(needle, report)
+        self.assertIsNone(re.search(r"sk-[A-Za-z0-9_-]{20,}", report))
+
+    def test_modding_multiagent_protocol_has_actionable_structure(self) -> None:
+        report = MODDING_MULTIAGENT_PROTOCOL.read_text(encoding="utf-8")
+
+        expected_sections = [
+            "# Cities2 modding multiagent eval protocol",
+            "## Executive summary",
+            "## What changed",
+            "## Pilot matrix",
+            "## Evidence model",
+            "## Success gates",
+            "## Artifact hygiene",
+        ]
+        last_index = -1
+        for section in expected_sections:
+            index = report.find(section)
+            self.assertNotEqual(index, -1)
+            self.assertGreater(index, last_index)
+            last_index = index
+
+        self.assertIn("`cities2-modding-workflow-safe-handoff`", report)
+        self.assertIn("WorkflowHandoffMod/package/package-state.txt", report)
+        self.assertIn("Exploratory only", report)
+        self.assertIn("indeterminate instrumentation states", report)
+        self.assertIn("deterministic evidence separately from manual acceptance review", report)
+
+    def test_modding_multiagent_protocol_avoids_raw_artifacts_and_private_paths(
+        self,
+    ) -> None:
+        report = MODDING_MULTIAGENT_PROTOCOL.read_text(encoding="utf-8")
 
         forbidden = [
             "coding-agent-tool-calls.jsonl",

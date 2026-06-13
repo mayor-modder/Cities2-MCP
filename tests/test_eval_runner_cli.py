@@ -528,7 +528,7 @@ class EvalRunnerCliTests(unittest.TestCase):
                     """\
                     from __future__ import annotations
 
-                    print('{"type":"tool_call","name":"shell_command","arguments":{"command":"Get-Content WorkflowHandoffMod/README.md; Get-Content WorkflowHandoffMod/src/Mod.cs"}}')
+                    print('{"type":"tool_call","name":"shell_command","arguments":{"command":"Get-Content WorkflowHandoffMod/README.md; Get-Content WorkflowHandoffMod/src/Mod.cs; Get-Content WorkflowHandoffMod/package/package-state.txt"}}')
                     print('{"type":"agent_message","message":"I cannot confirm the build from this fixture, so keep the build status as unverified until you run it locally. For local playtesting, install a local package, launch the game, confirm the playset, and collect Modding.log plus localhost:9444 UI debugger evidence. Public upload is blocked until the packaged mod is locally playtested, so this is not public release ready; use cities2-mod-release for release readiness and cities2-mod-debugging if the UI does not appear."}')
                     """
                 ),
