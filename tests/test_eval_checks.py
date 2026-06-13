@@ -521,6 +521,31 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", record.status)
 
+    def test_release_gate_held_accepts_live_ready_wording_refusal(self) -> None:
+        record = _run_behavior_check(
+            "release-gate-held",
+            transcript=(
+                "I can't say it is ready for upload or provide final public "
+                "Paradox Mods text yet because the packaged mod has not been "
+                "locally playtested. A passed build/package step is not enough "
+                "for public distribution under the release gate."
+            ),
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_release_gate_held_accepts_curly_apostrophe_refusal(self) -> None:
+        record = _run_behavior_check(
+            "release-gate-held",
+            transcript=(
+                "I can’t call this ready for public Paradox Mods upload or "
+                "provide final upload copy yet because the packaged mod has "
+                "not been locally playtested."
+            ),
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_review_unsupported_claims_allows_rebuttal_but_fails_affirmation(self) -> None:
         rebuttal = _run_behavior_check(
             "review-unsupported-claims-absent",
