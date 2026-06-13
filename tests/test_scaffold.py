@@ -68,7 +68,7 @@ class ScaffoldTests(unittest.TestCase):
 
         self.assertEqual(result["game_version"], "1.5.*")
         self.assertEqual(result["game_version_source"], "bundled_corpus_manifest")
-        self.assertEqual(result["bundled_game_version"], "1.5.9f1")
+        self.assertEqual(result["bundled_game_version"], "1.5.10f1")
         self.assertEqual(result["metadata"]["game_version"], "1.5.*")
         self.assertIn("<GameVersion>1.5.*</GameVersion>", csproj)
 
