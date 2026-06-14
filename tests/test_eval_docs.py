@@ -41,6 +41,10 @@ MODDING_MULTIAGENT_PROTOCOL = (
     REPORTS
     / "2026-06-13-cities2-modding-multiagent-protocol.md"
 )
+MODDING_HANDOFF_CONSISTENCY = (
+    REPORTS
+    / "2026-06-14-cities2-modding-handoff-consistency.md"
+)
 
 
 class EvalDocsTests(unittest.TestCase):
@@ -267,6 +271,52 @@ class EvalDocsTests(unittest.TestCase):
         self,
     ) -> None:
         report = MODDING_MULTIAGENT_PROTOCOL.read_text(encoding="utf-8")
+
+        forbidden = [
+            "coding-agent-tool-calls.jsonl",
+            "transcript.txt",
+            "verdict.json",
+            "coding-agent-config",
+            "coding-agent-workdir",
+            "C:" + "\\" + "Users",
+            "\\" + "Users" + "\\",
+            "/" + "Users" + "/",
+            "OPENAI_API_KEY" + "=",
+        ]
+        for needle in forbidden:
+            self.assertNotIn(needle, report)
+        self.assertIsNone(re.search(r"sk-[A-Za-z0-9_-]{20,}", report))
+
+    def test_modding_handoff_consistency_report_has_actionable_structure(self) -> None:
+        report = MODDING_HANDOFF_CONSISTENCY.read_text(encoding="utf-8")
+
+        expected_sections = [
+            "# Cities2 modding handoff consistency rerun",
+            "## Short version",
+            "## Run matrix",
+            "## Verdict table",
+            "## Failure patterns",
+            "## Interpretation",
+            "## Follow-up status",
+            "## Privacy note",
+        ]
+        last_index = -1
+        for section in expected_sections:
+            index = report.find(section)
+            self.assertNotEqual(index, -1)
+            self.assertGreater(index, last_index)
+            last_index = index
+
+        self.assertIn("`no-skill`: 0/3 passed", report)
+        self.assertIn("`with-cities2-modding`: 3/3 passed", report)
+        self.assertIn("clear positive delta", report)
+        self.assertIn("package-state evidence", report)
+        self.assertIn("tail-only path candidates remain strict", report)
+
+    def test_modding_handoff_consistency_report_avoids_raw_artifacts_and_private_paths(
+        self,
+    ) -> None:
+        report = MODDING_HANDOFF_CONSISTENCY.read_text(encoding="utf-8")
 
         forbidden = [
             "coding-agent-tool-calls.jsonl",

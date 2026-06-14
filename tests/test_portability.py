@@ -557,6 +557,21 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("start a dev server", text)
             self.assertNotIn("Claude Code and Codex, project-scoped plugin", text)
 
+    def test_modding_skill_requires_incomplete_project_handoff_evidence(self) -> None:
+        skill_paths = [
+            ROOT / "skills" / "cities2-modding" / "SKILL.md",
+            ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-modding" / "SKILL.md",
+            ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-modding" / "SKILL.md",
+        ]
+
+        for path in skill_paths:
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("package-state evidence", text)
+            self.assertIn("no generated build output", text)
+            self.assertIn("installable local artifact", text)
+            self.assertIn("package/installable artifact", text)
+            self.assertIn("launch, playset, logs, UI debugger, and confirmation", text)
+
     def test_install_guide_explains_workspace_allowlist_for_mod_repos(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
 

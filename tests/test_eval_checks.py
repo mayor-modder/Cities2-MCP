@@ -810,6 +810,52 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", record.status)
 
+    def test_project_files_inspected_accepts_wrapped_powershell_absolute_paths(self) -> None:
+        record = _run_behavior_check(
+            "project-files-inspected",
+            args=[
+                "WorkflowHandoffMod/README.md",
+                "WorkflowHandoffMod/src/Mod.cs",
+                "WorkflowHandoffMod/package/package-state.txt",
+            ],
+            events=[],
+            tool_calls=[
+                {
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            '"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell\\pwsh.exe" '
+                            '-Command "Get-Content -Path '
+                            "'C:/agent/run/coding-agent-workdir/WorkflowHandoffMod/README.md'\""
+                        )
+                    },
+                },
+                {
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            '"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell\\pwsh.exe" '
+                            '-Command "Get-Content -Path '
+                            "'C:/agent/run/coding-agent-workdir/WorkflowHandoffMod/src/Mod.cs'\""
+                        )
+                    },
+                },
+                {
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            '"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell\\pwsh.exe" '
+                            '-Command "Get-Content -Path '
+                            "'C:/agent/run/coding-agent-workdir/WorkflowHandoffMod/package/package-state.txt'\""
+                        )
+                    },
+                },
+            ],
+            condition="with-cities2-modding",
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_project_files_inspected_accepts_project_root_relative_reads(self) -> None:
         record = _run_behavior_check(
             "project-files-inspected",
@@ -858,6 +904,37 @@ class EvalCheckToolTests(unittest.TestCase):
                     "item": {
                         "type": "command_execution",
                         "command": "Get-Content OtherMod/src/Mod.cs",
+                    },
+                },
+            ],
+            condition="with-cities2-modding",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("WorkflowHandoffMod/README.md", record.detail)
+        self.assertIn("WorkflowHandoffMod/src/Mod.cs", record.detail)
+
+    def test_project_files_inspected_rejects_prefixed_wrong_project(self) -> None:
+        record = _run_behavior_check(
+            "project-files-inspected",
+            args=["WorkflowHandoffMod/README.md", "WorkflowHandoffMod/src/Mod.cs"],
+            tool_calls=[
+                {
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            "Get-Content "
+                            "C:/agent/run/coding-agent-workdir/OtherWorkflowHandoffMod/README.md"
+                        )
+                    },
+                },
+                {
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            "Get-Content "
+                            "C:/agent/run/coding-agent-workdir/OtherWorkflowHandoffMod/src/Mod.cs"
+                        )
                     },
                 },
             ],

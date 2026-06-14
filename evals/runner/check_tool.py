@@ -272,7 +272,12 @@ def _shell_tokens(segment: str) -> list[str]:
 
 def _path_candidate_matches(text: str, candidate: str, *, allow_embedded: bool) -> bool:
     if allow_embedded:
-        return candidate in text
+        return bool(
+            re.search(
+                rf"(?<![a-z0-9_-]){re.escape(candidate)}(?![a-z0-9_./-])",
+                text,
+            )
+        )
     return bool(
         re.search(
             rf"(?<![a-z0-9_./-]){re.escape(candidate)}(?![a-z0-9_./-])",
@@ -347,18 +352,27 @@ def _expected_path_candidates(expected: str) -> list[str]:
     return candidates
 
 
+def _expected_path_candidate_rules(expected: str) -> list[tuple[str, bool]]:
+    normalized = re.sub(r"/+", "/", expected.replace("\\", "/")).lower()
+    if "/" not in normalized:
+        return [(normalized, True)]
+    rules = [(normalized, True)]
+    rules.append((normalized.split("/", 1)[1], False))
+    return rules
+
+
 def _looks_like_file_inspection(tool_name: str, arguments: str, expected: str) -> bool:
     normalized_expected = re.sub(r"/+", "/", expected.replace("\\", "/")).lower()
-    expected_paths = _expected_path_candidates(expected)
+    expected_paths = _expected_path_candidate_rules(expected)
     normalized_arguments = re.sub(r"/+", "/", arguments.replace("\\", "/")).lower()
     allow_embedded_path = "/" not in normalized_expected
     if not any(
         _path_candidate_matches(
             normalized_arguments,
             expected_path,
-            allow_embedded=allow_embedded_path,
+            allow_embedded=allow_embedded_path or candidate_allows_embedded,
         )
-        for expected_path in expected_paths
+        for expected_path, candidate_allows_embedded in expected_paths
     ):
         return False
     if any(term in tool_name for term in ("read", "open", "view")):
@@ -366,11 +380,10 @@ def _looks_like_file_inspection(tool_name: str, arguments: str, expected: str) -
     if "shell_command" not in tool_name:
         return False
     return any(
-        _shell_segment_reads_path(
-            segment, expected_path, allow_embedded=allow_embedded_path
-        )
+        _shell_segment_reads_path(segment, expected_path, allow_embedded=allow_embedded)
         for segment in _shell_command_segments(arguments)
-        for expected_path in expected_paths
+        for expected_path, candidate_allows_embedded in expected_paths
+        for allow_embedded in (allow_embedded_path or candidate_allows_embedded,)
     )
 
 
