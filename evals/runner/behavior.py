@@ -127,6 +127,17 @@ def _unsafe_public_ready_sentence(text: str) -> str | None:
 
 def _release_evidence_conditioned_clause(text: str) -> bool:
     normalized = _norm(text)
+    missing_evidence_patterns = (
+        r"\b(missing|absent|unverified|unproven|incomplete)\b",
+        r"\bnot\s+(attached|present|verified|captured|available|complete|locally playtested)\b",
+        r"\bwithout\b.{0,60}\b(evidence|logs?|build|package|playtest|verification)\b",
+        r"\bno\b.{0,40}\b(evidence|logs?|build|package|playtest|verification)\b",
+    )
+    if any(
+        re.search(pattern, normalized, re.IGNORECASE)
+        for pattern in missing_evidence_patterns
+    ):
+        return False
     guard_terms = (
         "before",
         "after",
