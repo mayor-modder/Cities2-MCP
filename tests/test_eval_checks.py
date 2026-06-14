@@ -810,6 +810,52 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", record.status)
 
+    def test_project_files_inspected_accepts_wrapped_powershell_absolute_paths(self) -> None:
+        record = _run_behavior_check(
+            "project-files-inspected",
+            args=[
+                "WorkflowHandoffMod/README.md",
+                "WorkflowHandoffMod/src/Mod.cs",
+                "WorkflowHandoffMod/package/package-state.txt",
+            ],
+            events=[],
+            tool_calls=[
+                {
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            '"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell\\pwsh.exe" '
+                            '-Command "Get-Content -Path '
+                            "'C:/agent/run/coding-agent-workdir/WorkflowHandoffMod/README.md'\""
+                        )
+                    },
+                },
+                {
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            '"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell\\pwsh.exe" '
+                            '-Command "Get-Content -Path '
+                            "'C:/agent/run/coding-agent-workdir/WorkflowHandoffMod/src/Mod.cs'\""
+                        )
+                    },
+                },
+                {
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            '"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell\\pwsh.exe" '
+                            '-Command "Get-Content -Path '
+                            "'C:/agent/run/coding-agent-workdir/WorkflowHandoffMod/package/package-state.txt'\""
+                        )
+                    },
+                },
+            ],
+            condition="with-cities2-modding",
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_project_files_inspected_accepts_project_root_relative_reads(self) -> None:
         record = _run_behavior_check(
             "project-files-inspected",

@@ -97,6 +97,8 @@ Before writing files, building, packaging, or preparing playtesting handoff step
 
 If a write/build tool returns diagnostics, summarize the actionable errors first and include paths or commands that matter.
 
+When inspecting an unfamiliar or incomplete project, explicitly report package-state evidence before giving build, playtest, or release advice. If package markers or tool output say no generated build output exists, say that no generated build output is present and that there is no installable local artifact yet. Do not call that a successful package, public release candidate, or playable handoff. The next workflow is to restore or scaffold a real project, analyze/build it, then create or install a package/installable artifact for local playtesting.
+
 On Windows, use `npm.cmd` for both install and build commands; do not
 try bare `npm` first because execution policy can block `npm.ps1`. Use
 native file listing (`Get-ChildItem`) when checking template files or
@@ -114,6 +116,8 @@ installed, whether the game or playset must be restarted, the exact in-game
 checks to perform, the expected success signal, the likely failure signal, and
 relevant evidence such as `Modding.log`, Unity/Player logs, UI debugger output
 at `localhost:9444`, installed files, or playset state.
+
+For incomplete-project handoffs, keep the local playtest section concrete even when playtesting is not ready yet: state the package/installable artifact status, then list the evidence required for a future handoff: launch, playset, logs, UI debugger, and confirmation. If there is no installable local artifact, say local playtesting is blocked until one exists, then name the exact package/install step that would unblock it.
 
 Cities: Skylines II must be closed before installing or replacing a local mod
 build. If the game is running, stop and tell the user to close Cities: Skylines II before install. After install, tell the user to launch the game,
