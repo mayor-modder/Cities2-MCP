@@ -1031,6 +1031,28 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", record.status)
 
+    def test_review_actionable_findings_accepts_no_demonstrated_css_effect(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs is only a plain C# class with no IMod lifecycle. "
+                "Impact: the game cannot discover it as a functional mod. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. OptionsPanel.tsx is not evidence of a React UI mod by itself; "
+                "the missing React loader is not the top confirmed issue. "
+                "theme.css currently has no demonstrated effect. Nothing imports "
+                "or bundles it, so there is no current runtime styling risk or "
+                "benefit. Fix: wire it through the actual UI pipeline.\n"
+                "3. Readiness evidence still needed: clean build, package artifact, "
+                "installed package/playset smoke launch, local playtest results or "
+                "notes, logs, and UI debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_project_files_inspected_uses_tool_arguments_not_transcript_echo(self) -> None:
         passed = _run_behavior_check(
             "project-files-inspected",
