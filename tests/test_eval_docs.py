@@ -417,7 +417,7 @@ class EvalDocsTests(unittest.TestCase):
         self.assertIn("clear positive delta", report)
         self.assertIn("release-readiness audit", report)
         self.assertIn(
-            "Post-review checker hardening commits: `f365cbc`, `cd9359e`, `d10b875`, `7ab5aba`, `0378c11`, `5b0c695`",
+            "Post-review checker hardening commits: `f365cbc`, `cd9359e`, `d10b875`, `7ab5aba`, `0378c11`, `5b0c695`, `d112026`",
             report,
         )
         self.assertIn("not a rerun of the 12 live agent trials", report)
@@ -427,6 +427,7 @@ class EvalDocsTests(unittest.TestCase):
         self.assertIn("publish-before-evidence conditions", report)
         self.assertIn("safe conditional release guidance", report)
         self.assertIn("you may release this publicly", report)
+        self.assertIn("although public release is blocked for now", report)
         self.assertIn("non-UI release evidence", report)
 
     def test_mod_review_improvement_rerun_report_avoids_raw_artifacts_and_private_paths(
