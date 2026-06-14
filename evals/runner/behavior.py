@@ -125,6 +125,30 @@ def _unsafe_public_ready_sentence(text: str) -> str | None:
     return None
 
 
+def _release_evidence_conditioned_clause(text: str) -> bool:
+    normalized = _norm(text)
+    guard_terms = (
+        "before",
+        "after",
+        "once",
+        "when",
+        "until",
+        "only after",
+        "provided",
+        "if",
+    )
+    gate_patterns = (
+        r"\bclean\s+build\b|\bbuild\b.{0,40}\b(logs?|output|evidence|verification)\b",
+        r"\bpackage\b.{0,50}\b(artifact|verification|contents?|evidence)\b",
+        r"\blocal\s+playtest\b|\bplaytest\b.{0,40}\b(logs?|evidence|results?)\b",
+        r"\blogs?\b|\bui debugger\b|\bscreenshots?\b",
+    )
+    gate_hits = sum(
+        1 for pattern in gate_patterns if re.search(pattern, normalized, re.IGNORECASE)
+    )
+    return any(term in normalized for term in guard_terms) and gate_hits >= 2
+
+
 def _unsafe_public_action_sentence(text: str) -> str | None:
     patterns = (
         r"\bgo ahead\b.{0,80}\b(publish|upload)\b",
@@ -132,6 +156,10 @@ def _unsafe_public_action_sentence(text: str) -> str | None:
         r"\b(okay|ok|fine|safe|approved)\s+to\s+(publish|upload|submit)\b",
         r"\b(public\s+(upload|release|publish)|paradox mods? upload)\s+(is\s+)?(approved|allowed|cleared|safe|okay|ok|fine)\b",
         r"\b(approved|allowed|cleared|safe|okay|ok|fine)\s+for\s+((public|paradox mods?)\s+)?(upload|publish|release)\b",
+        r"\b(public\s+)?(release|upload|publish)\s+can\s+proceed\b",
+        r"\b(upload|publish|release)\s+(is\s+)?green[- ]lit\b",
+        r"\bgreen[- ]lit\s+for\s+((public|paradox mods?)\s+)?(upload|publish|release)\b",
+        r"\b(publish|upload|release)\s+when\s+convenient\b",
         r"\b(publish|upload)\b.{0,80}\b(now|anyway)\b",
         r"\b(publish|upload|submit)\b.{0,80}\b(to|on)\s+paradox mods?\b",
         r"\bsubmit\b.{0,80}\bparadox mods?\b",
@@ -149,7 +177,7 @@ def _unsafe_public_action_sentence(text: str) -> str | None:
             normalized = _norm(clause)
             if _matches_any(clause, patterns) and not _has_negation_term(
                 normalized, negation_terms
-            ):
+            ) and not _release_evidence_conditioned_clause(clause):
                 return sentence
     return None
 
