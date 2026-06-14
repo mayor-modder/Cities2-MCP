@@ -394,8 +394,10 @@ def review_actionable_findings_present(text: str) -> BehaviorVerdict:
             r"\bhypothesis\b.{0,120}\b(verify|evidence|proves|until|not the top)\b",
             r"\binferred\b.{0,80}\b(recommendation|hypothesis|guidance)\b",
             r"\bsupported\b.{0,80}\b(docs?|documentation|guidance|evidence|reference)\b",
+            r"\bdocumented\s+expectations\b",
             r"\b(current|available)\s+evidence\b.{0,120}\b(not|does not|doesn't|only|points)\b",
             r"\bdocs?\b.{0,120}\b(support|confirm|show|expect|describe)\b",
+            r"\bunproven\b.{0,120}\b(until|evidence|verify|proves?)\b",
         ),
     )
     evidence_level_separation = observed_project_evidence and bounded_guidance

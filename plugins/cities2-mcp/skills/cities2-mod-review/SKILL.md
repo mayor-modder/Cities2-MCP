@@ -20,6 +20,7 @@ Review the mod as a good-faith quality pass: find practical risks, missing evide
 - If source access is partial, say what was reviewed and what remains unknown.
 - For diff, branch, or PR-style reviews, identify the reviewed range or changed files, compare against the user request or plan, inspect affected call sites, and state if no diff or requirements were available.
 - When judging readiness, name the exact evidence that would prove the next stage: clean build, package artifact, installed package/playset smoke launch, local playtest results or notes, relevant logs, and UI debugger or screenshots for UI mods. Keep local playtest separate from install/playset launch; do not collapse it into "installed local package/playset launch" or "smoke-test in a local playset." If the scaffold cannot build yet, still list local playtest results or notes as a downstream gate after the build/package blockers are fixed.
+- If readiness is absent, unproven, or blocked, end with a `Readiness evidence still needed:` line or list that explicitly names: clean build, package artifact, installed package/playset smoke launch, local playtest results or notes, logs, and UI debugger or screenshots for UI mods.
 
 ## Multi-Agent Review Offer
 

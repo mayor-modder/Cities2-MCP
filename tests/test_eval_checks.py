@@ -951,6 +951,27 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", record.status)
 
+    def test_review_actionable_findings_accepts_documented_expectations_wording(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Evidence: Mod.cs has only a Name property and no IMod lifecycle. "
+                "Documented expectations point to a real CS2 mod entry point. "
+                "Impact: the game cannot discover this as a functional mod. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. Evidence: theme.css is not imported by OptionsPanel.tsx, so it "
+                "has no current effect. Fix: wire it into the UI bundle.\n"
+                "3. React loader work is unproven until package or import evidence "
+                "proves it. Readiness still needs a clean build, package artifact, "
+                "installed package/playset smoke launch, local playtest, logs, and "
+                "UI debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_project_files_inspected_uses_tool_arguments_not_transcript_echo(self) -> None:
         passed = _run_behavior_check(
             "project-files-inspected",
