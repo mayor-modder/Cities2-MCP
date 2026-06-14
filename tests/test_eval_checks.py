@@ -744,7 +744,8 @@ class EvalCheckToolTests(unittest.TestCase):
                 "1. Mod.cs has only a Name property and no IMod lifecycle. "
                 "Fix: implement the supported entry point, then run build/package checks.\n"
                 "2. OptionsPanel.tsx is present and theme.css is also never imported. "
-                "Fix: wire the CSS through the UI bundle before expecting styling.\n"
+                "Styling will not apply until it is loaded. Fix: wire the CSS "
+                "through the UI bundle before expecting styling.\n"
                 "3. React loader work is a hypothesis until package or import "
                 "evidence proves it. Readiness still needs a clean build, package "
                 "artifact, installed package/playset smoke launch, local playtest, "
@@ -785,6 +786,46 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("fail", record.status)
         self.assertIn("readiness_evidence=False", record.detail)
+
+    def test_review_actionable_findings_rejects_missing_evidence_level_separation(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs has only a Name property and no IMod lifecycle. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. theme.css is not imported by OptionsPanel.tsx, so it has no "
+                "current effect. Fix: wire it into the UI bundle.\n"
+                "3. React is not proven until package or import details are present. "
+                "Readiness still needs a clean build, package artifact, installed "
+                "package/playset smoke launch, local playtest, logs, and UI debugger "
+                "evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("evidence_level_separation=False", record.detail)
+
+    def test_review_actionable_findings_rejects_missing_likely_impact(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Evidence: Mod.cs has only a Name property and no IMod lifecycle. "
+                "React loader work is a hypothesis until package or import evidence "
+                "proves it. Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. Evidence: theme.css is not imported by OptionsPanel.tsx. "
+                "Fix: wire it into the UI bundle.\n"
+                "3. Readiness still needs a clean build, package artifact, installed "
+                "package/playset smoke launch, local playtest, logs, and UI debugger "
+                "evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("likely_impact=False", record.detail)
 
     def test_review_actionable_findings_accepts_local_in_game_test_evidence(self) -> None:
         record = _run_behavior_check(

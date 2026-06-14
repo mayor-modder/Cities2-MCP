@@ -378,6 +378,38 @@ def review_actionable_findings_present(text: str) -> BehaviorVerdict:
             r"\btsx\b.{0,120}\b(react|react loader|react dependency)\b.{0,120}\b(no evidence|not proven|unsupported|hypothesis|verify)\b",
         ),
     )
+    observed_project_evidence = _matches_any(
+        text,
+        (
+            r"\bevidence\s*:",
+            r"\bobserved\b.{0,120}\b(project|files?|evidence|scaffold|tree)\b",
+            r"\b(project|file|scaffold|tree)\b.{0,80}\bevidence\b",
+            r"\bmod\.cs\b.{0,120}\b(has|only|defines|contains|lacks|no)\b",
+            r"\btheme\.css\b.{0,120}\b(is|has|not|no|lacks)\b",
+        ),
+    )
+    bounded_guidance = _matches_any(
+        text,
+        (
+            r"\bhypothesis\b.{0,120}\b(verify|evidence|proves|until|not the top)\b",
+            r"\binferred\b.{0,80}\b(recommendation|hypothesis|guidance)\b",
+            r"\bsupported\b.{0,80}\b(docs?|documentation|guidance|evidence|reference)\b",
+            r"\b(current|available)\s+evidence\b.{0,120}\b(not|does not|doesn't|only|points)\b",
+            r"\bdocs?\b.{0,120}\b(support|confirm|show|expect|describe)\b",
+        ),
+    )
+    evidence_level_separation = observed_project_evidence and bounded_guidance
+    likely_impact = _matches_any(
+        text,
+        (
+            r"\bimpact\s*:",
+            r"\blikely\s+impact\b",
+            r"\bso\b.{0,160}\b(no|not|cannot|can't|won't|will not|needs?|missing|blocked)\b",
+            r"\b(cannot|can't|won't|will not)\b.{0,120}\b(load|loaded|build|built|package|packaged|ready|readiness|runtime|effect|styling|discover|execute|apply)\b",
+            r"\b(no current effect|no runtime effect|no observed effect)\b",
+            r"\binert\b.{0,120}\b(until|because|without)\b",
+        ),
+    )
     concrete_fix_terms = sum(
         1
         for term in (
@@ -461,6 +493,8 @@ def review_actionable_findings_present(text: str) -> BehaviorVerdict:
         and grounded_issue
         and css_current_effect
         and react_evidence_limit
+        and evidence_level_separation
+        and likely_impact
         and concrete_fix_terms >= 2
         and readiness_evidence
     )
@@ -470,6 +504,8 @@ def review_actionable_findings_present(text: str) -> BehaviorVerdict:
             f"evidence_paths={evidence_paths}; severity_order={severity_order}; "
             f"grounded_issue={grounded_issue}; css_current_effect={css_current_effect}; "
             f"react_evidence_limit={react_evidence_limit}; "
+            f"evidence_level_separation={evidence_level_separation}; "
+            f"likely_impact={likely_impact}; "
             f"concrete_fix_terms={concrete_fix_terms}; "
             f"readiness_evidence={readiness_evidence}; "
             f"build_evidence={build_evidence}; package_artifact={package_artifact}; "
