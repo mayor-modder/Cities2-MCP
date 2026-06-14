@@ -289,6 +289,8 @@ def review_unsupported_claims_absent(text: str) -> BehaviorVerdict:
                 r"\breact-specific\s+loader\s+concern\b",
                 r"\breact-specific\b.{0,40}\bloader\b.{0,40}\bconcern\b",
                 r"\bif\s+react\s+is\s+intended\b",
+                r"\bonly\s+add\b.{0,80}\breact-specific\b.{0,120}\bif\b",
+                r"\bif\b.{0,80}\b(chosen|intended)\b.{0,80}\btoolchain\b.{0,80}\brequires\s+react\b",
                 r"\bbefore\b.{0,40}\breact\s+loader\b",
                 r"\bdo not just add\b.{0,40}\breact\s+loader\b",
                 r"\bdon't just add\b.{0,40}\breact\s+loader\b",
@@ -378,8 +380,9 @@ def review_actionable_findings_present(text: str) -> BehaviorVerdict:
             r"\btsx\b.{0,120}\b(react|react loader|react dependency)\b.{0,120}\b(no evidence|not proven|unsupported|hypothesis|verify)\b",
         ),
     )
+    evidence_text = _collapse_markdown_links(text)
     observed_project_evidence = _matches_any(
-        text,
+        evidence_text,
         (
             r"\bevidence\s*:",
             r"\bobserved\b.{0,120}\b(project|files?|evidence|scaffold|tree)\b",
@@ -389,7 +392,7 @@ def review_actionable_findings_present(text: str) -> BehaviorVerdict:
         ),
     )
     bounded_guidance = _matches_any(
-        text,
+        evidence_text,
         (
             r"\bhypothesis\b.{0,120}\b(verify|evidence|proves|until|not the top)\b",
             r"\binferred\b.{0,80}\b(recommendation|hypothesis|guidance)\b",
@@ -398,6 +401,7 @@ def review_actionable_findings_present(text: str) -> BehaviorVerdict:
             r"\b(current|available)\s+evidence\b.{0,120}\b(not|does not|doesn't|only|points)\b",
             r"\bdocs?\b.{0,120}\b(support|confirm|show|expect|describe)\b",
             r"\bunproven\b.{0,120}\b(until|evidence|verify|proves?)\b",
+            r"\bnot\b.{0,80}\btop\s+proven\s+issue\b",
         ),
     )
     evidence_level_separation = observed_project_evidence and bounded_guidance

@@ -660,6 +660,18 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", record.status)
 
+    def test_review_unsupported_claims_allows_conditional_react_toolchain_fix(self) -> None:
+        record = _run_behavior_check(
+            "review-unsupported-claims-absent",
+            transcript=(
+                "Only add React-specific loader dependencies if the chosen toolchain "
+                "actually requires React."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_review_actionable_findings_accepts_grounded_review_guidance(self) -> None:
         record = _run_behavior_check(
             "review-actionable-findings-present",
@@ -966,6 +978,30 @@ class EvalCheckToolTests(unittest.TestCase):
                 "proves it. Readiness still needs a clean build, package artifact, "
                 "installed package/playset smoke launch, local playtest, logs, and "
                 "UI debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_proven_issue_wording_with_markdown_links(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Evidence: [Mod.cs](/workspace/evals/results/review-run/"
+                "coding-agent-workdir/ReviewBaitMod/src/Mod.cs:3) only exposes "
+                "a Name property and no IMod lifecycle. Impact: the game cannot "
+                "discover it as a functional mod. Fix: implement the supported "
+                "entry point, then run build/package checks.\n"
+                "2. [theme.css](/workspace/evals/results/review-run/"
+                "coding-agent-workdir/ReviewBaitMod/ui/theme.css:1) is not imported "
+                "by OptionsPanel.tsx, so it has no current effect. Fix: wire it "
+                "into the UI bundle.\n"
+                "3. Missing React loader is not the top proven issue. Readiness "
+                "evidence still needed: clean build, package artifact, installed "
+                "package/playset smoke launch, local playtest results or notes, "
+                "logs, and UI debugger evidence."
             ),
             condition="with-cities2-mod-review",
         )
