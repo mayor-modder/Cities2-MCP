@@ -272,7 +272,12 @@ def _shell_tokens(segment: str) -> list[str]:
 
 def _path_candidate_matches(text: str, candidate: str, *, allow_embedded: bool) -> bool:
     if allow_embedded:
-        return candidate in text
+        return bool(
+            re.search(
+                rf"(?<![a-z0-9_-]){re.escape(candidate)}(?![a-z0-9_./-])",
+                text,
+            )
+        )
     return bool(
         re.search(
             rf"(?<![a-z0-9_./-]){re.escape(candidate)}(?![a-z0-9_./-])",

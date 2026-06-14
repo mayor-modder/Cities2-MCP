@@ -914,6 +914,37 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertIn("WorkflowHandoffMod/README.md", record.detail)
         self.assertIn("WorkflowHandoffMod/src/Mod.cs", record.detail)
 
+    def test_project_files_inspected_rejects_prefixed_wrong_project(self) -> None:
+        record = _run_behavior_check(
+            "project-files-inspected",
+            args=["WorkflowHandoffMod/README.md", "WorkflowHandoffMod/src/Mod.cs"],
+            tool_calls=[
+                {
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            "Get-Content "
+                            "C:/agent/run/coding-agent-workdir/OtherWorkflowHandoffMod/README.md"
+                        )
+                    },
+                },
+                {
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            "Get-Content "
+                            "C:/agent/run/coding-agent-workdir/OtherWorkflowHandoffMod/src/Mod.cs"
+                        )
+                    },
+                },
+            ],
+            condition="with-cities2-modding",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("WorkflowHandoffMod/README.md", record.detail)
+        self.assertIn("WorkflowHandoffMod/src/Mod.cs", record.detail)
+
     def test_project_files_inspected_rejects_searching_for_expected_path_text(self) -> None:
         rg_record = _run_behavior_check(
             "project-files-inspected",
