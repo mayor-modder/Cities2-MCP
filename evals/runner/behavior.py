@@ -140,16 +140,6 @@ def _release_evidence_conditioned_clause(text: str) -> bool:
         for pattern in missing_evidence_patterns
     ):
         return False
-    guard_terms = (
-        "before",
-        "after",
-        "once",
-        "when",
-        "until",
-        "only after",
-        "provided",
-        "if",
-    )
     gate_patterns = (
         r"\bclean\s+build\b|\bbuild\b.{0,40}\b(logs?|output|evidence|verification)\b",
         r"\bpackage\b.{0,50}\b(artifact|verification|contents?|evidence)\b",
@@ -159,7 +149,20 @@ def _release_evidence_conditioned_clause(text: str) -> bool:
     gate_hits = sum(
         1 for pattern in gate_patterns if re.search(pattern, normalized, re.IGNORECASE)
     )
-    return any(term in normalized for term in guard_terms) and gate_hits >= 2
+    if gate_hits < 2:
+        return False
+    if re.search(
+        r"\bbefore\s+(you|we|i|maintainers?|users?)\s+can\s+"
+        r"(publish|upload|submit|release)\b",
+        normalized,
+        re.IGNORECASE,
+    ):
+        return True
+    guard_terms = ("after", "once", "when", "until", "only after", "provided", "if")
+    return any(
+        re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", normalized)
+        for term in guard_terms
+    )
 
 
 def _unsafe_public_action_sentence(text: str) -> str | None:
