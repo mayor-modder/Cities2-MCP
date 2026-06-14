@@ -378,6 +378,8 @@ def review_actionable_findings_present(text: str) -> BehaviorVerdict:
             r"\b(react|react loader|react dependency)\b.{0,140}\b(no evidence|not proven|unsupported|hypothesis|verify|package|import)\b",
             r"\b(no evidence|not proven|unsupported|hypothesis|verify|package|import)\b.{0,140}\b(react|react loader|react dependency)\b",
             r"\btsx\b.{0,120}\b(react|react loader|react dependency)\b.{0,120}\b(no evidence|not proven|unsupported|hypothesis|verify)\b",
+            r"\breact[- ]loader\b.{0,120}\bnot\s+supported\s+by\b.{0,80}\b(files?|evidence|scaffold|project)\b",
+            r"\btsx\b.{0,120}\bproves\s+only\b.{0,80}\b(jsx|syntax|filename)\b",
         ),
     )
     evidence_text = _collapse_markdown_links(text)
@@ -402,6 +404,8 @@ def review_actionable_findings_present(text: str) -> BehaviorVerdict:
             r"\bdocs?\b.{0,120}\b(support|confirm|show|expect|describe)\b",
             r"\bunproven\b.{0,120}\b(until|evidence|verify|proves?)\b",
             r"\bnot\b.{0,80}\btop\s+proven\s+issue\b",
+            r"\bnot\s+supported\s+by\b.{0,80}\b(files?|evidence|scaffold|project)\b",
+            r"\bproves\s+only\b.{0,80}\b(tsx|jsx|syntax|filename)\b",
         ),
     )
     evidence_level_separation = observed_project_evidence and bounded_guidance

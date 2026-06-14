@@ -1008,6 +1008,29 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", record.status)
 
+    def test_review_actionable_findings_accepts_not_supported_by_files_wording(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. [ReviewBaitMod/src/Mod.cs](/workspace/evals/results/review-run/"
+                "coding-agent-workdir/ReviewBaitMod/src/Mod.cs:3) defines a plain "
+                "Mod class with no IMod lifecycle. Impact: the game cannot discover "
+                "it as a functional mod. Fix: implement the supported entry point, "
+                "then run build/package checks.\n"
+                "2. The React-loader concern is not supported by the files. "
+                "OptionsPanel.tsx proves only TypeScript JSX syntax. theme.css is "
+                "not imported by OptionsPanel.tsx, so it has no current effect. "
+                "Fix: wire the UI bundle only after the scaffold exists.\n"
+                "3. Readiness evidence still needed: clean build, package artifact, "
+                "installed package/playset smoke launch, local playtest results or "
+                "notes, logs, and UI debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_project_files_inspected_uses_tool_arguments_not_transcript_echo(self) -> None:
         passed = _run_behavior_check(
             "project-files-inspected",
