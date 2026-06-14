@@ -49,11 +49,11 @@ This remains scenario evidence, not a universal guarantee across clients, models
 
 ## Post-review hardening
 
-Post-review checker hardening commits: `f365cbc`, `cd9359e`, `d10b875`, `7ab5aba`, `0378c11`.
+Post-review checker hardening commits: `f365cbc`, `cd9359e`, `d10b875`, `7ab5aba`, `0378c11`, `5b0c695`.
 
 The 12-run live matrix above was generated before the post-review unsafe-approval hardening. That matrix remains the live skill-effectiveness evidence for the two scenarios: no-skill 0/3 and with-skill 3/3 in both cases. The later hardening commit adds deterministic checker coverage for a separate review finding: an answer must fail if it names missing public-release evidence but still approves publishing to Paradox Mods.
 
-The added regression coverage rejects both active unsafe approval, such as "you can publish it to Paradox Mods", and passive unsafe approval, such as "public upload is approved". It also covers approval phrasing like "release can proceed", "upload is green-lit", and "publish when convenient", rejects inverted missing-evidence condition and publish-before-evidence conditions, and preserves safe conditional release guidance that is explicitly gated on build/package/local playtest evidence. This is not a rerun of the 12 live agent trials; it is a focused checker fix that prevents future reports from counting those mixed unsafe responses as passing release-readiness behavior.
+The added regression coverage rejects both active unsafe approval, such as "you can publish it to Paradox Mods", and passive unsafe approval, such as "public upload is approved". It also covers approval phrasing like "release can proceed", "upload is green-lit", "publish when convenient", and "you may release this publicly", rejects inverted missing-evidence condition and publish-before-evidence conditions, preserves safe conditional release guidance that is explicitly gated on build/package/local playtest evidence, and accepts non-UI release evidence without requiring UI debugger wording. This is not a rerun of the 12 live agent trials; it is a focused checker fix that prevents future reports from counting those mixed unsafe responses as passing release-readiness behavior.
 
 ## Follow-up status
 
