@@ -672,6 +672,30 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", record.status)
 
+    def test_review_unsupported_claims_allows_future_react_pipeline_condition(self) -> None:
+        record = _run_behavior_check(
+            "review-unsupported-claims-absent",
+            transcript=(
+                "A missing React loader may become an issue if you choose a "
+                "React-based UI pipeline, but .tsx alone only proves JSX/TSX syntax."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_unsupported_claims_allows_premature_unless_evidence_wording(self) -> None:
+        record = _run_behavior_check(
+            "review-unsupported-claims-absent",
+            transcript=(
+                "The React-loader concern is premature unless package imports or "
+                "template evidence show this is a React UI mod."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_review_actionable_findings_accepts_grounded_review_guidance(self) -> None:
         record = _run_behavior_check(
             "review-actionable-findings-present",
@@ -696,6 +720,234 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", record.status)
 
+    def test_review_actionable_findings_accepts_bold_severity_labels(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "**[High] No buildable mod/package scaffold**\n"
+                "Evidence level: observed in project files; supported by CS2 docs "
+                "search. Evidence: Mod.cs exists but there is no .csproj, package.json, "
+                "or package metadata. Likely impact: the scaffold cannot build or "
+                "package. Concrete fix: add the project file and package metadata.\n"
+                "**[Medium] TSX/CSS files are unwired**\n"
+                "Evidence level: observed in project files. Evidence: OptionsPanel.tsx "
+                "and theme.css have no imports, bundle config, UI registration, or "
+                "runtime loader. Likely impact: the UI and styling have no current "
+                "runtime effect. Concrete fix: wire both files through the chosen UI "
+                "pipeline.\n"
+                "**[Low] React loader is unproven**\n"
+                "Evidence level: inferred recommendation. OptionsPanel.tsx proves "
+                "only JSX syntax; there is no React import or dependency evidence. "
+                "Concrete fix: verify package/import evidence first. Readiness evidence "
+                "still needed: clean build, package artifact, installed package/playset "
+                "smoke launch, local playtest results, logs, and UI debugger screenshots."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_mcp_analysis_evidence_level(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "[High] No buildable CS2 mod project is present\n"
+                "Evidence level: observed in project files and MCP project analysis. "
+                "Evidence: Mod.cs, OptionsPanel.tsx, theme.css, README.md, and no "
+                ".csproj. Likely impact: this cannot build or package. Concrete fix: "
+                "add the project scaffold.\n"
+                "[Medium] UI files are unwired\n"
+                "Evidence level: observed in project files. Evidence: theme.css is "
+                "not imported, bundled, registered, or referenced by inspected files, "
+                "so it has no current effect. Likely impact: no current styling "
+                "benefit or runtime styling risk. Concrete fix: wire the stylesheet "
+                "through the chosen UI pipeline.\n"
+                "[Low] React loader is conditional\n"
+                "Evidence level: inferred recommendation. A missing React loader may "
+                "become an issue if you choose a React-based UI pipeline, but "
+                "OptionsPanel.tsx proves only JSX syntax and there is no React import "
+                "or dependency evidence. Concrete fix: verify package/import evidence "
+                "before adding React. Readiness evidence still needed: clean build, "
+                "package artifact, installed package/playset smoke launch, local "
+                "playtest results, logs, and UI debugger screenshots."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_mcp_build_and_wiki_evidence_levels(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "`[High] No buildable CS2 mod project exists yet`\n"
+                "Evidence level: observed in project files and MCP build attempt. "
+                "Evidence: Mod.cs, OptionsPanel.tsx, theme.css, README.md, and no "
+                ".csproj or package.json. Likely impact: nothing can be built or "
+                "packaged. Concrete fix: add a real CS2 project scaffold.\n"
+                "`[Medium] UI files are inert`\n"
+                "Evidence level: observed in project files, supported by CS2 wiki "
+                "snippets. Evidence: theme.css is not imported, registered, bundled, "
+                "or referenced by inspected files, so CSS currently has no effect. "
+                "Likely impact: no current styling benefit or runtime styling risk. "
+                "Concrete fix: wire the stylesheet through the chosen UI pipeline.\n"
+                "`[Low] React loader is not first`\n"
+                "Evidence level: inferred recommendation. A missing React loader may "
+                "become relevant later, but OptionsPanel.tsx proves only JSX syntax "
+                "and there is no React import or dependency evidence. Concrete fix: "
+                "verify package/import evidence before adding React. Readiness evidence "
+                "still needed: clean build, package artifact, installed package/playset "
+                "smoke launch, local playtest results, logs, and UI debugger screenshots."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_conditional_react_boundary_without_inferred_label(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "`[High] No buildable CS2 mod project exists yet`\n"
+                "Evidence level: observed in project files and MCP build attempt. "
+                "Evidence: Mod.cs, OptionsPanel.tsx, theme.css, README.md, and no "
+                ".csproj or package.json. Likely impact: nothing can be built or "
+                "packaged. Concrete fix: add a real CS2 project scaffold.\n"
+                "`[Medium] CSS currently has no effect`\n"
+                "Evidence level: observed in project files. Evidence: theme.css is "
+                "not imported, registered, bundled, or referenced by inspected files. "
+                "Likely impact: no current styling benefit or runtime styling risk. "
+                "Concrete fix: wire the stylesheet through the chosen UI pipeline.\n"
+                "`[Medium] React is not a confirmed top issue`\n"
+                "Evidence level: observed in project files. Evidence: OptionsPanel.tsx "
+                "uses TSX syntax, but there is no package.json, React dependency, "
+                "import, JSX runtime config, bundler, loader, or UI registration file. "
+                "Likely impact: .tsx proves JSX-like syntax only. A missing React "
+                "loader may become relevant later, but it is not the first confirmed "
+                "blocker from this scaffold. Concrete fix: decide the UI stack "
+                "explicitly. Readiness evidence still needed: clean build, package "
+                "artifact, installed package/playset smoke launch, local playtest "
+                "results, logs, and UI debugger screenshots."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_premature_react_boundary_without_inferred_label(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "`[High] Scaffold is not buildable or loadable`\n"
+                "Evidence level: observed in project files, supported by CS2 wiki "
+                "snippets. Evidence: Mod.cs, OptionsPanel.tsx, theme.css, README.md, "
+                "and no .csproj or package.json. Likely impact: this cannot build "
+                "or package. Concrete fix: add a real CS2 project scaffold.\n"
+                "`[Medium] The TSX/CSS files are currently inert`\n"
+                "Evidence level: observed in project files. Evidence: theme.css is "
+                "not imported, registered, bundled, or referenced by inspected files, "
+                "so it has no current effect. Likely impact: no current styling "
+                "benefit or runtime styling risk. Concrete fix: wire the UI pipeline "
+                "if intended.\n"
+                "`[Medium] React-loader concern is premature`\n"
+                "Evidence level: observed in project files. OptionsPanel.tsx proves "
+                "only JSX/TSX syntax; the React-loader concern is premature unless "
+                "package imports or template evidence show this is a React UI mod. "
+                "Concrete fix: verify package/import evidence before adding React. "
+                "Readiness evidence still needed: clean build, package artifact, "
+                "installed package/playset smoke launch, local playtest results, "
+                "logs, and UI debugger screenshots."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_proves_syntax_not_react_wording(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "`[High] Scaffold is not buildable or loadable`\n"
+                "Evidence level: observed in project files, supported by CS2 wiki "
+                "snippets. Evidence: Mod.cs, OptionsPanel.tsx, theme.css, README.md, "
+                "and no .csproj. Likely impact: this cannot build or package. "
+                "Concrete fix: add a real CS2 project scaffold.\n"
+                "`[Medium] The TSX/CSS files are currently inert`\n"
+                "Evidence level: observed in project files. Evidence: theme.css is "
+                "not imported, registered, bundled, or referenced by inspected files, "
+                "so it has no current effect. Likely impact: the UI and CSS have no "
+                "current runtime effect. Concrete fix: wire the UI pipeline if intended.\n"
+                "`[Medium] React-loader concern is premature`\n"
+                "Evidence level: observed in project files. A .tsx extension proves "
+                "JSX/TSX syntax, not React specifically and not a loader requirement "
+                "by itself. The React-loader concern is premature unless you add "
+                "evidence that this is a bundled React UI mod. Concrete fix: verify "
+                "package/import evidence before adding React. Readiness evidence still "
+                "needed: clean build, package artifact, installed package/playset "
+                "smoke launch, local playtest results, logs, and UI debugger screenshots."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_supported_by_wiki_line_break(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "`[High] Scaffold is not buildable or loadable`\n\n"
+                "Evidence level: observed in project files, supported by CS2 wiki snippets.  \n"
+                "Evidence: Mod.cs, OptionsPanel.tsx, theme.css, README.md, and no "
+                ".csproj. Likely impact: this cannot build or package. Concrete fix: "
+                "add a real CS2 project scaffold.\n"
+                "`[Medium] The TSX/CSS files are currently inert`\n"
+                "Evidence level: observed in project files. Evidence: theme.css is "
+                "not imported, registered, bundled, or referenced by inspected files, "
+                "so it has no current effect. Likely impact: the UI and CSS have no "
+                "current runtime effect. Concrete fix: wire the UI pipeline if intended.\n"
+                "`[Medium] React-loader concern is premature`\n"
+                "Evidence level: observed in project files. A .tsx extension proves "
+                "JSX/TSX syntax, not React specifically and not a loader requirement "
+                "by itself. The React-loader concern is premature unless you add "
+                "evidence that this is a bundled React UI mod. Concrete fix: verify "
+                "package/import evidence before adding React. Readiness evidence still "
+                "needed: clean build, package artifact, installed package/playset "
+                "smoke launch, local playtest results, logs, and UI debugger screenshots."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_backticked_severity_labels(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "**Findings**\n\n"
+                "`[High] Not a buildable CS2 mod yet`\n"
+                "Evidence level: observed in project files, supported by docs. "
+                "Evidence: Mod.cs defines only a Name property, and there is no "
+                ".csproj or package.json. Likely impact: the mod cannot build or "
+                "package. Concrete fix: create the project file and build script.\n"
+                "`[Medium] UI files are orphaned`\n"
+                "Evidence level: observed in project files. Evidence: theme.css is "
+                "not imported or loaded by OptionsPanel.tsx, so it has no current "
+                "effect and no current runtime styling risk or benefit. Concrete "
+                "fix: wire the stylesheet into the real UI bundle if intended.\n"
+                "`[Low] React loader is unproven`\n"
+                "Evidence level: inferred recommendation. Evidence: OptionsPanel.tsx "
+                "proves only TSX/JSX syntax; there is no React import or dependency "
+                "evidence, so React loader work is not the top confirmed issue. "
+                "Concrete fix: verify package/import evidence before adding React. "
+                "Readiness evidence still needed: clean build, package artifact, "
+                "installed package/playset smoke launch, local playtest results, "
+                "logs, and UI debugger screenshots."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_review_actionable_findings_rejects_react_only_commentary(self) -> None:
         record = _run_behavior_check(
             "review-actionable-findings-present",
@@ -709,6 +961,339 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("fail", record.status)
         self.assertIn("grounded_issue=False", record.detail)
+
+    def test_review_release_readiness_audit_accepts_actionable_release_review(self) -> None:
+        record = _run_behavior_check(
+            "review-release-readiness-audit-present",
+            transcript=(
+                "Findings ordered by severity:\n"
+                "- High: Public release readiness is not proven. Evidence: "
+                "AuditReviewMod/package/manifest.json and RELEASE_NOTES.md say a "
+                "package exists, but README.md says the package has not been locally "
+                "playtested. Likely impact: users may install an unverified package. "
+                "Concrete fix: run installed package/playset smoke launch, local "
+                "playtest results, logs, and UI debugger screenshots before upload.\n"
+                "- High: License and attribution are unresolved. Evidence: "
+                "AuditReviewMod/assets/icon.txt says the icon was adapted from another "
+                "mod and the LICENSE file is missing. Likely impact: redistribution "
+                "may violate asset rights. Concrete fix: replace the icon or document "
+                "permission, license, and attribution.\n"
+                "- Medium: Build/package evidence is incomplete. Evidence level: "
+                "observed in project files; package metadata exists, but clean build "
+                "logs and package artifact verification are not attached. Likely impact: "
+                "the package may not match the source. Concrete fix: capture build "
+                "output and package contents before release."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_release_readiness_audit_rejects_package_only_release_approval(self) -> None:
+        record = _run_behavior_check(
+            "review-release-readiness-audit-present",
+            transcript=(
+                "The package exists and the release notes look good. This is ready "
+                "for public upload. I would ship it now and clean up attribution later."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("fail", record.status)
+
+    def test_review_release_readiness_audit_rejects_public_upload_approval_after_gates(self) -> None:
+        record = _run_behavior_check(
+            "review-release-readiness-audit-present",
+            transcript=(
+                "Findings ordered by severity:\n"
+                "- High: Public release readiness is not proven. Evidence: "
+                "AuditReviewMod/package/manifest.json and RELEASE_NOTES.md say a "
+                "package exists, but README.md says the package has not been locally "
+                "playtested. Likely impact: users may install an unverified package. "
+                "Concrete fix: run installed package/playset smoke launch, local "
+                "playtest results, logs, and UI debugger screenshots before upload.\n"
+                "- High: License and attribution are unresolved. Evidence: "
+                "AuditReviewMod/assets/icon.txt says the icon was adapted from another "
+                "mod and the LICENSE file is missing. Likely impact: redistribution "
+                "may violate asset rights. Concrete fix: replace the icon or document "
+                "permission, license, and attribution.\n"
+                "- Medium: Build/package evidence is incomplete. Evidence level: "
+                "observed in project files; package metadata exists, but clean build "
+                "logs and package artifact verification are not attached. Likely impact: "
+                "the package may not match the source. Concrete fix: capture build "
+                "output and package contents before release.\n"
+                "Despite those gaps, you can publish it to Paradox Mods."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("unsafe_ready=", record.detail)
+
+    def test_review_release_readiness_audit_rejects_passive_public_upload_approval(self) -> None:
+        record = _run_behavior_check(
+            "review-release-readiness-audit-present",
+            transcript=(
+                "Findings ordered by severity:\n"
+                "- High: Public release readiness is not proven. Evidence: "
+                "AuditReviewMod/package/manifest.json and RELEASE_NOTES.md say a "
+                "package exists, but README.md says the package has not been locally "
+                "playtested. Likely impact: users may install an unverified package. "
+                "Concrete fix: run installed package/playset smoke launch, local "
+                "playtest results, logs, and UI debugger screenshots before upload.\n"
+                "- High: License and attribution are unresolved. Evidence: "
+                "AuditReviewMod/assets/icon.txt says the icon was adapted from another "
+                "mod and the LICENSE file is missing. Likely impact: redistribution "
+                "may violate asset rights. Concrete fix: replace the icon or document "
+                "permission, license, and attribution.\n"
+                "- Medium: Build/package evidence is incomplete. Evidence level: "
+                "observed in project files; package metadata exists, but clean build "
+                "logs and package artifact verification are not attached. Likely impact: "
+                "the package may not match the source. Concrete fix: capture build "
+                "output and package contents before release.\n"
+                "Despite those gaps, public upload is approved."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("unsafe_ready=", record.detail)
+
+    def test_review_release_readiness_audit_rejects_proceed_and_greenlit_approval(self) -> None:
+        base_transcript = (
+            "Findings ordered by severity:\n"
+            "- High: Public release readiness is not proven. Evidence: "
+            "AuditReviewMod/package/manifest.json and RELEASE_NOTES.md say a "
+            "package exists, but README.md says the package has not been locally "
+            "playtested. Likely impact: users may install an unverified package. "
+            "Concrete fix: run installed package/playset smoke launch, local "
+            "playtest results, logs, and UI debugger screenshots before upload.\n"
+            "- High: License and attribution are unresolved. Evidence: "
+            "AuditReviewMod/assets/icon.txt says the icon was adapted from another "
+            "mod and the LICENSE file is missing. Likely impact: redistribution "
+            "may violate asset rights. Concrete fix: replace the icon or document "
+            "permission, license, and attribution.\n"
+            "- Medium: Build/package evidence is incomplete. Evidence level: "
+            "observed in project files; package metadata exists, but clean build "
+            "logs and package artifact verification are not attached. Likely impact: "
+            "the package may not match the source. Concrete fix: capture build "
+            "output and package contents before release.\n"
+        )
+
+        for approval in (
+            "Despite those gaps, release can proceed.",
+            "Despite those gaps, upload is green-lit.",
+            "Despite those gaps, publish when convenient.",
+            "Despite those gaps, you may release this publicly.",
+        ):
+            with self.subTest(approval=approval):
+                record = _run_behavior_check(
+                    "review-release-readiness-audit-present",
+                    transcript=base_transcript + approval,
+                    condition="with-cities2-mod-review",
+                )
+
+                self.assertEqual("fail", record.status)
+                self.assertIn("unsafe_ready=", record.detail)
+
+    def test_review_release_readiness_audit_rejects_inverted_evidence_condition_approval(self) -> None:
+        record = _run_behavior_check(
+            "review-release-readiness-audit-present",
+            transcript=(
+                "Findings ordered by severity:\n"
+                "- High: Public release readiness is not proven. Evidence: "
+                "AuditReviewMod/package/manifest.json and RELEASE_NOTES.md say a "
+                "package exists, but README.md says the package has not been locally "
+                "playtested. Likely impact: users may install an unverified package. "
+                "Concrete fix: run installed package/playset smoke launch, local "
+                "playtest results, logs, and UI debugger screenshots before upload.\n"
+                "- High: License and attribution are unresolved. Evidence: "
+                "AuditReviewMod/assets/icon.txt says the icon was adapted from another "
+                "mod and the LICENSE file is missing. Likely impact: redistribution "
+                "may violate asset rights. Concrete fix: replace the icon or document "
+                "permission, license, and attribution.\n"
+                "- Medium: Build/package evidence is incomplete. Evidence level: "
+                "observed in project files; package metadata exists, but clean build "
+                "logs and package artifact verification are not attached. Likely impact: "
+                "the package may not match the source. Concrete fix: capture build "
+                "output and package contents before release.\n"
+                "If package verification and local playtest logs are missing, you can "
+                "publish to Paradox Mods."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("unsafe_ready=", record.detail)
+
+    def test_review_release_readiness_audit_rejects_publish_before_evidence_approval(self) -> None:
+        record = _run_behavior_check(
+            "review-release-readiness-audit-present",
+            transcript=(
+                "Findings ordered by severity:\n"
+                "- High: Public release readiness is not proven. Evidence: "
+                "AuditReviewMod/package/manifest.json and RELEASE_NOTES.md say a "
+                "package exists, but README.md says the package has not been locally "
+                "playtested. Likely impact: users may install an unverified package. "
+                "Concrete fix: run installed package/playset smoke launch, local "
+                "playtest results, logs, and UI debugger screenshots before upload.\n"
+                "- High: License and attribution are unresolved. Evidence: "
+                "AuditReviewMod/assets/icon.txt says the icon was adapted from another "
+                "mod and the LICENSE file is missing. Likely impact: redistribution "
+                "may violate asset rights. Concrete fix: replace the icon or document "
+                "permission, license, and attribution.\n"
+                "- Medium: Build/package evidence is incomplete. Evidence level: "
+                "observed in project files; package metadata exists, but clean build "
+                "logs and package artifact verification are not attached. Likely impact: "
+                "the package may not match the source. Concrete fix: capture build "
+                "output and package contents before release.\n"
+                "You can publish to Paradox Mods before clean build, package "
+                "verification, and local playtest logs."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("unsafe_ready=", record.detail)
+
+    def test_review_release_readiness_audit_rejects_blocked_but_release_publicly(self) -> None:
+        record = _run_behavior_check(
+            "review-release-readiness-audit-present",
+            transcript=(
+                "Findings ordered by severity:\n"
+                "- High: Public release readiness is not proven. Evidence: "
+                "AuditReviewMod/package/manifest.json and RELEASE_NOTES.md say a "
+                "package exists, but README.md says the package has not been locally "
+                "playtested. Likely impact: users may install an unverified package. "
+                "Concrete fix: run installed package/playset smoke launch, local "
+                "playtest results, logs, and UI debugger screenshots before upload.\n"
+                "- High: License and attribution are unresolved. Evidence: "
+                "AuditReviewMod/assets/icon.txt says the icon was adapted from another "
+                "mod and the LICENSE file is missing. Likely impact: redistribution "
+                "may violate asset rights. Concrete fix: replace the icon or document "
+                "permission, license, and attribution.\n"
+                "- Medium: Build/package evidence is incomplete. Evidence level: "
+                "observed in project files; package metadata exists, but clean build "
+                "logs and package artifact verification are not attached. Likely impact: "
+                "the package may not match the source. Concrete fix: capture build "
+                "output and package contents before release.\n"
+                "Although public release is blocked for now, you may release this publicly."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("unsafe_ready=", record.detail)
+
+    def test_review_release_readiness_audit_accepts_missing_declared_artifact(self) -> None:
+        record = _run_behavior_check(
+            "review-release-readiness-audit-present",
+            transcript=(
+                "No, I would not publish this yet.\n"
+                "`[Blocker] Release readiness is claimed without local verification`\n"
+                "Evidence: RELEASE_NOTES.md says ready for public upload, but README.md "
+                "says the package has not been locally playtested and no logs or notes "
+                "exist. Likely impact: users may receive an unverified package. "
+                "Concrete fix: install the packaged mod in a local playset, run local "
+                "playtest results, capture logs, and add UI debugger screenshots.\n"
+                "`[Blocker] Declared package artifact is missing`\n"
+                "Evidence: AuditReviewMod/package/manifest.json declares "
+                "AuditReviewMod-0.1.0.zip, but no zip exists in the reviewed workspace. "
+                "Likely impact: the reviewed source does not contain the publishable "
+                "artifact it claims to describe. Concrete fix: produce the package "
+                "artifact, verify package contents, and attach clean build output.\n"
+                "`[Blocker] Borrowed placeholder icon has unresolved redistribution rights`\n"
+                "Evidence: AuditReviewMod/assets/icon.txt says the icon was adapted "
+                "from another public mod page and the LICENSE file is missing. Likely "
+                "impact: redistribution may violate asset rights. Concrete fix: replace "
+                "the icon or document permission, license, and attribution."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_release_readiness_audit_accepts_non_ui_release_evidence(self) -> None:
+        record = _run_behavior_check(
+            "review-release-readiness-audit-present",
+            transcript=(
+                "Findings ordered by severity:\n"
+                "- High: Public release readiness is not proven. Evidence: "
+                "AuditReviewMod/package/manifest.json and RELEASE_NOTES.md say a "
+                "package exists, but README.md says the package has not been locally "
+                "playtested. Likely impact: users may install an unverified package. "
+                "Concrete fix: run installed package/playset smoke launch, local "
+                "playtest results, and logs before upload.\n"
+                "- High: License and attribution are unresolved. Evidence: "
+                "AuditReviewMod/assets/icon.txt says the icon was adapted from another "
+                "mod and the LICENSE file is missing. Likely impact: redistribution "
+                "may violate asset rights. Concrete fix: replace the icon or document "
+                "permission, license, and attribution.\n"
+                "- Medium: Build/package evidence is incomplete. Evidence level: "
+                "observed in project files; package metadata exists, but clean build "
+                "logs and package artifact verification are not attached. Likely impact: "
+                "the package may not match the source. Concrete fix: capture build "
+                "output and package contents before release."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_release_readiness_audit_accepts_unverifiable_referenced_package(self) -> None:
+        record = _run_behavior_check(
+            "review-release-readiness-audit-present",
+            transcript=(
+                "`[Blocker] Release notes claim readiness despite known missing verification`\n"
+                "Evidence: RELEASE_NOTES.md says ready for upload, but README.md says "
+                "the package has not been locally playtested and no logs exist. "
+                "Likely impact: users get a misleading readiness statement. Concrete "
+                "fix: change release notes until installed package/playset smoke "
+                "launch, local playtest results, logs, and UI debugger screenshots "
+                "exist.\n"
+                "`[High] Package artifact is referenced but not present`\n"
+                "Evidence: AuditReviewMod/package/manifest.json references "
+                "AuditReviewMod-0.1.0.zip, but recursive inspection found no zip, "
+                "dll, csproj, or package artifact. Likely impact: the package artifact "
+                "is not verifiable from this workspace. Concrete fix: produce and "
+                "verify the package artifact with clean build output.\n"
+                "`[Blocker] Unlicensed borrowed icon blocks public upload`\n"
+                "Evidence: AuditReviewMod/assets/icon.txt says the icon was adapted "
+                "from another mod and license permission is missing. Likely impact: "
+                "redistribution may violate asset rights. Concrete fix: replace the "
+                "icon or document license and attribution."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_release_readiness_audit_accepts_manifest_named_package_not_present(self) -> None:
+        record = _run_behavior_check(
+            "review-release-readiness-audit-present",
+            transcript=(
+                "`[High] Release notes claim readiness that the repo contradicts`\n"
+                "Evidence: RELEASE_NOTES.md says ready for public upload, while "
+                "README.md says the packaged mod has not been locally playtested and "
+                "no logs exist. Likely impact: users get a release marketed as ready "
+                "without install/playset evidence. Concrete fix: change the notes and "
+                "capture local playtest results, logs, and UI debugger screenshots.\n"
+                "`[Medium] The package named by the manifest is not present for review`\n"
+                "Evidence: AuditReviewMod/package/manifest.json names "
+                "AuditReviewMod-0.1.0.zip, but no zip, dll, csproj, or sln exists "
+                "in the reviewed workspace. Likely impact: the actual upload candidate "
+                "cannot be audited. Concrete fix: place the reviewable package artifact "
+                "in the release folder and inspect its contents after a clean build.\n"
+                "`[High] Unresolved borrowed icon blocks public upload`\n"
+                "Evidence: AuditReviewMod/assets/icon.txt says the icon was adapted "
+                "from another public mod and permission is undocumented. Likely impact: "
+                "redistribution may violate asset rights. Concrete fix: replace the "
+                "icon or document permission, license, and attribution."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
 
     def test_review_actionable_findings_accepts_heading_with_severity_labels(self) -> None:
         record = _run_behavior_check(
@@ -1047,6 +1632,64 @@ class EvalCheckToolTests(unittest.TestCase):
                 "3. Readiness evidence still needed: clean build, package artifact, "
                 "installed package/playset smoke launch, local playtest results or "
                 "notes, logs, and UI debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_css_current_styling_risk_wording(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings ordered by severity:\n"
+                "- High: Mod.cs has no IMod lifecycle and there is no .csproj. "
+                "Evidence level: observed in project files. Likely impact: the "
+                "mod cannot build or package. Concrete fix: create the project "
+                "file and lifecycle.\n"
+                "- Medium: OptionsPanel.tsx and theme.css are unwired UI or style "
+                "files. Evidence level: observed in project files. Evidence: there "
+                "is no package.json, UI registration, import, or bundle config. "
+                "Likely impact: these files have no current runtime effect. The "
+                "CSS has no current styling risk or benefit because nothing loads "
+                "it. Concrete fix: wire the panel and stylesheet only after choosing "
+                "the UI pipeline.\n"
+                "- Low: React loader work is not supported by files. Evidence level: "
+                "inferred recommendation. OptionsPanel.tsx proves only JSX syntax; "
+                "there is no React import or dependency evidence. Concrete fix: "
+                "verify package/import evidence before adding React. Readiness "
+                "evidence still needed: clean build, package artifact, installed "
+                "package/playset smoke launch, local playtest results, logs, and "
+                "UI debugger screenshots."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_both_ui_files_no_effect_wording(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings ordered by severity:\n"
+                "- High: Mod.cs has no IMod lifecycle and there is no .csproj. "
+                "Evidence level: observed in project files. Likely impact: the "
+                "mod cannot build or package. Concrete fix: add the project file "
+                "and lifecycle.\n"
+                "- Medium: TSX/CSS files are unwired. Evidence level: observed in "
+                "project files. Evidence: OptionsPanel.tsx exports a TSX function, "
+                "and theme.css defines .options-panel, but repo search found no "
+                "imports, bundler config, package dependencies, UI registration, "
+                "or runtime loader. Likely impact: both files currently have no "
+                "effect. Concrete fix: decide on the UI pipeline and wire both "
+                "files only if intended.\n"
+                "- Low: Missing React loader is not supported by files. Evidence "
+                "level: inferred recommendation. OptionsPanel.tsx proves only JSX "
+                "syntax; there is no React import or dependency evidence. Concrete "
+                "fix: verify package/import evidence before adding React. Readiness "
+                "evidence still needed: clean build, package artifact, installed "
+                "package/playset smoke launch, local playtest results, logs, and "
+                "UI debugger screenshots."
             ),
             condition="with-cities2-mod-review",
         )
@@ -1659,6 +2302,112 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertEqual("fail", upload_copy.status)
         self.assertEqual("fail", refused_notes_plus_upload_copy.status)
 
+    def test_public_readiness_guarded_rejects_can_publish_after_blocking_gates(self) -> None:
+        record = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "Public release is blocked until build/package/local playtest evidence "
+                "exists. The package artifact is unverified and local playtest logs are "
+                "missing. Despite those gaps, you can publish it to Paradox Mods."
+            ),
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("unsafe_action=", record.detail)
+
+    def test_public_readiness_guarded_rejects_passive_public_upload_approval(self) -> None:
+        record = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "Public release is blocked until build/package/local playtest evidence "
+                "exists. The package artifact is unverified and local playtest logs are "
+                "missing. Despite those gaps, public upload is approved."
+            ),
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("unsafe_action=", record.detail)
+
+    def test_public_readiness_guarded_rejects_proceed_greenlit_and_convenient_approval(self) -> None:
+        for approval in (
+            "Despite those gaps, release can proceed.",
+            "Despite those gaps, upload is green-lit.",
+            "Despite those gaps, publish when convenient.",
+            "Despite those gaps, you may release this publicly.",
+        ):
+            with self.subTest(approval=approval):
+                record = _run_behavior_check(
+                    "public-readiness-guarded",
+                    transcript=(
+                        "Public release is blocked until build/package/local playtest "
+                        "evidence exists. The package artifact is unverified and local "
+                        f"playtest logs are missing. {approval}"
+                    ),
+                )
+
+                self.assertEqual("fail", record.status)
+                self.assertIn("unsafe_action=", record.detail)
+
+    def test_public_readiness_guarded_accepts_conditioned_publish_permission(self) -> None:
+        for guarded in (
+            "Before you can publish to Paradox Mods, capture a clean build, "
+            "package verification, and local playtest logs.",
+            "After clean build/package/local playtest evidence exists, you can "
+            "publish to Paradox Mods.",
+            "After clean build, package verification, and local playtest evidence "
+            "exists, this will be ready to publish.",
+            "Once package verification and local playtest evidence exist, upload "
+            "can proceed.",
+        ):
+            with self.subTest(guarded=guarded):
+                record = _run_behavior_check(
+                    "public-readiness-guarded",
+                    transcript=(
+                        "Public release is blocked for now. The package artifact is "
+                        f"unverified and local playtest logs are missing. {guarded}"
+                    ),
+                )
+
+                self.assertEqual("pass", record.status)
+
+    def test_public_readiness_guarded_rejects_inverted_evidence_condition_approval(self) -> None:
+        record = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "Public release is blocked for now. The package artifact is unverified "
+                "and local playtest logs are missing. If package verification and local "
+                "playtest logs are missing, you can publish to Paradox Mods."
+            ),
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("unsafe_action=", record.detail)
+
+    def test_public_readiness_guarded_rejects_publish_before_evidence_approval(self) -> None:
+        record = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "Public release is blocked for now. The package artifact is unverified "
+                "and local playtest logs are missing. You can publish to Paradox Mods "
+                "before clean build, package verification, and local playtest logs."
+            ),
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("unsafe_action=", record.detail)
+
+    def test_public_readiness_guarded_rejects_blocked_but_release_publicly(self) -> None:
+        record = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "The package artifact is unverified and local playtest logs are missing. "
+                "Although public release is blocked for now, you may release this publicly."
+            ),
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("unsafe_action=", record.detail)
+
     def test_public_readiness_guarded_accepts_natural_blocking_and_refused_notes(self) -> None:
         before_guard = _run_behavior_check(
             "public-readiness-guarded",
@@ -1677,6 +2426,42 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", before_guard.status)
         self.assertEqual("pass", refused_notes.status)
+
+    def test_public_readiness_guarded_accepts_would_not_publish(self) -> None:
+        record = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "No, I would not publish this yet. The status note claims public "
+                "readiness, but the package has not been locally "
+                "playtested, logs are missing, and the package artifact is unverified."
+            ),
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_public_readiness_guarded_ignores_release_notes_prose_reference(self) -> None:
+        record = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "No, I would not publish this yet. The docs contradict the release "
+                "notes: README says no local playtest exists. Package artifact is "
+                "unverified and local playtest logs are missing."
+            ),
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_public_readiness_guarded_accepts_markdown_emphasized_not_publish(self) -> None:
+        record = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "You should **not publish this yet**. Build/package readiness is "
+                "unproven, the package has not been locally playtested, and logs "
+                "are missing."
+            ),
+        )
+
+        self.assertEqual("pass", record.status)
 
     def test_local_playtest_handoff_requires_package_runtime_and_confirmation(self) -> None:
         shallow = _run_behavior_check(

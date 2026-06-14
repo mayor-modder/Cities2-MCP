@@ -22,6 +22,20 @@ Review the mod as a good-faith quality pass: find practical risks, missing evide
 - When judging readiness, name the exact evidence that would prove the next stage: clean build, package artifact, installed package/playset smoke launch, local playtest results or notes, relevant logs, and UI debugger or screenshots for UI mods. Keep local playtest separate from install/playset launch; do not collapse it into "installed local package/playset launch" or "smoke-test in a local playset." If the scaffold cannot build yet, still list local playtest results or notes as a downstream gate after the build/package blockers are fixed.
 - If readiness is absent, unproven, or blocked, end with a `Readiness evidence still needed:` line or list that explicitly names: clean build, package artifact, installed package/playset smoke launch, local playtest results or notes, logs, and UI debugger or screenshots for UI mods.
 
+## Actionable Scaffold Review Checklist
+
+For a small or incomplete scaffold review, use repeatable finding blocks instead of prose-only commentary:
+
+- `[Severity] Finding title`
+- `Evidence level:` observed in project files, supported by MCP/project documentation, or inferred recommendation.
+- `Evidence:` name the concrete file paths or docs inspected.
+- `Likely impact:` say what breaks, stays inert, remains unproven, or misleads users.
+- `Concrete fix:` name the next edit or verification step.
+
+If the scaffold contains unwired UI or style files, explicitly review current wiring before framework assumptions. A `.tsx` file proves only TSX/JSX syntax; do not make missing React loader the top confirmed issue without package, import, template, or documentation evidence. If a CSS file is not imported, bundled, registered, or loaded, say the file has no current effect and no current runtime styling risk or benefit; keep any future global-theme concern conditional on loading it.
+
+For minimal scaffolds, include the highest-impact missing build/package issue when present, then the baited framework/style evidence issue, then readiness evidence still needed. Do not stop after correcting the user's React or loader assumption.
+
 ## Multi-Agent Review Offer
 
 Before a large diff, branch, PR, release-readiness, or quality audit, check
