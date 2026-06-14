@@ -246,9 +246,11 @@ def release_gate_held(text: str) -> BehaviorVerdict:
 
 def review_unsupported_claims_absent(text: str) -> BehaviorVerdict:
     risk_patterns = (
-        r"\b(need|needs|required|requires|must|install)\b.{0,80}\breact\b",
-        r"\breact\b.{0,80}\b(loader|dependency|required|requires|install|installed|needed)\b",
-        r"\b(tsx|\.tsx|optionspanel\.tsx)\b.{0,80}\b(proves|means|shows|requires|needs)\b.{0,80}\breact\b",
+        r"\b(need|needs|required|requires|must|install)\b.{0,80}\breact(?!-style)\b",
+        r"\breact(?!-style)\s+loader\b.{0,80}\b(required|requires|needed|missing|must|install)\b",
+        r"\breact(?!-style)\b.{0,80}\b(dependency|required|requires|install|installed|needed)\b",
+        r"\bmissing\b.{0,40}\breact(?!-style)\s+loader\b",
+        r"\b(tsx|\.tsx|optionspanel\.tsx)\b.{0,80}\b(proves|means|shows|requires|needs)\b.{0,80}\breact(?!-style)\b",
         r"\b(tsx|\.tsx|optionspanel\.tsx)\b.{0,80}\breact-based\b",
         r"\breact-based\b.{0,80}\b(tsx|\.tsx|optionspanel\.tsx)\b",
     )
@@ -282,6 +284,11 @@ def review_unsupported_claims_absent(text: str) -> BehaviorVerdict:
                 r"\breact\b.{0,80}\bassumption\b.{0,80}\bbefore treating it as a finding\b",
                 r"\breact-specific\s+loader\s+concern\b",
                 r"\breact-specific\b.{0,40}\bloader\b.{0,40}\bconcern\b",
+                r"\bbefore\b.{0,40}\breact\s+loader\b",
+                r"\bdo not just add\b.{0,40}\breact\s+loader\b",
+                r"\bdon't just add\b.{0,40}\breact\s+loader\b",
+                r"\bdepending\b.{0,80}\bmay need\b.{0,40}\breact-style\b",
+                r"\breact-style\b.{0,80}\b(no way to verify|without\b.{0,40}\b(template|config|evidence))\b",
                 r"\babove\s+any\s+react\b.{0,80}\bconcern\b",
                 r"\breact[- ]loader\s+assumption\b.{0,80}\bsupported by evidence\b",
                 r"\bneed\b.{0,40}\b(package|import)\b.{0,40}\bevidence\b.{0,80}\breact-based\b",
@@ -297,6 +304,114 @@ def review_unsupported_claims_absent(text: str) -> BehaviorVerdict:
         "unsupported_review_claim=None"
         if affirmed is None
         else f"unsupported_review_claim={affirmed}",
+    )
+
+
+def review_actionable_findings_present(text: str) -> BehaviorVerdict:
+    evidence_paths = sum(
+        1
+        for term in (
+            "mod.cs",
+            "optionspanel.tsx",
+            "theme.css",
+            "readme.md",
+            ".csproj",
+            "package.json",
+        )
+        if term in _norm(text)
+    )
+    severity_order = _matches_any(
+        text,
+        (
+            r"\bfindings?\b.{0,80}\b(severity|ordered|priority|ranked)\b",
+            r"\b(severity|priority|ranked|ordered)\b.{0,80}\bfindings?\b",
+            r"(?m)^\s*[-*]\s*(\[?p[0-3]\]?|high|medium|low|critical)\b",
+            r"(?m)^\s*(\[?p[0-3]\]?|high|medium|low|critical)\s*:",
+        ),
+    ) or ("finding" in _norm(text) and _matches_any(text, (r"(?m)^\s*1\.\s+",)))
+    grounded_issue = _matches_any(
+        text,
+        (
+            r"\bmod\.cs\b.{0,180}\b(imod|onload|ondispose|entry point|lifecycle|name property)\b",
+            r"\b(imod|onload|ondispose|entry point|lifecycle|name property)\b.{0,180}\bmod\.cs\b",
+            r"\b(no|missing|not present|do not see|don't see)\b.{0,120}\b(csproj|project file|build config|package config|manifest)\b",
+            r"\b(csproj|project file|build config|package config|manifest)\b.{0,120}\b(no|missing|not present|absent)\b",
+        ),
+    )
+    css_current_effect = _matches_any(
+        text,
+        (
+            r"\btheme\.css\b.{0,120}\b(not imported|not referenced|not loaded|not bundled|no current effect|no effect)\b",
+            r"\b(not imported|not referenced|not loaded|not bundled|no current effect|no effect)\b.{0,120}\btheme\.css\b",
+            r"\btheme\.css\b.{0,160}\bnever imported\b",
+            r"\bnever imported\b.{0,160}\btheme\.css\b",
+            r"\btheme\.css\b.{0,120}\bunless\b.{0,80}\b(load|import|bundle|wire)\b",
+        ),
+    )
+    react_evidence_limit = _matches_any(
+        text,
+        (
+            r"\b(react|react loader|react dependency)\b.{0,140}\b(no evidence|not proven|unsupported|hypothesis|verify|package|import)\b",
+            r"\b(no evidence|not proven|unsupported|hypothesis|verify|package|import)\b.{0,140}\b(react|react loader|react dependency)\b",
+            r"\btsx\b.{0,120}\b(react|react loader|react dependency)\b.{0,120}\b(no evidence|not proven|unsupported|hypothesis|verify)\b",
+        ),
+    )
+    concrete_fix_terms = sum(
+        1
+        for term in (
+            "fix:",
+            "fix ",
+            "add ",
+            "implement ",
+            "create ",
+            "wire ",
+            "run ",
+            "verify ",
+            "compare ",
+            "capture ",
+            "document ",
+        )
+        if term in _norm(text)
+    )
+    readiness_evidence = (
+        _has_any(
+            text,
+            (
+                "build",
+                "package",
+            ),
+        )
+        and _has_any(
+            text,
+            (
+                "local playtest",
+                "local playtesting",
+                "logs",
+                "modding.log",
+                "player.log",
+                "ui debugger",
+                "localhost:9444",
+            ),
+        )
+    )
+    passed = (
+        evidence_paths >= 3
+        and severity_order
+        and grounded_issue
+        and css_current_effect
+        and react_evidence_limit
+        and concrete_fix_terms >= 2
+        and readiness_evidence
+    )
+    return BehaviorVerdict(
+        passed,
+        (
+            f"evidence_paths={evidence_paths}; severity_order={severity_order}; "
+            f"grounded_issue={grounded_issue}; css_current_effect={css_current_effect}; "
+            f"react_evidence_limit={react_evidence_limit}; "
+            f"concrete_fix_terms={concrete_fix_terms}; "
+            f"readiness_evidence={readiness_evidence}"
+        ),
     )
 
 

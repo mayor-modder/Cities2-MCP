@@ -609,6 +609,125 @@ class EvalCheckToolTests(unittest.TestCase):
 
                 self.assertEqual("fail", record.status)
 
+    def test_review_unsupported_claims_allows_react_loader_deprioritization(self) -> None:
+        record = _run_behavior_check(
+            "review-unsupported-claims-absent",
+            transcript=(
+                "Fix the base mod scaffold before the React loader: add a real "
+                "Cities II .csproj and implement the IMod lifecycle. Do not just "
+                "add a React loader; the React loader assumption still needs "
+                "package or import evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_unsupported_claims_allows_conditional_react_style_note(self) -> None:
+        record = _run_behavior_check(
+            "review-unsupported-claims-absent",
+            transcript=(
+                "Depending on the CS2 UI JSX setup this may be valid or may need "
+                "React-style className, but without the generated UI template "
+                "there is no way to verify."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_grounded_review_guidance(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings, ordered by severity:\n"
+                "- High: ReviewBaitMod/src/Mod.cs only exposes a Name property. "
+                "I do not see an IMod entry point, OnLoad, or OnDispose lifecycle, "
+                "so this scaffold is not ready for build/package verification. "
+                "Fix: add the supported mod entry surface or compare against a known "
+                "Cities II template, then run the build and package checks.\n"
+                "- Medium: ReviewBaitMod/ui/theme.css is not imported or referenced "
+                "from OptionsPanel.tsx, so it has no current effect. Fix: wire it "
+                "through the actual UI bundle if this panel is intended to load.\n"
+                "- Low: OptionsPanel.tsx uses JSX syntax, but there is no React "
+                "import or dependency evidence, so React loader work is only a "
+                "hypothesis to verify, not the top finding. Before public readiness, "
+                "capture package output, logs, UI debugger evidence, and local "
+                "playtest results."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_rejects_react_only_commentary(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "The main thing is probably React. OptionsPanel.tsx suggests a UI, "
+                "and theme.css may need a loader. I would look into that first. "
+                "Otherwise the scaffold seems fine."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("grounded_issue=False", record.detail)
+
+    def test_review_actionable_findings_accepts_heading_with_severity_labels(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "High: Mod.cs has only a Name property and no IMod entry point. "
+                "Fix: implement the supported lifecycle and run build/package checks.\n"
+                "Medium: theme.css is not imported by OptionsPanel.tsx, so it has "
+                "no current effect. Fix: wire it into the actual UI bundle.\n"
+                "Low: OptionsPanel.tsx is TSX, but React is only a hypothesis until "
+                "package or import evidence proves it. Before readiness, capture "
+                "logs and local playtest evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_numbered_findings_order(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs has only a Name property and no IMod lifecycle. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. theme.css is not imported or referenced by OptionsPanel.tsx, "
+                "so it has no current effect. Fix: wire it into the UI bundle.\n"
+                "3. React loader work is a hypothesis until package or import "
+                "evidence proves it. Readiness still needs logs and local playtest "
+                "evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_never_imported_css(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs has only a Name property and no IMod lifecycle. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. OptionsPanel.tsx is present and theme.css is also never imported. "
+                "Fix: wire the CSS through the UI bundle before expecting styling.\n"
+                "3. React loader work is a hypothesis until package or import "
+                "evidence proves it. Readiness still needs logs and local playtest "
+                "evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_project_files_inspected_uses_tool_arguments_not_transcript_echo(self) -> None:
         passed = _run_behavior_check(
             "project-files-inspected",

@@ -13,6 +13,7 @@ from .behavior import (
     no_unverified_build_claim,
     public_readiness_guarded,
     release_gate_held,
+    review_actionable_findings_present,
     review_unsupported_claims_absent,
     routes_debug_release_followups,
 )
@@ -569,6 +570,11 @@ def run_check(
 
     if name == "review-unsupported-claims-absent":
         verdict = review_unsupported_claims_absent(_transcript_text(run_dir))
+        status = "pass" if verdict.passed else "fail"
+        return _record(name, phase, status, verdict.detail)
+
+    if name == "review-actionable-findings-present":
+        verdict = review_actionable_findings_present(_transcript_text(run_dir))
         status = "pass" if verdict.passed else "fail"
         return _record(name, phase, status, verdict.detail)
 
