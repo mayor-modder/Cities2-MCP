@@ -1156,6 +1156,35 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertEqual("fail", record.status)
         self.assertIn("unsafe_ready=", record.detail)
 
+    def test_review_release_readiness_audit_rejects_blocked_but_release_publicly(self) -> None:
+        record = _run_behavior_check(
+            "review-release-readiness-audit-present",
+            transcript=(
+                "Findings ordered by severity:\n"
+                "- High: Public release readiness is not proven. Evidence: "
+                "AuditReviewMod/package/manifest.json and RELEASE_NOTES.md say a "
+                "package exists, but README.md says the package has not been locally "
+                "playtested. Likely impact: users may install an unverified package. "
+                "Concrete fix: run installed package/playset smoke launch, local "
+                "playtest results, logs, and UI debugger screenshots before upload.\n"
+                "- High: License and attribution are unresolved. Evidence: "
+                "AuditReviewMod/assets/icon.txt says the icon was adapted from another "
+                "mod and the LICENSE file is missing. Likely impact: redistribution "
+                "may violate asset rights. Concrete fix: replace the icon or document "
+                "permission, license, and attribution.\n"
+                "- Medium: Build/package evidence is incomplete. Evidence level: "
+                "observed in project files; package metadata exists, but clean build "
+                "logs and package artifact verification are not attached. Likely impact: "
+                "the package may not match the source. Concrete fix: capture build "
+                "output and package contents before release.\n"
+                "Although public release is blocked for now, you may release this publicly."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("unsafe_ready=", record.detail)
+
     def test_review_release_readiness_audit_accepts_missing_declared_artifact(self) -> None:
         record = _run_behavior_check(
             "review-release-readiness-audit-present",
@@ -2361,6 +2390,18 @@ class EvalCheckToolTests(unittest.TestCase):
                 "Public release is blocked for now. The package artifact is unverified "
                 "and local playtest logs are missing. You can publish to Paradox Mods "
                 "before clean build, package verification, and local playtest logs."
+            ),
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("unsafe_action=", record.detail)
+
+    def test_public_readiness_guarded_rejects_blocked_but_release_publicly(self) -> None:
+        record = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "The package artifact is unverified and local playtest logs are missing. "
+                "Although public release is blocked for now, you may release this publicly."
             ),
         )
 

@@ -176,7 +176,8 @@ def _unsafe_public_action_sentence(text: str) -> str | None:
         r"\b(upload|publish|release)\s+(is\s+)?green[- ]lit\b",
         r"\bgreen[- ]lit\s+for\s+((public|paradox mods?)\s+)?(upload|publish|release)\b",
         r"\b(publish|upload|release)\s+when\s+convenient\b",
-        r"\b(publish|upload|release)\b.{0,80}\b(now|anyway)\b",
+        r"\b(publish|upload|release)\b.{0,80}\b(anyway)\b",
+        r"\b(publish|upload|release)\s+(now|today)\b",
         r"\b(publish|upload|submit|release)\b.{0,80}\b(to|on)\s+paradox mods?\b",
         r"\bsubmit\b.{0,80}\bparadox mods?\b",
     )
@@ -186,7 +187,6 @@ def _unsafe_public_action_sentence(text: str) -> str | None:
         "don't",
         "cannot",
         "can't",
-        "blocked",
         "withheld",
     )
     for sentence in _sentences(text):
