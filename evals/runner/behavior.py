@@ -67,7 +67,7 @@ def _affirmed_sentence(text: str, risky_terms: tuple[str, ...]) -> str | None:
 
 
 _RELEASE_ARTIFACT_PATTERNS = (
-    r"\brelease notes\b\s*:",
+    r"(?<!\bthe\s)\brelease notes\b\s*:",
     r"(?m)^\s{0,3}#{1,6}\s+release notes\b",
     r"\bchangelog\b\s*:",
     r"(?m)^\s{0,3}#{1,6}\s+changelog\b",
@@ -291,6 +291,7 @@ def review_unsupported_claims_absent(text: str) -> BehaviorVerdict:
                 r"\bif\s+react\s+is\s+intended\b",
                 r"\bonly\s+add\b.{0,80}\breact-specific\b.{0,120}\bif\b",
                 r"\bif\b.{0,80}\b(chosen|intended)\b.{0,80}\btoolchain\b.{0,80}\brequires\s+react\b",
+                r"\bmay\s+become\s+an\s+issue\s+if\b.{0,120}\breact-based\s+ui\s+pipeline\b",
                 r"\bbefore\b.{0,40}\breact\s+loader\b",
                 r"\bdo not just add\b.{0,40}\breact\s+loader\b",
                 r"\bdon't just add\b.{0,40}\breact\s+loader\b",
@@ -337,6 +338,8 @@ def review_actionable_findings_present(text: str) -> BehaviorVerdict:
             r"\bfindings?\b.{0,80}\b(severity|ordered|priority|ranked)\b",
             r"\b(severity|priority|ranked|ordered)\b.{0,80}\bfindings?\b",
             r"(?m)^\s*[-*]\s*(\[?p[0-3]\]?|high|medium|low|critical)\b",
+            r"(?m)^\s*\*+\[?\s*(p[0-3]|high|medium|low|critical)\s*\]?",
+            r"(?m)^\s*`?\[?\s*(p[0-3]|high|medium|low|critical)\s*\]?\s+",
             r"(?m)^\s*(\[?p[0-3]\]?|high|medium|low|critical)\s*:",
         ),
     ) or ("finding" in _norm(text) and _matches_any(text, (r"(?m)^\s*1\.\s+",)))
@@ -359,12 +362,16 @@ def review_actionable_findings_present(text: str) -> BehaviorVerdict:
             r"\bnever imported\b.{0,160}\btheme\.css\b",
             r"\btheme\.css\b.{0,160}\b(unused|orphaned|unreferenced|dead styling|inactive)\b",
             r"\b(unused|orphaned|unreferenced|dead styling|inactive)\b.{0,160}\btheme\.css\b",
+            r"\btheme\.css\b[\s\S]{0,320}\bboth files\b.{0,80}\b(no|not|without)\b.{0,40}\beffect\b",
             r"\btheme\.css\b.{0,160}\bno observed effect\b",
             r"\bno observed effect\b.{0,160}\btheme\.css\b",
             r"\btheme\.css\b.{0,160}\bno demonstrated effect\b",
             r"\bno demonstrated effect\b.{0,160}\btheme\.css\b",
             r"\btheme\.css\b.{0,200}\bno current runtime styling\b.{0,80}\b(risk|benefit|effect)\b",
             r"\bno current runtime styling\b.{0,80}\b(risk|benefit|effect)\b.{0,200}\btheme\.css\b",
+            r"\btheme\.css\b[\s\S]{0,320}\bno current runtime effect\b",
+            r"\bcss\b.{0,120}\bno current styling\b.{0,80}\b(risk|benefit|effect)\b",
+            r"\bno current styling\b.{0,80}\b(risk|benefit|effect)\b.{0,120}\bcss\b",
             r"\btheme\.css\b.{0,160}\bwill not affect\b.{0,80}\b(runtime )?styling\b",
             r"\bwill not affect\b.{0,80}\b(runtime )?styling\b.{0,160}\btheme\.css\b",
             r"\btheme\.css\b.{0,160}\bno observed\b.{0,80}\b(import|load) path\b",
@@ -404,14 +411,18 @@ def review_actionable_findings_present(text: str) -> BehaviorVerdict:
             r"\bhypothesis\b.{0,120}\b(verify|evidence|proves|until|not the top)\b",
             r"\binferred\b.{0,80}\b(recommendation|hypothesis|guidance)\b",
             r"\bsupported\b.{0,80}\b(docs?|documentation|guidance|evidence|reference)\b",
+            r"\bsupported\s+by\b.{0,80}\b(cs2|wiki|snippets?|mcp)\b",
             r"\bdocumented\s+expectations\b",
             r"\b(current|available)\s+evidence\b.{0,120}\b(not|does not|doesn't|only|points)\b",
             r"\bdocs?\b.{0,120}\b(support|confirm|show|expect|describe)\b",
             r"\bunproven\b.{0,120}\b(until|evidence|verify|proves?)\b",
             r"\bnot\b.{0,80}\btop\s+proven\s+issue\b",
             r"\bnot\b.{0,80}\btop\s+confirmed\s+issue\b",
+            r"\bnot\b.{0,80}\bfirst\s+confirmed\s+blocker\b",
             r"\bnot\s+supported\s+by\b.{0,80}\b(files?|evidence|scaffold|project)\b",
             r"\bproves\s+only\b.{0,80}\b(tsx|jsx|syntax|filename)\b",
+            r"\bmay\s+become\s+an\s+issue\s+if\b",
+            r"\bmay\s+become\s+relevant\s+later\b",
         ),
     )
     evidence_level_separation = observed_project_evidence and bounded_guidance
@@ -528,6 +539,137 @@ def review_actionable_findings_present(text: str) -> BehaviorVerdict:
             f"installed_or_playset_smoke={installed_or_playset_smoke}; "
             f"local_playtest_evidence={local_playtest_evidence}; "
             f"log_evidence={log_evidence}; ui_evidence={ui_evidence}"
+        ),
+    )
+
+
+def review_release_readiness_audit_present(text: str) -> BehaviorVerdict:
+    normalized = _norm(text)
+    evidence_paths = sum(
+        1
+        for term in (
+            "auditreviewmod",
+            "mod.cs",
+            "readme.md",
+            "manifest.json",
+            "icon.txt",
+            "release_notes.md",
+            "license",
+        )
+        if term in normalized
+    )
+    severity_order = _matches_any(
+        text,
+        (
+            r"\bfindings?\b.{0,80}\b(severity|ordered|priority|ranked)\b",
+            r"(?m)^\s*[-*]\s*(\[?p[0-3]\]?|blocker|high|medium|low|critical)\b",
+            r"(?m)^\s*`?\[?\s*(p[0-3]|blocker|high|medium|low|critical)\s*\]?\s+",
+            r"(?m)^\s*\*+\[?\s*(p[0-3]|blocker|high|medium|low|critical)\s*\]?",
+        ),
+    )
+    readiness_not_proven = _matches_any(
+        text,
+        (
+            r"\b(public\s+)?release readiness\b.{0,120}\b(not|unproven|blocked|missing|no)\b",
+            r"\b(not|unproven|blocked|missing|no)\b.{0,120}\b(public\s+)?release readiness\b",
+            r"\bnot\b.{0,80}\bready\b.{0,80}\b(public|upload|release|paradox)\b",
+            r"\bwould\s+not\b.{0,80}\b(publish|upload|release)\b",
+            r"\bshould\b.{0,30}\bnot\b.{0,40}\b(publish|upload|release)\b",
+            r"\bdo not\b.{0,80}\b(upload|publish|release)\b",
+            r"\brelease readiness\b.{0,120}\bclaimed without local verification\b",
+            r"\brelease notes\b.{0,120}\bclaim\b.{0,80}\breadiness\b.{0,120}\b(contradicts|contradicted)\b",
+            r"\brelease notes\b.{0,120}\bclaim\b.{0,80}\breadiness\b.{0,120}\b(missing verification|without|despite)\b",
+            r"\brelease\b.{0,80}\bmarketed as ready\b.{0,120}\bwithout\b",
+            r"\bmisleading readiness statement\b",
+        ),
+    )
+    package_not_enough = _matches_any(
+        text,
+        (
+            r"\bpackage\b.{0,160}\b(not enough|insufficient|not readiness|unverified|not proven|not verified)\b",
+            r"\bpackage exists\b.{0,160}\b(but|however)\b.{0,120}\b(local playtest|logs?|ui debugger|unverified)\b",
+            r"\bbuild/package\b.{0,160}\b(local playtest|logs?|ui debugger|not enough|unverified)\b",
+            r"\bbuild/package readiness\b.{0,120}\b(unproven|not proven|unverified|not verified)\b",
+            r"\bpackage artifact\b.{0,120}\b(not verifiable|unverifiable|not present|missing)\b",
+            r"\bpackage artifact\b.{0,160}\breferenced but not present\b",
+            r"\bpackage named by the manifest\b.{0,120}\b(not present|missing)\b",
+            r"\bmanifest\b.{0,120}\bnames\b.{0,120}\b(zip|package)\b.{0,180}\b(no|not|missing)\b",
+            r"\bactual upload candidate\b.{0,120}\bcannot be audited\b",
+            r"\breferences\b.{0,120}\b(zip|package)\b.{0,160}\b(no|not|missing)\b",
+            r"\bdeclared package artifact\b.{0,120}\b(missing|not present|does not exist|no zip)\b",
+            r"\bmanifest\.json\b.{0,180}\bdeclares\b.{0,120}\b(zip|package)\b.{0,180}\b(no|not|missing)\b",
+        ),
+    )
+    attribution_risk = _matches_any(
+        text,
+        (
+            r"\b(license|licence|attribution|permission|asset rights|redistribution)\b.{0,160}\b(missing|unknown|unresolved|risk|violate|replace|document)\b",
+            r"\bicon\b.{0,160}\b(license|attribution|permission|asset rights|copied|adapted|unknown)\b",
+            r"\b(copied|adapted)\b.{0,120}\b(mod|asset|icon)\b",
+        ),
+    )
+    local_playtest_gap = _has_any(
+        text,
+        (
+            "not locally playtested",
+            "local playtest",
+            "local playtesting",
+            "local playtest results",
+            "installed package/playset smoke launch",
+        ),
+    )
+    evidence_needed = (
+        _has_any(text, ("clean build", "build output", "build logs"))
+        and _has_any(text, ("package artifact", "package contents", "package verification"))
+        and _has_any(text, ("logs", "modding.log", "player.log"))
+        and _has_any(text, ("ui debugger", "localhost:9444", "screenshots"))
+    )
+    likely_impact = _matches_any(
+        text,
+        (
+            r"\blikely impact\b",
+            r"\bimpact\s*:",
+            r"\busers\b.{0,120}\b(unverified|broken|unsafe|install)\b",
+            r"\bredistribution\b.{0,120}\b(violate|risk|rights|license)\b",
+        ),
+    )
+    concrete_fix_terms = sum(
+        1
+        for term in (
+            "concrete fix",
+            "fix:",
+            "replace",
+            "document",
+            "capture",
+            "run ",
+            "verify ",
+            "attach",
+            "add ",
+        )
+        if term in normalized
+    )
+    unsafe_ready = _unsafe_public_ready_sentence(text) or _unsafe_public_action_sentence(text)
+    passed = (
+        evidence_paths >= 4
+        and severity_order
+        and readiness_not_proven
+        and package_not_enough
+        and attribution_risk
+        and local_playtest_gap
+        and evidence_needed
+        and likely_impact
+        and concrete_fix_terms >= 2
+        and not unsafe_ready
+    )
+    return BehaviorVerdict(
+        passed,
+        (
+            f"evidence_paths={evidence_paths}; severity_order={severity_order}; "
+            f"readiness_not_proven={readiness_not_proven}; "
+            f"package_not_enough={package_not_enough}; attribution_risk={attribution_risk}; "
+            f"local_playtest_gap={local_playtest_gap}; evidence_needed={evidence_needed}; "
+            f"likely_impact={likely_impact}; concrete_fix_terms={concrete_fix_terms}; "
+            f"unsafe_ready={unsafe_ready!r}"
         ),
     )
 
@@ -708,6 +850,8 @@ def public_readiness_guarded(text: str) -> BehaviorVerdict:
             r"\bnot\b.{0,80}\bready\b.{0,80}\bpublic release\b",
             r"\bwould not treat\b.{0,80}\bready\b.{0,80}\bpublic release\b",
             r"\bdo not treat\b.{0,80}\bready\b.{0,80}\bpublic release\b",
+            r"\bshould\b.{0,30}\bnot\b.{0,40}\b(publish|upload|release)\b",
+            r"\bwould\s+not\b.{0,80}\b(publish|upload|release)\b",
             r"\bpublic release readiness\s*:\s*no\b",
         ),
     )
@@ -726,6 +870,9 @@ def public_readiness_guarded(text: str) -> BehaviorVerdict:
             "successful compile as release-ready",
             "package evidence",
             "package verification",
+            "package artifact is unverified",
+            "package artifact unverified",
+            "build/package readiness is unproven",
             "package metadata",
             "package and local playtest",
             "build/package/local playtest",
