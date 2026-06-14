@@ -17,16 +17,16 @@ The result is a clear positive delta after a narrow skill update: the review ski
 
 ## Run matrix
 
-Repository commit reported by runner: fdee1bc
-Skill checksum after the edit: sha256:5ec0e5312678641d3542d3110d33f90e60691ecc5f58baafd0c045c9ce9cf4b7
+Repository commit reported by runner: 1025d4c
+Skill checksum after the edit: sha256:88ee0f4a0d7e767d60fa2b896a487d6f2f3d16f6c7794f511c8323076d108fe0
 
 ## Verdict table
 
 | Backend | Scenario | Condition | Trial | Final | Failed checks |
 | --- | --- | --- | ---: | --- | --- |
-| codex | cities2-mod-review-tsx-no-react-evidence | no-skill | 1 | fail | review-actionable-findings-present |
-| codex | cities2-mod-review-tsx-no-react-evidence | no-skill | 2 | fail | review-actionable-findings-present |
-| codex | cities2-mod-review-tsx-no-react-evidence | no-skill | 3 | fail | review-actionable-findings-present |
+| codex | cities2-mod-review-tsx-no-react-evidence | no-skill | 1 | fail | review-actionable-findings-present, post-checks |
+| codex | cities2-mod-review-tsx-no-react-evidence | no-skill | 2 | fail | review-actionable-findings-present, post-checks |
+| codex | cities2-mod-review-tsx-no-react-evidence | no-skill | 3 | fail | review-actionable-findings-present, post-checks |
 | codex | cities2-mod-review-tsx-no-react-evidence | with-cities2-mod-review | 1 | pass | none |
 | codex | cities2-mod-review-tsx-no-react-evidence | with-cities2-mod-review | 2 | pass | none |
 | codex | cities2-mod-review-tsx-no-react-evidence | with-cities2-mod-review | 3 | pass | none |
@@ -36,6 +36,7 @@ Skill checksum after the edit: sha256:5ec0e5312678641d3542d3110d33f90e60691ecc5f
 - `agent-home-contained`: pass=6
 - `condition-skill-set`: pass=6
 - `git-branch`: pass=6
+- `post-checks`: fail=3
 - `project-files-inspected`: pass=6
 - `review-actionable-findings-present`: pass=3; fail=3
 - `review-unsupported-claims-absent`: pass=6
@@ -44,9 +45,9 @@ Skill checksum after the edit: sha256:5ec0e5312678641d3542d3110d33f90e60691ecc5f
 
 ## Interpretation
 
-The tightened eval now distinguishes between a merely non-hallucinated review and an actionable review. All six runs inspected the expected scaffold files and avoided unsupported React claims. The no-skill baseline still failed 3/3 because it did not consistently include readiness evidence, and one baseline trial also missed explicit inactive-CSS treatment. After the skill update, all three target-skill runs included actionable findings and downstream readiness evidence.
+The tightened eval now distinguishes between a merely non-hallucinated review and an actionable review. All six runs inspected the expected scaffold files and avoided unsupported React claims. The no-skill baseline still failed 3/3 because it did not include downstream readiness evidence; two baseline trials also missed explicit inactive-CSS treatment, and one missed the expected React evidence limit. After the skill update, all three target-skill runs included actionable findings and downstream readiness evidence.
 
-The skill change is intentionally small. It adds one readiness instruction to `cities2-mod-review`: when judging readiness, name the exact evidence that would prove the next stage, including clean build, package artifact, installed package/playset smoke launch, local playtest, relevant logs, and UI debugger or screenshots for UI mods. If a scaffold cannot build yet, the review still names those as downstream gates after build/package blockers are fixed.
+The skill change is intentionally small. It adds one readiness instruction to `cities2-mod-review`: when judging readiness, name the exact evidence that would prove the next stage, including clean build, package artifact, installed package/playset smoke launch, local playtest results or notes, relevant logs, and UI debugger or screenshots for UI mods. It explicitly keeps local playtest separate from installed local package/playset launch or smoke-test language. If a scaffold cannot build yet, the review still names those as downstream gates after build/package blockers are fixed.
 
 This result should be treated as directional evidence for this scenario, not a guarantee across clients, prompts, models, or larger mod projects.
 

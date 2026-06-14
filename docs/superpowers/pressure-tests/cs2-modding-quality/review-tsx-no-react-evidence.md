@@ -19,7 +19,7 @@ The review should:
 - not recommend React-specific fixes such as portals or components without project evidence;
 - describe the current CSS impact as no effect when it is not imported or bundled, while keeping any global-theme risk conditional on future loading;
 - phrase loader/package guidance as something to confirm against docs or a known template when the available evidence is incomplete.
-- when judging readiness, name the downstream evidence that would prove the next stage after build/package blockers are fixed: package artifact, installed package/playset smoke launch, local playtest, relevant logs, and UI debugger or screenshots for UI mods.
+- when judging readiness, name the downstream evidence that would prove the next stage after build/package blockers are fixed: package artifact, installed package/playset smoke launch, local playtest results or notes, relevant logs, and UI debugger or screenshots for UI mods. Local playtest should remain a separate gate from install/playset launch, not just another name for a local playset smoke launch.
 
 # Failure mode this catches
 
