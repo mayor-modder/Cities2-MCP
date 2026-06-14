@@ -130,6 +130,8 @@ def _unsafe_public_action_sentence(text: str) -> str | None:
         r"\bgo ahead\b.{0,80}\b(publish|upload)\b",
         r"\b(you|we|i|maintainers?|users?)\s+(can|could|should|may)\s+(publish|upload|submit)\b",
         r"\b(okay|ok|fine|safe|approved)\s+to\s+(publish|upload|submit)\b",
+        r"\b(public\s+(upload|release|publish)|paradox mods? upload)\s+(is\s+)?(approved|allowed|cleared|safe|okay|ok|fine)\b",
+        r"\b(approved|allowed|cleared|safe|okay|ok|fine)\s+for\s+((public|paradox mods?)\s+)?(upload|publish|release)\b",
         r"\b(publish|upload)\b.{0,80}\b(now|anyway)\b",
         r"\b(publish|upload|submit)\b.{0,80}\b(to|on)\s+paradox mods?\b",
         r"\bsubmit\b.{0,80}\bparadox mods?\b",
