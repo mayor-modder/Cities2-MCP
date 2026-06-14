@@ -157,6 +157,8 @@ class EvalScenarioLayoutTests(unittest.TestCase):
         self.assertIn("not locally playtested", story.lower())
         self.assertIn("license", story.lower())
         self.assertIn("attribution", story.lower())
+        self.assertIn("file-grounded review scenario", story.lower())
+        self.assertIn("does not require mcp tool calls", story.lower())
 
     def test_modding_matrix_scenario_encodes_workflow_handoff(self) -> None:
         story = (MODDING_MATRIX_SCENARIO / "story.md").read_text(encoding="utf-8")

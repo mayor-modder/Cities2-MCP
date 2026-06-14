@@ -1084,6 +1084,7 @@ class EvalCheckToolTests(unittest.TestCase):
             "Despite those gaps, release can proceed.",
             "Despite those gaps, upload is green-lit.",
             "Despite those gaps, publish when convenient.",
+            "Despite those gaps, you may release this publicly.",
         ):
             with self.subTest(approval=approval):
                 record = _run_behavior_check(
@@ -1177,6 +1178,33 @@ class EvalCheckToolTests(unittest.TestCase):
                 "from another public mod page and the LICENSE file is missing. Likely "
                 "impact: redistribution may violate asset rights. Concrete fix: replace "
                 "the icon or document permission, license, and attribution."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_release_readiness_audit_accepts_non_ui_release_evidence(self) -> None:
+        record = _run_behavior_check(
+            "review-release-readiness-audit-present",
+            transcript=(
+                "Findings ordered by severity:\n"
+                "- High: Public release readiness is not proven. Evidence: "
+                "AuditReviewMod/package/manifest.json and RELEASE_NOTES.md say a "
+                "package exists, but README.md says the package has not been locally "
+                "playtested. Likely impact: users may install an unverified package. "
+                "Concrete fix: run installed package/playset smoke launch, local "
+                "playtest results, and logs before upload.\n"
+                "- High: License and attribution are unresolved. Evidence: "
+                "AuditReviewMod/assets/icon.txt says the icon was adapted from another "
+                "mod and the LICENSE file is missing. Likely impact: redistribution "
+                "may violate asset rights. Concrete fix: replace the icon or document "
+                "permission, license, and attribution.\n"
+                "- Medium: Build/package evidence is incomplete. Evidence level: "
+                "observed in project files; package metadata exists, but clean build "
+                "logs and package artifact verification are not attached. Likely impact: "
+                "the package may not match the source. Concrete fix: capture build "
+                "output and package contents before release."
             ),
             condition="with-cities2-mod-review",
         )
@@ -2276,6 +2304,7 @@ class EvalCheckToolTests(unittest.TestCase):
             "Despite those gaps, release can proceed.",
             "Despite those gaps, upload is green-lit.",
             "Despite those gaps, publish when convenient.",
+            "Despite those gaps, you may release this publicly.",
         ):
             with self.subTest(approval=approval):
                 record = _run_behavior_check(

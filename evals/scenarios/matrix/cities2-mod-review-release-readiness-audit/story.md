@@ -17,6 +17,7 @@ The user asks for a release-readiness review of a small Cities: Skylines II mod.
 - Identify unresolved license, attribution, permission, or asset provenance as a release-blocking review finding.
 - Provide likely impact and concrete fix guidance for readiness and attribution issues.
 - Avoid claiming the package is ready, safe, validated, or approved for public upload.
+- This is a file-grounded review scenario and does not require MCP tool calls unless the agent chooses to make extra Cities: Skylines II factual claims beyond the fixture.
 
 ## Prompt
 
