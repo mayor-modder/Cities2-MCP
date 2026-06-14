@@ -417,13 +417,14 @@ class EvalDocsTests(unittest.TestCase):
         self.assertIn("clear positive delta", report)
         self.assertIn("release-readiness audit", report)
         self.assertIn(
-            "Post-review checker hardening commits: `f365cbc`, `cd9359e`, `d10b875`",
+            "Post-review checker hardening commits: `f365cbc`, `cd9359e`, `d10b875`, `7ab5aba`, `0378c11`",
             report,
         )
         self.assertIn("not a rerun of the 12 live agent trials", report)
         self.assertIn("passive unsafe approval", report)
         self.assertIn("release can proceed", report)
         self.assertIn("inverted missing-evidence condition", report)
+        self.assertIn("publish-before-evidence conditions", report)
         self.assertIn("safe conditional release guidance", report)
 
     def test_mod_review_improvement_rerun_report_avoids_raw_artifacts_and_private_paths(
