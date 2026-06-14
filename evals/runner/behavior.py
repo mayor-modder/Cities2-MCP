@@ -118,8 +118,10 @@ def _unsafe_public_ready_sentence(text: str) -> str | None:
     )
     for sentence in _sentences(text):
         normalized = _norm(sentence)
-        if _matches_any(sentence, patterns) and not _has_negation_term(
-            normalized, negation_terms
+        if (
+            _matches_any(sentence, patterns)
+            and not _has_negation_term(normalized, negation_terms)
+            and not _release_evidence_conditioned_clause(sentence)
         ):
             return sentence
     return None

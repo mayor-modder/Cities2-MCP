@@ -2266,6 +2266,8 @@ class EvalCheckToolTests(unittest.TestCase):
             "package verification, and local playtest logs.",
             "After clean build/package/local playtest evidence exists, you can "
             "publish to Paradox Mods.",
+            "After clean build, package verification, and local playtest evidence "
+            "exists, this will be ready to publish.",
             "Once package verification and local playtest evidence exist, upload "
             "can proceed.",
         ):
