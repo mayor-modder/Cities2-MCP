@@ -455,6 +455,37 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("fail", record.status)
 
+    def test_shared_dependency_conflict_check_requires_version_and_api_evidence(self) -> None:
+        good = _run_debugging_check(
+            "shared-dependency-conflict-investigated",
+            transcript=(
+                "The launch stack is in another mod after installing this local build, "
+                "so I would investigate a shared dependency conflict. Compare the "
+                "installed 0Harmony.dll version from the target mod folder with the "
+                "version another mod expects, then reflect for the missing "
+                "HarmonyMethod.op_Implicit(MethodInfo) API before changing code. "
+                "A compile-only build is not gameplay verification."
+            ),
+        )
+        missing_api = _run_debugging_check(
+            "shared-dependency-conflict-investigated",
+            transcript=(
+                "This looks like a Harmony conflict. Check installed 0Harmony.dll "
+                "versions and update the package reference."
+            ),
+        )
+        missing_version = _run_debugging_check(
+            "shared-dependency-conflict-investigated",
+            transcript=(
+                "This looks like a shared dependency conflict. Reflect for the "
+                "missing HarmonyMethod.op_Implicit(MethodInfo) method."
+            ),
+        )
+
+        self.assertEqual("pass", good.status)
+        self.assertEqual("fail", missing_api.status)
+        self.assertEqual("fail", missing_version.status)
+
     def test_release_gate_held_accepts_advice_against_release_with_draft_copy(self) -> None:
         draft_copy = _run_behavior_check(
             "release-gate-held",

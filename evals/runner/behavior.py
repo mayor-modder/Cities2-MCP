@@ -586,6 +586,45 @@ def no_unverified_build_claim(text: str) -> BehaviorVerdict:
     )
 
 
+def shared_dependency_conflict_investigated(text: str) -> BehaviorVerdict:
+    shared_dependency = _matches_any(
+        text,
+        (
+            r"\bshared\b.{0,80}\b(dependency|assembly|dll)\b",
+            r"\b(dependency|assembly|dll)\b.{0,80}\bconflict\b",
+            r"\bharmony\b.{0,80}\b(conflict|version|assembly|dll)\b",
+            r"\b0harmony\.dll\b",
+        ),
+    )
+    installed_version = _matches_any(
+        text,
+        (
+            r"\b(installed|live|mods?\s+folder|target\s+mod)\b.{0,120}\b(version|0harmony\.dll|assembly)\b",
+            r"\b(version|0harmony\.dll|assembly)\b.{0,120}\b(installed|live|mods?\s+folder|target\s+mod)\b",
+            r"\bcompare\b.{0,120}\b(version|assembly|dll)\b",
+            r"\bversion\b.{0,80}\b(expects?|expected|loaded|ships?|shipped|installed)\b",
+        ),
+    )
+    api_evidence = _matches_any(
+        text,
+        (
+            r"\bmissing\b.{0,120}\b(method|api|member)\b",
+            r"\b(method|api|member)\b.{0,120}\b(missing|availability|exists?|present)\b",
+            r"\breflect\b.{0,120}\b(method|api|member|op_implicit|harmonymethod)\b",
+            r"\bharmonymethod\.op_implicit\b",
+            r"\bmethodinfo\b",
+        ),
+    )
+    passed = shared_dependency and installed_version and api_evidence
+    return BehaviorVerdict(
+        passed,
+        (
+            f"shared_dependency={shared_dependency}; "
+            f"installed_version={installed_version}; api_evidence={api_evidence}"
+        ),
+    )
+
+
 def local_playtest_handoff_present(text: str) -> BehaviorVerdict:
     local_playtest = _has_any(text, ("local playtest", "local playtesting", "locally playtest"))
     package_step = _matches_any(

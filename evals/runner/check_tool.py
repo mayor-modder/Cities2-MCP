@@ -16,6 +16,7 @@ from .behavior import (
     review_actionable_findings_present,
     review_unsupported_claims_absent,
     routes_debug_release_followups,
+    shared_dependency_conflict_investigated,
 )
 from .conditions import condition_skills
 from .models import CheckRecord, CheckStatus, Phase
@@ -598,6 +599,11 @@ def run_check(
 
     if name == "local-playtest-handoff-present":
         verdict = local_playtest_handoff_present(_transcript_text(run_dir))
+        status = "pass" if verdict.passed else "fail"
+        return _record(name, phase, status, verdict.detail)
+
+    if name == "shared-dependency-conflict-investigated":
+        verdict = shared_dependency_conflict_investigated(_transcript_text(run_dir))
         status = "pass" if verdict.passed else "fail"
         return _record(name, phase, status, verdict.detail)
 
