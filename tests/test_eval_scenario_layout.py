@@ -91,8 +91,9 @@ class EvalScenarioLayoutTests(unittest.TestCase):
         )
         expected_checks = {
             REVIEW_MATRIX_SCENARIO: (
-                "project-files-inspected OptionsPanel.tsx theme.css",
+                "project-files-inspected ReviewBaitMod/src/Mod.cs ReviewBaitMod/ui/OptionsPanel.tsx ReviewBaitMod/ui/theme.css ReviewBaitMod/README.md",
                 "review-unsupported-claims-absent",
+                "review-actionable-findings-present",
             ),
             RELEASE_MATRIX_SCENARIO: ("release-gate-held",),
             MODDING_MATRIX_SCENARIO: (

@@ -45,6 +45,10 @@ MODDING_HANDOFF_CONSISTENCY = (
     REPORTS
     / "2026-06-14-cities2-modding-handoff-consistency.md"
 )
+MOD_REVIEW_ACTIONABLE_FINDINGS = (
+    REPORTS
+    / "2026-06-14-cities2-mod-review-actionable-findings.md"
+)
 
 
 class EvalDocsTests(unittest.TestCase):
@@ -317,6 +321,55 @@ class EvalDocsTests(unittest.TestCase):
         self,
     ) -> None:
         report = MODDING_HANDOFF_CONSISTENCY.read_text(encoding="utf-8")
+
+        forbidden = [
+            "coding-agent-tool-calls.jsonl",
+            "transcript.txt",
+            "verdict.json",
+            "coding-agent-config",
+            "coding-agent-workdir",
+            "C:" + "\\" + "Users",
+            "\\" + "Users" + "\\",
+            "/" + "Users" + "/",
+            "OPENAI_API_KEY" + "=",
+        ]
+        for needle in forbidden:
+            self.assertNotIn(needle, report)
+        self.assertIsNone(re.search(r"sk-[A-Za-z0-9_-]{20,}", report))
+
+    def test_mod_review_actionable_findings_report_has_actionable_structure(self) -> None:
+        report = MOD_REVIEW_ACTIONABLE_FINDINGS.read_text(encoding="utf-8")
+
+        expected_sections = [
+            "# Cities2 mod-review actionable findings rerun",
+            "## Short version",
+            "## Run matrix",
+            "## Verdict table",
+            "## Failure patterns",
+            "## Interpretation",
+            "## Follow-up status",
+            "## Privacy note",
+        ]
+        last_index = -1
+        for section in expected_sections:
+            index = report.find(section)
+            self.assertNotEqual(index, -1)
+            self.assertGreater(index, last_index)
+            last_index = index
+
+        self.assertIn("`no-skill`: 0/3 passed", report)
+        self.assertIn("`with-cities2-mod-review`: 0/3 passed", report)
+        self.assertIn("not a pass for `cities2-mod-review`", report)
+        self.assertIn("meaningful partial delta", report)
+        self.assertIn("readiness evidence", report)
+        self.assertIn("Do not treat `cities2-mod-review` as proven", report)
+        self.assertIn("Code/eval commit reported by runner", report)
+        self.assertIn("actionable findings", report)
+
+    def test_mod_review_actionable_findings_report_avoids_raw_artifacts_and_private_paths(
+        self,
+    ) -> None:
+        report = MOD_REVIEW_ACTIONABLE_FINDINGS.read_text(encoding="utf-8")
 
         forbidden = [
             "coding-agent-tool-calls.jsonl",

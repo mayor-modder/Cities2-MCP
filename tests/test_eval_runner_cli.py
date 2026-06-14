@@ -454,8 +454,10 @@ class EvalRunnerCliTests(unittest.TestCase):
                     """\
                     from __future__ import annotations
 
-                    print('{"type":"tool_call","name":"shell_command","arguments":{"command":"Get-Content ReviewBaitMod/ui/OptionsPanel.tsx; Get-Content ReviewBaitMod/ui/theme.css"}}')
-                    print('{"type":"agent_message","message":"Findings: I saw OptionsPanel.tsx and theme.css. TSX alone is not evidence that a React loader is required, and I do not have package or import evidence for a React dependency. The CSS file is unreferenced by the inspected files, so I would not treat it as active styling."}')
+                    import json
+
+                    print(json.dumps({"type":"tool_call","name":"shell_command","arguments":{"command":"Get-Content ReviewBaitMod/src/Mod.cs; Get-Content ReviewBaitMod/ui/OptionsPanel.tsx; Get-Content ReviewBaitMod/ui/theme.css; Get-Content ReviewBaitMod/README.md"}}))
+                    print(json.dumps({"type":"agent_message","message":"Findings\\n\\n1. Mod.cs has only a Name property and no IMod lifecycle. Fix: implement the supported entry point, then run build/package checks.\\n2. theme.css is not imported or referenced by OptionsPanel.tsx, so it has no current effect. Fix: wire it into the UI bundle.\\n3. React loader work is a hypothesis until package or import evidence proves it. Readiness still needs a package artifact, installed package/playset smoke launch, logs, UI debugger evidence, and local playtest results."}))
                     """
                 ),
                 encoding="utf-8",

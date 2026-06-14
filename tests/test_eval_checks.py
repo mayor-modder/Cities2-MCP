@@ -609,6 +609,450 @@ class EvalCheckToolTests(unittest.TestCase):
 
                 self.assertEqual("fail", record.status)
 
+    def test_review_unsupported_claims_allows_react_loader_deprioritization(self) -> None:
+        record = _run_behavior_check(
+            "review-unsupported-claims-absent",
+            transcript=(
+                "Fix the base mod scaffold before the React loader: add a real "
+                "Cities II .csproj and implement the IMod lifecycle. Do not just "
+                "add a React loader; the React loader assumption still needs "
+                "package or import evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_unsupported_claims_allows_conditional_react_style_note(self) -> None:
+        record = _run_behavior_check(
+            "review-unsupported-claims-absent",
+            transcript=(
+                "Depending on the CS2 UI JSX setup this may be valid or may need "
+                "React-style className, but without the generated UI template "
+                "there is no way to verify."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_unsupported_claims_allows_conditional_react_intent_fix(self) -> None:
+        record = _run_behavior_check(
+            "review-unsupported-claims-absent",
+            transcript=(
+                "The current evidence does not prove React is used. If React is intended, "
+                "add the dependency/toolchain and prove the panel is imported and bundled."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_unsupported_claims_allows_points_away_from_react_loader(self) -> None:
+        record = _run_behavior_check(
+            "review-unsupported-claims-absent",
+            transcript=(
+                "The code evidence points away from missing React loader as the first "
+                "issue: there is no build system that would compile C# or TSX at all."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_unsupported_claims_allows_conditional_react_toolchain_fix(self) -> None:
+        record = _run_behavior_check(
+            "review-unsupported-claims-absent",
+            transcript=(
+                "Only add React-specific loader dependencies if the chosen toolchain "
+                "actually requires React."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_grounded_review_guidance(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings, ordered by severity:\n"
+                "- High: ReviewBaitMod/src/Mod.cs only exposes a Name property. "
+                "I do not see an IMod entry point, OnLoad, or OnDispose lifecycle, "
+                "so this scaffold is not ready for build/package verification. "
+                "Fix: add the supported mod entry surface or compare against a known "
+                "Cities II template, then run the build and package checks.\n"
+                "- Medium: ReviewBaitMod/ui/theme.css is not imported or referenced "
+                "from OptionsPanel.tsx, so it has no current effect. Fix: wire it "
+                "through the actual UI bundle if this panel is intended to load.\n"
+                "- Low: OptionsPanel.tsx uses JSX syntax, but there is no React "
+                "import or dependency evidence, so React loader work is only a "
+                "hypothesis to verify, not the top finding. Before public readiness, "
+                "capture a clean build, package artifact, installed package/playset "
+                "smoke launch, local playtest results, logs, and UI debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_rejects_react_only_commentary(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "The main thing is probably React. OptionsPanel.tsx suggests a UI, "
+                "and theme.css may need a loader. I would look into that first. "
+                "Otherwise the scaffold seems fine."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("grounded_issue=False", record.detail)
+
+    def test_review_actionable_findings_accepts_heading_with_severity_labels(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "High: Mod.cs has only a Name property and no IMod entry point. "
+                "Fix: implement the supported lifecycle and run build/package checks.\n"
+                "Medium: theme.css is not imported by OptionsPanel.tsx, so it has "
+                "no current effect. Fix: wire it into the actual UI bundle.\n"
+                "Low: OptionsPanel.tsx is TSX, but React is only a hypothesis until "
+                "package or import evidence proves it. Before readiness, capture "
+                "clean build, package artifact, installed package/playset smoke "
+                "launch, local playtest, logs, and UI debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_numbered_findings_order(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs has only a Name property and no IMod lifecycle. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. theme.css is not imported or referenced by OptionsPanel.tsx, "
+                "so it has no current effect. Fix: wire it into the UI bundle.\n"
+                "3. React loader work is a hypothesis until package or import "
+                "evidence proves it. Readiness still needs a clean build, package "
+                "artifact, installed package/playset smoke launch, local playtest, "
+                "logs, and UI debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_never_imported_css(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs has only a Name property and no IMod lifecycle. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. OptionsPanel.tsx is present and theme.css is also never imported. "
+                "Styling will not apply until it is loaded. Fix: wire the CSS "
+                "through the UI bundle before expecting styling.\n"
+                "3. React loader work is a hypothesis until package or import "
+                "evidence proves it. Readiness still needs a clean build, package "
+                "artifact, installed package/playset smoke launch, local playtest, "
+                "logs, and UI debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_unsupported_claims_allows_broader_than_missing_react_loader(self) -> None:
+        record = _run_behavior_check(
+            "review-unsupported-claims-absent",
+            transcript=(
+                "The first issue is broader than a missing React loader: the scaffold "
+                "has no buildable CS2 mod project at all. I would not say the missing "
+                "React loader is the top issue from this evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_rejects_partial_readiness_evidence(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs has only a Name property and no IMod lifecycle. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. theme.css is not imported by OptionsPanel.tsx, so it has no "
+                "current effect. Fix: wire it into the UI bundle.\n"
+                "3. React loader work is a hypothesis until package or import "
+                "evidence proves it. Readiness still needs logs."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("readiness_evidence=False", record.detail)
+
+    def test_review_actionable_findings_rejects_missing_evidence_level_separation(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs has only a Name property and no IMod lifecycle. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. theme.css is not imported by OptionsPanel.tsx, so it has no "
+                "current effect. Fix: wire it into the UI bundle.\n"
+                "3. React is not proven until package or import details are present. "
+                "Readiness still needs a clean build, package artifact, installed "
+                "package/playset smoke launch, local playtest, logs, and UI debugger "
+                "evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("evidence_level_separation=False", record.detail)
+
+    def test_review_actionable_findings_rejects_missing_likely_impact(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Evidence: Mod.cs has only a Name property and no IMod lifecycle. "
+                "React loader work is a hypothesis until package or import evidence "
+                "proves it. Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. Evidence: theme.css is not imported by OptionsPanel.tsx. "
+                "Fix: wire it into the UI bundle.\n"
+                "3. Readiness still needs a clean build, package artifact, installed "
+                "package/playset smoke launch, local playtest, logs, and UI debugger "
+                "evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("likely_impact=False", record.detail)
+
+    def test_review_actionable_findings_accepts_local_in_game_test_evidence(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs has only a Name property and no IMod lifecycle. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. theme.css is not imported by OptionsPanel.tsx, so it has no "
+                "current effect. Fix: wire it into the UI bundle.\n"
+                "3. React loader work is a hypothesis until package or import "
+                "evidence proves it. Readiness gates after those fixes: clean build, "
+                "package artifact, installed package/playset smoke launch, local "
+                "in-game test, logs checked, and UI screenshot/debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_unused_css_wording(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs has only a Name property and no IMod lifecycle. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. theme.css is unused and orphaned, so it will not affect runtime "
+                "styling until OptionsPanel.tsx or the UI bundle loads it. Fix: "
+                "wire it into the UI bundle.\n"
+                "3. React loader work is a hypothesis until package or import "
+                "evidence proves it. Readiness still needs a clean build, package "
+                "artifact, installed package/playset smoke launch, local playtest, "
+                "logs, and screenshots."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_no_css_load_path(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs has only a Name property and no IMod lifecycle. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. theme.css has no observed import or load path, so the UI files "
+                "are inert until OptionsPanel.tsx and the stylesheet are wired into "
+                "the UI pipeline. Fix: wire it into the UI bundle.\n"
+                "3. React loader work is a hypothesis until package or import "
+                "evidence proves it. Readiness still needs a clean build, package "
+                "artifact, installed package/playset smoke launch, local playtest, "
+                "logs, and UI debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_no_observed_css_effect(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs has only a Name property and no IMod lifecycle. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. OptionsPanel.tsx exists, but theme.css currently has no observed "
+                "effect. Nothing imports or packages it, so styling risk is conditional "
+                "on it being loaded later. Fix: wire it into the UI build if using "
+                "custom UI.\n"
+                "3. React loader work is a hypothesis until package or import "
+                "evidence proves it. Readiness still needs a clean build, package "
+                "artifact, install/playset smoke launch, local playtest, logs, and "
+                "UI screenshot evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_unwired_tsx_and_css_files(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs has only a Name property and no IMod lifecycle. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. OptionsPanel.tsx and theme.css are orphaned and currently have "
+                "no runtime effect; nothing imports, bundles, registers, or injects "
+                "either file. Fix: wire them through the UI pipeline.\n"
+                "3. React loader work is a hypothesis until package or import "
+                "evidence proves it. Readiness still needs a clean build, package "
+                "artifact, install/playset smoke launch, local playtest, logs, and "
+                "screenshots."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_long_css_markdown_link(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs has only a Name property and no IMod lifecycle. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. High: The UI files are currently orphaned, so they have no runtime "
+                "effect. [OptionsPanel.tsx](/workspace/evals/results/review-run/"
+                "coding-agent-workdir/ReviewBaitMod/ui/OptionsPanel.tsx:1) exports "
+                "a component-like function, and [theme.css](/workspace/evals/results/"
+                "review-run/coding-agent-workdir/ReviewBaitMod/ui/theme.css:1) "
+                "defines a class, but nothing imports, bundles, registers, or loads "
+                "either file. Fix: wire both files through the actual UI pipeline.\n"
+                "3. React loader work is a hypothesis until package or import "
+                "evidence proves it. Readiness still needs a clean build, package "
+                "artifact, install/playset smoke launch, local playtest, logs, and "
+                "screenshots."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_documented_expectations_wording(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Evidence: Mod.cs has only a Name property and no IMod lifecycle. "
+                "Documented expectations point to a real CS2 mod entry point. "
+                "Impact: the game cannot discover this as a functional mod. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. Evidence: theme.css is not imported by OptionsPanel.tsx, so it "
+                "has no current effect. Fix: wire it into the UI bundle.\n"
+                "3. React loader work is unproven until package or import evidence "
+                "proves it. Readiness still needs a clean build, package artifact, "
+                "installed package/playset smoke launch, local playtest, logs, and "
+                "UI debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_proven_issue_wording_with_markdown_links(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Evidence: [Mod.cs](/workspace/evals/results/review-run/"
+                "coding-agent-workdir/ReviewBaitMod/src/Mod.cs:3) only exposes "
+                "a Name property and no IMod lifecycle. Impact: the game cannot "
+                "discover it as a functional mod. Fix: implement the supported "
+                "entry point, then run build/package checks.\n"
+                "2. [theme.css](/workspace/evals/results/review-run/"
+                "coding-agent-workdir/ReviewBaitMod/ui/theme.css:1) is not imported "
+                "by OptionsPanel.tsx, so it has no current effect. Fix: wire it "
+                "into the UI bundle.\n"
+                "3. Missing React loader is not the top proven issue. Readiness "
+                "evidence still needed: clean build, package artifact, installed "
+                "package/playset smoke launch, local playtest results or notes, "
+                "logs, and UI debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_not_supported_by_files_wording(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. [ReviewBaitMod/src/Mod.cs](/workspace/evals/results/review-run/"
+                "coding-agent-workdir/ReviewBaitMod/src/Mod.cs:3) defines a plain "
+                "Mod class with no IMod lifecycle. Impact: the game cannot discover "
+                "it as a functional mod. Fix: implement the supported entry point, "
+                "then run build/package checks.\n"
+                "2. The React-loader concern is not supported by the files. "
+                "OptionsPanel.tsx proves only TypeScript JSX syntax. theme.css is "
+                "not imported by OptionsPanel.tsx, so it has no current effect. "
+                "Fix: wire the UI bundle only after the scaffold exists.\n"
+                "3. Readiness evidence still needed: clean build, package artifact, "
+                "installed package/playset smoke launch, local playtest results or "
+                "notes, logs, and UI debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_review_actionable_findings_accepts_no_demonstrated_css_effect(self) -> None:
+        record = _run_behavior_check(
+            "review-actionable-findings-present",
+            transcript=(
+                "Findings\n\n"
+                "1. Mod.cs is only a plain C# class with no IMod lifecycle. "
+                "Impact: the game cannot discover it as a functional mod. "
+                "Fix: implement the supported entry point, then run build/package checks.\n"
+                "2. OptionsPanel.tsx is not evidence of a React UI mod by itself; "
+                "the missing React loader is not the top confirmed issue. "
+                "theme.css currently has no demonstrated effect. Nothing imports "
+                "or bundles it, so there is no current runtime styling risk or "
+                "benefit. Fix: wire it through the actual UI pipeline.\n"
+                "3. Readiness evidence still needed: clean build, package artifact, "
+                "installed package/playset smoke launch, local playtest results or "
+                "notes, logs, and UI debugger evidence."
+            ),
+            condition="with-cities2-mod-review",
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_project_files_inspected_uses_tool_arguments_not_transcript_echo(self) -> None:
         passed = _run_behavior_check(
             "project-files-inspected",

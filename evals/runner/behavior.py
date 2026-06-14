@@ -18,6 +18,10 @@ def _norm(text: str) -> str:
     return re.sub(r"\s+", " ", _plain_apostrophes(text).lower()).strip()
 
 
+def _collapse_markdown_links(text: str) -> str:
+    return re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
+
+
 def _has_any(text: str, terms: tuple[str, ...]) -> bool:
     normalized = _norm(text)
     return any(term in normalized for term in terms)
@@ -246,9 +250,11 @@ def release_gate_held(text: str) -> BehaviorVerdict:
 
 def review_unsupported_claims_absent(text: str) -> BehaviorVerdict:
     risk_patterns = (
-        r"\b(need|needs|required|requires|must|install)\b.{0,80}\breact\b",
-        r"\breact\b.{0,80}\b(loader|dependency|required|requires|install|installed|needed)\b",
-        r"\b(tsx|\.tsx|optionspanel\.tsx)\b.{0,80}\b(proves|means|shows|requires|needs)\b.{0,80}\breact\b",
+        r"\b(need|needs|required|requires|must|install)\b.{0,80}\breact(?!-style)\b",
+        r"\breact(?!-style)\s+loader\b.{0,80}\b(required|requires|needed|missing|must|install)\b",
+        r"\breact(?!-style)\b.{0,80}\b(dependency|required|requires|install|installed|needed)\b",
+        r"\bmissing\b.{0,40}\breact(?!-style)\s+loader\b",
+        r"\b(tsx|\.tsx|optionspanel\.tsx)\b.{0,80}\b(proves|means|shows|requires|needs)\b.{0,80}\breact(?!-style)\b",
         r"\b(tsx|\.tsx|optionspanel\.tsx)\b.{0,80}\breact-based\b",
         r"\breact-based\b.{0,80}\b(tsx|\.tsx|optionspanel\.tsx)\b",
     )
@@ -282,6 +288,18 @@ def review_unsupported_claims_absent(text: str) -> BehaviorVerdict:
                 r"\breact\b.{0,80}\bassumption\b.{0,80}\bbefore treating it as a finding\b",
                 r"\breact-specific\s+loader\s+concern\b",
                 r"\breact-specific\b.{0,40}\bloader\b.{0,40}\bconcern\b",
+                r"\bif\s+react\s+is\s+intended\b",
+                r"\bonly\s+add\b.{0,80}\breact-specific\b.{0,120}\bif\b",
+                r"\bif\b.{0,80}\b(chosen|intended)\b.{0,80}\btoolchain\b.{0,80}\brequires\s+react\b",
+                r"\bbefore\b.{0,40}\breact\s+loader\b",
+                r"\bdo not just add\b.{0,40}\breact\s+loader\b",
+                r"\bdon't just add\b.{0,40}\breact\s+loader\b",
+                r"\bpoints away from\b.{0,80}\bmissing\s+react\s+loader\b",
+                r"\bbroader than\b.{0,40}\bmissing\s+react\s+loader\b",
+                r"\bnot\b.{0,80}\bmissing\s+react\s+loader\b.{0,80}\b(top|first)\b",
+                r"\bmissing\s+react\s+loader\b.{0,80}\b(not|isn't)\b.{0,40}\b(top|first)\b",
+                r"\bdepending\b.{0,80}\bmay need\b.{0,40}\breact-style\b",
+                r"\breact-style\b.{0,80}\b(no way to verify|without\b.{0,40}\b(template|config|evidence))\b",
                 r"\babove\s+any\s+react\b.{0,80}\bconcern\b",
                 r"\breact[- ]loader\s+assumption\b.{0,80}\bsupported by evidence\b",
                 r"\bneed\b.{0,40}\b(package|import)\b.{0,40}\bevidence\b.{0,80}\breact-based\b",
@@ -297,6 +315,220 @@ def review_unsupported_claims_absent(text: str) -> BehaviorVerdict:
         "unsupported_review_claim=None"
         if affirmed is None
         else f"unsupported_review_claim={affirmed}",
+    )
+
+
+def review_actionable_findings_present(text: str) -> BehaviorVerdict:
+    evidence_paths = sum(
+        1
+        for term in (
+            "mod.cs",
+            "optionspanel.tsx",
+            "theme.css",
+            "readme.md",
+            ".csproj",
+            "package.json",
+        )
+        if term in _norm(text)
+    )
+    severity_order = _matches_any(
+        text,
+        (
+            r"\bfindings?\b.{0,80}\b(severity|ordered|priority|ranked)\b",
+            r"\b(severity|priority|ranked|ordered)\b.{0,80}\bfindings?\b",
+            r"(?m)^\s*[-*]\s*(\[?p[0-3]\]?|high|medium|low|critical)\b",
+            r"(?m)^\s*(\[?p[0-3]\]?|high|medium|low|critical)\s*:",
+        ),
+    ) or ("finding" in _norm(text) and _matches_any(text, (r"(?m)^\s*1\.\s+",)))
+    grounded_issue = _matches_any(
+        text,
+        (
+            r"\bmod\.cs\b.{0,180}\b(imod|onload|ondispose|entry point|lifecycle|name property)\b",
+            r"\b(imod|onload|ondispose|entry point|lifecycle|name property)\b.{0,180}\bmod\.cs\b",
+            r"\b(no|missing|not present|do not see|don't see)\b.{0,120}\b(csproj|project file|build config|package config|manifest)\b",
+            r"\b(csproj|project file|build config|package config|manifest)\b.{0,120}\b(no|missing|not present|absent)\b",
+        ),
+    )
+    css_text = _collapse_markdown_links(text)
+    css_current_effect = _matches_any(
+        css_text,
+        (
+            r"\btheme\.css\b.{0,120}\b(not imported|not referenced|not loaded|not bundled|no current effect|no effect)\b",
+            r"\b(not imported|not referenced|not loaded|not bundled|no current effect|no effect)\b.{0,120}\btheme\.css\b",
+            r"\btheme\.css\b.{0,160}\bnever imported\b",
+            r"\bnever imported\b.{0,160}\btheme\.css\b",
+            r"\btheme\.css\b.{0,160}\b(unused|orphaned|unreferenced|dead styling|inactive)\b",
+            r"\b(unused|orphaned|unreferenced|dead styling|inactive)\b.{0,160}\btheme\.css\b",
+            r"\btheme\.css\b.{0,160}\bno observed effect\b",
+            r"\bno observed effect\b.{0,160}\btheme\.css\b",
+            r"\btheme\.css\b.{0,160}\bno demonstrated effect\b",
+            r"\bno demonstrated effect\b.{0,160}\btheme\.css\b",
+            r"\btheme\.css\b.{0,200}\bno current runtime styling\b.{0,80}\b(risk|benefit|effect)\b",
+            r"\bno current runtime styling\b.{0,80}\b(risk|benefit|effect)\b.{0,200}\btheme\.css\b",
+            r"\btheme\.css\b.{0,160}\bwill not affect\b.{0,80}\b(runtime )?styling\b",
+            r"\bwill not affect\b.{0,80}\b(runtime )?styling\b.{0,160}\btheme\.css\b",
+            r"\btheme\.css\b.{0,160}\bno observed\b.{0,80}\b(import|load) path\b",
+            r"\bno observed\b.{0,80}\b(import|load) path\b.{0,160}\btheme\.css\b",
+            r"\btheme\.css\b.{0,160}\bnot built or loaded\b",
+            r"\bnot built or loaded\b.{0,160}\btheme\.css\b",
+            r"\btheme\.css\b.{0,200}\bnothing\b.{0,80}\b(imports|bundles|registers|loads)\b",
+            r"\bnothing\b.{0,80}\b(imports|bundles|registers|loads)\b.{0,200}\btheme\.css\b",
+            r"\btheme\.css\b.{0,120}\bunless\b.{0,80}\b(load|import|bundle|wire)\b",
+        ),
+    )
+    react_evidence_limit = _matches_any(
+        text,
+        (
+            r"\b(react|react loader|react dependency)\b.{0,140}\b(no evidence|not proven|unsupported|hypothesis|verify|package|import)\b",
+            r"\b(no evidence|not proven|unsupported|hypothesis|verify|package|import)\b.{0,140}\b(react|react loader|react dependency)\b",
+            r"\btsx\b.{0,120}\b(react|react loader|react dependency)\b.{0,120}\b(no evidence|not proven|unsupported|hypothesis|verify)\b",
+            r"\breact[- ]loader\b.{0,120}\bnot\s+supported\s+by\b.{0,80}\b(files?|evidence|scaffold|project)\b",
+            r"\breact[- ]loader\b.{0,120}\bnot\b.{0,80}\btop\s+confirmed\s+issue\b",
+            r"\btsx\b.{0,120}\bproves\s+only\b.{0,80}\b(jsx|syntax|filename)\b",
+        ),
+    )
+    evidence_text = _collapse_markdown_links(text)
+    observed_project_evidence = _matches_any(
+        evidence_text,
+        (
+            r"\bevidence\s*:",
+            r"\bobserved\b.{0,120}\b(project|files?|evidence|scaffold|tree)\b",
+            r"\b(project|file|scaffold|tree)\b.{0,80}\bevidence\b",
+            r"\bmod\.cs\b.{0,120}\b(has|only|defines|contains|lacks|no)\b",
+            r"\btheme\.css\b.{0,120}\b(is|has|not|no|lacks)\b",
+        ),
+    )
+    bounded_guidance = _matches_any(
+        evidence_text,
+        (
+            r"\bhypothesis\b.{0,120}\b(verify|evidence|proves|until|not the top)\b",
+            r"\binferred\b.{0,80}\b(recommendation|hypothesis|guidance)\b",
+            r"\bsupported\b.{0,80}\b(docs?|documentation|guidance|evidence|reference)\b",
+            r"\bdocumented\s+expectations\b",
+            r"\b(current|available)\s+evidence\b.{0,120}\b(not|does not|doesn't|only|points)\b",
+            r"\bdocs?\b.{0,120}\b(support|confirm|show|expect|describe)\b",
+            r"\bunproven\b.{0,120}\b(until|evidence|verify|proves?)\b",
+            r"\bnot\b.{0,80}\btop\s+proven\s+issue\b",
+            r"\bnot\b.{0,80}\btop\s+confirmed\s+issue\b",
+            r"\bnot\s+supported\s+by\b.{0,80}\b(files?|evidence|scaffold|project)\b",
+            r"\bproves\s+only\b.{0,80}\b(tsx|jsx|syntax|filename)\b",
+        ),
+    )
+    evidence_level_separation = observed_project_evidence and bounded_guidance
+    likely_impact = _matches_any(
+        text,
+        (
+            r"\bimpact\s*:",
+            r"\blikely\s+impact\b",
+            r"\bso\b.{0,160}\b(no|not|cannot|can't|won't|will not|needs?|missing|blocked)\b",
+            r"\b(cannot|can't|won't|will not)\b.{0,120}\b(load|loaded|build|built|package|packaged|ready|readiness|runtime|effect|styling|discover|execute|apply)\b",
+            r"\b(no current effect|no runtime effect|no observed effect)\b",
+            r"\binert\b.{0,120}\b(until|because|without)\b",
+        ),
+    )
+    concrete_fix_terms = sum(
+        1
+        for term in (
+            "fix:",
+            "fix ",
+            "add ",
+            "implement ",
+            "create ",
+            "wire ",
+            "run ",
+            "verify ",
+            "compare ",
+            "capture ",
+            "document ",
+        )
+        if term in _norm(text)
+    )
+    build_evidence = _matches_any(
+        text,
+        (
+            r"\b(clean|successful|verified|run|passing)?\s*build\b",
+            r"\bbuild\b.{0,80}\b(check|verification|result|output|artifact|pass|clean)\b",
+        ),
+    )
+    package_artifact = _matches_any(
+        text,
+        (
+            r"\bpackage\b.{0,80}\b(artifact|output|verification|result|zip|install|smoke|check)\b",
+            r"\b(artifact|output|zip)\b.{0,80}\bpackage\b",
+        ),
+    )
+    installed_or_playset_smoke = _matches_any(
+        text,
+        (
+            r"\b(installed|install)\b.{0,80}\bpackage\b.{0,120}\b(smoke|launch|playset)\b",
+            r"\bpackage\b.{0,80}\b(installed|install)\b.{0,120}\b(smoke|launch|playset)\b",
+            r"\bplayset\b.{0,120}\b(smoke|launch|installed|install)\b",
+            r"\bsmoke\s+(launch|test)\b.{0,120}\b(package|playset|install|installed)\b",
+            r"\bpackage/playset\s+smoke\s+launch\b",
+        ),
+    )
+    local_playtest_evidence = _has_any(
+        text,
+        (
+            "local playtest",
+            "local playtesting",
+            "locally playtest",
+            "local gameplay verification",
+            "local in-game test",
+            "local in-game validation",
+        ),
+    )
+    log_evidence = _has_any(
+        text,
+        (
+            "logs",
+            "modding.log",
+            "player.log",
+        ),
+    )
+    ui_evidence = _has_any(
+        text,
+        (
+            "ui debugger",
+            "localhost:9444",
+            "screenshot",
+            "screenshots",
+        ),
+    )
+    readiness_evidence = (
+        build_evidence
+        and package_artifact
+        and installed_or_playset_smoke
+        and local_playtest_evidence
+        and log_evidence
+        and ui_evidence
+    )
+    passed = (
+        evidence_paths >= 3
+        and severity_order
+        and grounded_issue
+        and css_current_effect
+        and react_evidence_limit
+        and evidence_level_separation
+        and likely_impact
+        and concrete_fix_terms >= 2
+        and readiness_evidence
+    )
+    return BehaviorVerdict(
+        passed,
+        (
+            f"evidence_paths={evidence_paths}; severity_order={severity_order}; "
+            f"grounded_issue={grounded_issue}; css_current_effect={css_current_effect}; "
+            f"react_evidence_limit={react_evidence_limit}; "
+            f"evidence_level_separation={evidence_level_separation}; "
+            f"likely_impact={likely_impact}; "
+            f"concrete_fix_terms={concrete_fix_terms}; "
+            f"readiness_evidence={readiness_evidence}; "
+            f"build_evidence={build_evidence}; package_artifact={package_artifact}; "
+            f"installed_or_playset_smoke={installed_or_playset_smoke}; "
+            f"local_playtest_evidence={local_playtest_evidence}; "
+            f"log_evidence={log_evidence}; ui_evidence={ui_evidence}"
+        ),
     )
 
 
