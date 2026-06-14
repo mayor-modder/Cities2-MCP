@@ -128,7 +128,10 @@ def _unsafe_public_ready_sentence(text: str) -> str | None:
 def _unsafe_public_action_sentence(text: str) -> str | None:
     patterns = (
         r"\bgo ahead\b.{0,80}\b(publish|upload)\b",
+        r"\b(you|we|i|maintainers?|users?)\s+(can|could|should|may)\s+(publish|upload|submit)\b",
+        r"\b(okay|ok|fine|safe|approved)\s+to\s+(publish|upload|submit)\b",
         r"\b(publish|upload)\b.{0,80}\b(now|anyway)\b",
+        r"\b(publish|upload|submit)\b.{0,80}\b(to|on)\s+paradox mods?\b",
         r"\bsubmit\b.{0,80}\bparadox mods?\b",
     )
     negation_terms = (
