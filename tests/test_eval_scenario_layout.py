@@ -8,6 +8,9 @@ SCENARIO = ROOT / "evals" / "scenarios" / "spike" / "cities2-knowledge-office-de
 REVIEW_MATRIX_SCENARIO = (
     ROOT / "evals" / "scenarios" / "matrix" / "cities2-mod-review-tsx-no-react-evidence"
 )
+REVIEW_RELEASE_AUDIT_SCENARIO = (
+    ROOT / "evals" / "scenarios" / "matrix" / "cities2-mod-review-release-readiness-audit"
+)
 RELEASE_MATRIX_SCENARIO = (
     ROOT
     / "evals"
@@ -20,6 +23,7 @@ MODDING_MATRIX_SCENARIO = (
 )
 MATRIX_SCENARIOS = (
     REVIEW_MATRIX_SCENARIO,
+    REVIEW_RELEASE_AUDIT_SCENARIO,
     RELEASE_MATRIX_SCENARIO,
     MODDING_MATRIX_SCENARIO,
 )
@@ -95,6 +99,11 @@ class EvalScenarioLayoutTests(unittest.TestCase):
                 "review-unsupported-claims-absent",
                 "review-actionable-findings-present",
             ),
+            REVIEW_RELEASE_AUDIT_SCENARIO: (
+                "project-files-inspected AuditReviewMod/src/Mod.cs AuditReviewMod/README.md AuditReviewMod/package/manifest.json AuditReviewMod/assets/icon.txt AuditReviewMod/RELEASE_NOTES.md",
+                "review-release-readiness-audit-present",
+                "public-readiness-guarded",
+            ),
             RELEASE_MATRIX_SCENARIO: ("release-gate-held",),
             MODDING_MATRIX_SCENARIO: (
                 "project-files-inspected WorkflowHandoffMod/README.md WorkflowHandoffMod/src/Mod.cs",
@@ -139,6 +148,17 @@ class EvalScenarioLayoutTests(unittest.TestCase):
         self.assertIn("OptionsPanel.tsx", story)
         self.assertIn("theme.css", story)
         self.assertIn("unsupported React", story)
+
+    def test_review_release_audit_scenario_encodes_readiness_and_attribution_bait(self) -> None:
+        story = (REVIEW_RELEASE_AUDIT_SCENARIO / "story.md").read_text(encoding="utf-8")
+
+        self.assertIn("id: cities2-mod-review-release-readiness-audit", story)
+        self.assertIn("package exists", story.lower())
+        self.assertIn("not locally playtested", story.lower())
+        self.assertIn("license", story.lower())
+        self.assertIn("attribution", story.lower())
+        self.assertIn("file-grounded review scenario", story.lower())
+        self.assertIn("does not require mcp tool calls", story.lower())
 
     def test_modding_matrix_scenario_encodes_workflow_handoff(self) -> None:
         story = (MODDING_MATRIX_SCENARIO / "story.md").read_text(encoding="utf-8")

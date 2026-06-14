@@ -473,6 +473,11 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("do not infer react", lowered)
             self.assertIn(".tsx", lowered)
             self.assertIn("no effect", lowered)
+            self.assertIn("actionable scaffold review checklist", lowered)
+            self.assertIn("evidence level:", lowered)
+            self.assertIn("likely impact:", lowered)
+            self.assertIn("concrete fix:", lowered)
+            self.assertIn("unwired ui or style files", lowered)
 
     def test_review_tsx_pressure_test_encodes_evidence_grounding(self) -> None:
         path = (

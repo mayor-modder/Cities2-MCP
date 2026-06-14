@@ -14,6 +14,7 @@ from .behavior import (
     public_readiness_guarded,
     release_gate_held,
     review_actionable_findings_present,
+    review_release_readiness_audit_present,
     review_unsupported_claims_absent,
     routes_debug_release_followups,
     shared_dependency_conflict_investigated,
@@ -576,6 +577,11 @@ def run_check(
 
     if name == "review-actionable-findings-present":
         verdict = review_actionable_findings_present(_transcript_text(run_dir))
+        status = "pass" if verdict.passed else "fail"
+        return _record(name, phase, status, verdict.detail)
+
+    if name == "review-release-readiness-audit-present":
+        verdict = review_release_readiness_audit_present(_transcript_text(run_dir))
         status = "pass" if verdict.passed else "fail"
         return _record(name, phase, status, verdict.detail)
 

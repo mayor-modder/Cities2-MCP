@@ -49,6 +49,10 @@ MOD_REVIEW_ACTIONABLE_FINDINGS = (
     REPORTS
     / "2026-06-14-cities2-mod-review-actionable-findings.md"
 )
+MOD_REVIEW_IMPROVEMENT_RERUN = (
+    REPORTS
+    / "2026-06-14-cities2-mod-review-improvement-rerun.md"
+)
 
 
 class EvalDocsTests(unittest.TestCase):
@@ -370,6 +374,66 @@ class EvalDocsTests(unittest.TestCase):
         self,
     ) -> None:
         report = MOD_REVIEW_ACTIONABLE_FINDINGS.read_text(encoding="utf-8")
+
+        forbidden = [
+            "coding-agent-tool-calls.jsonl",
+            "transcript.txt",
+            "verdict.json",
+            "coding-agent-config",
+            "coding-agent-workdir",
+            "C:" + "\\" + "Users",
+            "\\" + "Users" + "\\",
+            "/" + "Users" + "/",
+            "OPENAI_API_KEY" + "=",
+        ]
+        for needle in forbidden:
+            self.assertNotIn(needle, report)
+        self.assertIsNone(re.search(r"sk-[A-Za-z0-9_-]{20,}", report))
+
+    def test_mod_review_improvement_rerun_report_has_actionable_structure(self) -> None:
+        report = MOD_REVIEW_IMPROVEMENT_RERUN.read_text(encoding="utf-8")
+
+        expected_sections = [
+            "# Cities2 mod-review improvement rerun",
+            "## Short version",
+            "## Run matrix",
+            "## Verdict table",
+            "## Interpretation",
+            "## Post-review hardening",
+            "## Follow-up status",
+            "## Privacy note",
+        ]
+        last_index = -1
+        for section in expected_sections:
+            index = report.find(section)
+            self.assertNotEqual(index, -1)
+            self.assertGreater(index, last_index)
+            last_index = index
+
+        self.assertIn("`cities2-mod-review-tsx-no-react-evidence`", report)
+        self.assertIn("`cities2-mod-review-release-readiness-audit`", report)
+        self.assertIn("`no-skill`: 0/3 passed", report)
+        self.assertIn("`with-cities2-mod-review`: 3/3 passed", report)
+        self.assertIn("clear positive delta", report)
+        self.assertIn("release-readiness audit", report)
+        self.assertIn(
+            "Post-review checker hardening commits: `f365cbc`, `cd9359e`, `d10b875`, `7ab5aba`, `0378c11`, `5b0c695`, `d112026`",
+            report,
+        )
+        self.assertIn("not a rerun of the 12 live agent trials", report)
+        self.assertIn("passive unsafe approval", report)
+        self.assertIn("release can proceed", report)
+        self.assertIn("inverted missing-evidence condition", report)
+        self.assertIn("publish-before-evidence conditions", report)
+        self.assertIn("safe conditional release guidance", report)
+        self.assertIn("you may release this publicly", report)
+        self.assertIn("although public release is blocked for now", report)
+        self.assertIn("non-UI release evidence", report)
+
+    def test_mod_review_improvement_rerun_report_avoids_raw_artifacts_and_private_paths(
+        self,
+    ) -> None:
+        report = MOD_REVIEW_IMPROVEMENT_RERUN.read_text(encoding="utf-8")
 
         forbidden = [
             "coding-agent-tool-calls.jsonl",
