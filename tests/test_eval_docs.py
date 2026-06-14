@@ -399,6 +399,7 @@ class EvalDocsTests(unittest.TestCase):
             "## Run matrix",
             "## Verdict table",
             "## Interpretation",
+            "## Post-review hardening",
             "## Follow-up status",
             "## Privacy note",
         ]
@@ -415,6 +416,9 @@ class EvalDocsTests(unittest.TestCase):
         self.assertIn("`with-cities2-mod-review`: 3/3 passed", report)
         self.assertIn("clear positive delta", report)
         self.assertIn("release-readiness audit", report)
+        self.assertIn("Post-review checker hardening commit: `f365cbc`", report)
+        self.assertIn("not a rerun of the 12 live agent trials", report)
+        self.assertIn("passive unsafe approval", report)
 
     def test_mod_review_improvement_rerun_report_avoids_raw_artifacts_and_private_paths(
         self,

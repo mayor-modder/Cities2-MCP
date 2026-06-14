@@ -17,7 +17,7 @@ The result is a clear positive delta for `cities2-mod-review` on these two scena
 
 ## Run matrix
 
-Code/eval commit reported by runner: 4d5c360
+Live matrix code/eval commit reported by runner: 4d5c360
 Skill checksum: sha256:b5264c9649ace993d0c2bf443e357236c76b707904fd6c33487408c37c3103d1
 
 ## Verdict table
@@ -46,6 +46,14 @@ The release-readiness audit adds a different pressure shape. It verifies that `c
 The checker changes are calibration changes, not exact-wording gates. They were expanded for natural variants observed in live runs, such as backticked or bold severity labels, "CSS has no current styling risk or benefit", "package named by the manifest is not present", and "should not publish this yet".
 
 This remains scenario evidence, not a universal guarantee across clients, models, or larger mod projects.
+
+## Post-review hardening
+
+Post-review checker hardening commit: `f365cbc`.
+
+The 12-run live matrix above was generated before the post-review unsafe-approval hardening. That matrix remains the live skill-effectiveness evidence for the two scenarios: no-skill 0/3 and with-skill 3/3 in both cases. The later hardening commit adds deterministic checker coverage for a separate review finding: an answer must fail if it names missing public-release evidence but still approves publishing to Paradox Mods.
+
+The added regression coverage rejects both active unsafe approval, such as "you can publish it to Paradox Mods", and passive unsafe approval, such as "public upload is approved". This is not a rerun of the 12 live agent trials; it is a focused checker fix that prevents future reports from counting those mixed unsafe responses as passing release-readiness behavior.
 
 ## Follow-up status
 
