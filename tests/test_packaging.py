@@ -30,7 +30,7 @@ SKILL_NAMES = (
 )
 
 
-class PackagingTests(unittest.TestCase):
+class PluginPackagingTests(unittest.TestCase):
     @staticmethod
     def _stop_proc(proc: subprocess.Popen[bytes]) -> None:
         proc.terminate()
@@ -38,6 +38,28 @@ class PackagingTests(unittest.TestCase):
         for stream in (proc.stdin, proc.stdout, proc.stderr):
             if stream is not None:
                 stream.close()
+
+    @staticmethod
+    def _generated_repo_root(plugin_root: Path, package_root: Path) -> Path:
+        root = plugin_root
+        for _part in package_root.parts:
+            root = root.parent
+        return root
+
+    def _generated_package_root(self, package_root: Path) -> Path:
+        from cities2_mcp import plugin_packages
+
+        tmp = tempfile.TemporaryDirectory(prefix="cities2-mcp-generated-package-")
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        shutil.copytree(ROOT / "skills", root / "skills")
+        shutil.copytree(
+            ROOT / "cities2_mcp",
+            root / "cities2_mcp",
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache"),
+        )
+        plugin_packages.sync_packages(root, package_roots=(package_root,))
+        return root / package_root
 
     def test_pyproject_declares_public_package_and_entrypoint(self) -> None:
         pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
@@ -158,15 +180,16 @@ class PackagingTests(unittest.TestCase):
                 self.assertIsInstance(annotations.get(key), bool, f"{tool['name']} {key}")
 
     def test_anthropic_distribution_artifacts_are_version_aligned(self) -> None:
-        plugin = json.loads(
-            (ROOT / "integrations" / "anthropic" / "claude-plugin" / ".claude-plugin" / "plugin.json").read_text(
-                encoding="utf-8"
-            )
+        from cities2_mcp import plugin_metadata
+        from cities2_mcp import plugin_packages
+
+        plugin_root = self._generated_package_root(plugin_packages.CLAUDE_PACKAGE_ROOT)
+        generated_root = self._generated_repo_root(plugin_root, plugin_packages.CLAUDE_PACKAGE_ROOT)
+        plugin = json.loads((plugin_root / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        plugin_mcp = json.loads((plugin_root / ".mcp.json").read_text(encoding="utf-8"))
+        marketplace = json.loads(
+            (generated_root / "dist" / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8")
         )
-        plugin_mcp = json.loads(
-            (ROOT / "integrations" / "anthropic" / "claude-plugin" / ".mcp.json").read_text(encoding="utf-8")
-        )
-        marketplace = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
         privacy_text = (ROOT / "PRIVACY.md").read_text(encoding="utf-8")
 
@@ -183,16 +206,16 @@ class PackagingTests(unittest.TestCase):
             "${user_config.trusted_workspace}",
         )
         self.assertNotIn("uvx", json.dumps(plugin_mcp))
-        self.assertEqual(marketplace["name"], "cities2-mcp")
+        self.assertEqual(marketplace["name"], plugin_metadata.CATALOG_NAME)
         self.assertEqual(marketplace["plugins"][0]["source"], "./integrations/anthropic/claude-plugin")
         self.assertEqual(marketplace["plugins"][0]["version"], "0.1.9")
         self.assertIn("[PRIVACY.md](PRIVACY.md)", readme_text)
         self.assertIn("does not collect telemetry", privacy_text)
         self.assertIn("doesn't send any data to the cloud", privacy_text)
         self.assertIn("does not collect telemetry, phone home, or send data to its authors", privacy_text)
-        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "bin" / "cities2-mcp-launcher.js").exists())
-        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "run_server.py").exists())
-        self.assertTrue((ROOT / "integrations" / "anthropic" / "claude-plugin" / "vendor" / "cities2_mcp" / "mcp_server.py").exists())
+        self.assertTrue((plugin_root / "bin" / "cities2-mcp-launcher.js").exists())
+        self.assertTrue((plugin_root / "vendor" / "run_server.py").exists())
+        self.assertTrue((plugin_root / "vendor" / "cities2_mcp" / "mcp_server.py").exists())
         legacy_desktop_extension_dir = "claude-" + "mcp" + "b"
         self.assertFalse((ROOT / "integrations" / "anthropic" / legacy_desktop_extension_dir).exists())
         for skill_name in (
@@ -204,10 +227,7 @@ class PackagingTests(unittest.TestCase):
         ):
             self.assertTrue(
                 (
-                    ROOT
-                    / "integrations"
-                    / "anthropic"
-                    / "claude-plugin"
+                    plugin_root
                     / "skills"
                     / skill_name
                     / "SKILL.md"
@@ -215,7 +235,9 @@ class PackagingTests(unittest.TestCase):
             )
 
     def test_claude_plugin_vendored_launcher_reports_version(self) -> None:
-        plugin_root = ROOT / "integrations" / "anthropic" / "claude-plugin"
+        from cities2_mcp import plugin_packages
+
+        plugin_root = self._generated_package_root(plugin_packages.CLAUDE_PACKAGE_ROOT)
         result = subprocess.run(
             [
                 "node",
@@ -233,8 +255,9 @@ class PackagingTests(unittest.TestCase):
 
     def test_claude_plugin_vendored_launcher_serves_mcp(self) -> None:
         from tests.smoke_mcp import call, rpc, rpc_ndjson
+        from cities2_mcp import plugin_packages
 
-        plugin_root = ROOT / "integrations" / "anthropic" / "claude-plugin"
+        plugin_root = self._generated_package_root(plugin_packages.CLAUDE_PACKAGE_ROOT)
         with tempfile.TemporaryDirectory(prefix="cities2-mcp-plugin-") as tmp:
             proc = subprocess.Popen(
                 [
@@ -268,10 +291,16 @@ class PackagingTests(unittest.TestCase):
                 self._stop_proc(proc)
 
     def test_codex_distribution_artifacts_are_version_aligned(self) -> None:
-        plugin_root = ROOT / "plugins" / "cities2-mcp"
+        from cities2_mcp import plugin_metadata
+        from cities2_mcp import plugin_packages
+
+        plugin_root = self._generated_package_root(plugin_packages.CODEX_PACKAGE_ROOT)
+        generated_root = self._generated_repo_root(plugin_root, plugin_packages.CODEX_PACKAGE_ROOT)
         plugin = json.loads((plugin_root / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
         plugin_mcp = json.loads((plugin_root / ".mcp.json").read_text(encoding="utf-8"))
-        marketplace = json.loads((ROOT / ".agents" / "plugins" / "marketplace.json").read_text(encoding="utf-8"))
+        marketplace = json.loads(
+            (generated_root / "dist" / ".agents" / "plugins" / "marketplace.json").read_text(encoding="utf-8")
+        )
 
         self.assertEqual(plugin["name"], "cities2-mcp")
         self.assertEqual(plugin["interface"]["displayName"], "Cities2 MCP and Modding Toolkit")
@@ -288,7 +317,7 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("--workspace", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
         self.assertIn(".", plugin_mcp["mcpServers"]["cities2-mcp"]["args"])
         self.assertEqual(plugin_mcp["mcpServers"]["cities2-mcp"]["cwd"], ".")
-        self.assertEqual(marketplace["name"], "cities2-mcp")
+        self.assertEqual(marketplace["name"], plugin_metadata.CATALOG_NAME)
         self.assertEqual(marketplace["plugins"][0]["name"], "cities2-mcp")
         self.assertEqual(marketplace["plugins"][0]["source"]["source"], "local")
         self.assertEqual(marketplace["plugins"][0]["source"]["path"], "./plugins/cities2-mcp")
@@ -306,7 +335,9 @@ class PackagingTests(unittest.TestCase):
         self.assertTrue((plugin_root / "vendor" / "cities2_mcp" / "data" / "index" / "chunks.jsonl").exists())
 
     def test_codex_plugin_vendored_launcher_reports_version(self) -> None:
-        plugin_root = ROOT / "plugins" / "cities2-mcp"
+        from cities2_mcp import plugin_packages
+
+        plugin_root = self._generated_package_root(plugin_packages.CODEX_PACKAGE_ROOT)
         result = subprocess.run(
             [
                 "node",
@@ -323,7 +354,9 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
 
     def test_codex_plugin_launcher_ignores_bad_plugin_root_when_self_root_is_valid(self) -> None:
-        plugin_root = ROOT / "plugins" / "cities2-mcp"
+        from cities2_mcp import plugin_packages
+
+        plugin_root = self._generated_package_root(plugin_packages.CODEX_PACKAGE_ROOT)
         with tempfile.TemporaryDirectory(prefix="cities2-mcp-empty-codex-cache-") as tmp:
             empty_cache = Path(tmp) / "empty-cache"
             empty_cache.mkdir()
@@ -344,7 +377,9 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(result.stdout.strip(), "cities2-mcp 0.1.9")
 
     def test_codex_plugin_launcher_handles_stripped_vendor_package_cache(self) -> None:
-        plugin_root = ROOT / "plugins" / "cities2-mcp"
+        from cities2_mcp import plugin_packages
+
+        plugin_root = self._generated_package_root(plugin_packages.CODEX_PACKAGE_ROOT)
         with tempfile.TemporaryDirectory(prefix="cities2-mcp-stripped-codex-cache-") as tmp:
             staged_root = Path(tmp) / "cities2-mcp" / "0.1.9"
             shutil.copytree(plugin_root, staged_root)
@@ -369,8 +404,9 @@ class PackagingTests(unittest.TestCase):
 
     def test_codex_plugin_vendored_launcher_serves_mcp(self) -> None:
         from tests.smoke_mcp import call, rpc, rpc_ndjson
+        from cities2_mcp import plugin_packages
 
-        plugin_root = ROOT / "plugins" / "cities2-mcp"
+        plugin_root = self._generated_package_root(plugin_packages.CODEX_PACKAGE_ROOT)
         with tempfile.TemporaryDirectory(prefix="cities2-mcp-codex-plugin-") as tmp:
             proc = subprocess.Popen(
                 [
@@ -505,6 +541,37 @@ class PackagingTests(unittest.TestCase):
     def test_check_detects_and_sync_restores_each_metadata_file(self) -> None:
         from cities2_mcp import plugin_packages
 
+        expected_metadata = {
+            Path("dist/integrations/anthropic/claude-plugin"): (
+                Path("dist/integrations/anthropic/claude-plugin/.claude-plugin/plugin.json"),
+                Path("dist/integrations/anthropic/claude-plugin/.mcp.json"),
+                Path("dist/integrations/anthropic/claude-plugin/README.md"),
+                Path("dist/.claude-plugin/marketplace.json"),
+            ),
+            Path("dist/plugins/cities2-mcp"): (
+                Path("dist/plugins/cities2-mcp/.codex-plugin/plugin.json"),
+                Path("dist/plugins/cities2-mcp/.mcp.json"),
+                Path("dist/plugins/cities2-mcp/README.md"),
+                Path("dist/.agents/plugins/marketplace.json"),
+            ),
+            Path("plugins/cities2-mcp"): (
+                Path("plugins/cities2-mcp/plugin.json"),
+                Path("plugins/cities2-mcp/mcp_config.json"),
+            ),
+        }
+        actual_metadata = {
+            package_rel: tuple(rel for rel, _builder in entries)
+            for package_rel, entries in plugin_packages.METADATA_FILES.items()
+        }
+        self.assertEqual(actual_metadata, expected_metadata)
+        self.assertEqual(tuple(plugin_packages.PACKAGE_ROOTS), tuple(expected_metadata))
+        self.assertEqual(
+            tuple(plugin_packages.CHECK_PACKAGE_ROOTS),
+            (Path("plugins/cities2-mcp"),),
+        )
+        with self.assertRaises(ValueError):
+            plugin_packages.check_packages(ROOT, package_roots=(Path("unknown"),))
+
         flattened = [
             rel
             for entries in plugin_packages.METADATA_FILES.values()
@@ -513,7 +580,8 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(len(flattened), 10)  # guards the spec's "10 metadata files"
         self.assertEqual(len(set(flattened)), 10)  # no duplicate registrations
 
-        for package_rel, entries in plugin_packages.METADATA_FILES.items():
+        for package_rel in expected_metadata:
+            entries = plugin_packages.METADATA_FILES[package_rel]
             for rel, _builder in entries:
                 with self.subTest(metadata=str(rel)):
                     with tempfile.TemporaryDirectory(prefix="cities2-mcp-meta-drift-") as tmp:
@@ -541,7 +609,7 @@ class PackagingTests(unittest.TestCase):
             root = Path(tmp)
             self._write_plugin_sync_fixture(root)
             plugin_packages.sync_packages(root)
-            stale_metadata = root / "plugins" / "cities2-mcp" / ".codex-plugin" / "plugin.json"
+            stale_metadata = root / "plugins" / "cities2-mcp" / "plugin.json"
             stale_metadata.write_text("{}\n", encoding="utf-8")
 
             stdout = io.StringIO()
@@ -553,7 +621,7 @@ class PackagingTests(unittest.TestCase):
             self.assertIn("generated artifacts differ from canonical sources", output)
             self.assertIn("Canonical sources: skills/, cities2_mcp/, and cities2_mcp.plugin_metadata", output)
             self.assertIn(
-                "Generated copies: integrations/anthropic/claude-plugin/ and plugins/cities2-mcp/",
+                "Generated copies: dist/integrations/anthropic/claude-plugin/, dist/plugins/cities2-mcp/, and plugins/cities2-mcp/ for Antigravity",
                 output,
             )
             self.assertIn("python -m cities2_mcp.plugin_packages sync", output)
@@ -576,6 +644,80 @@ class PackagingTests(unittest.TestCase):
             self.assertIn(stale_skill, changed)
             self.assertEqual(stale, ())
             self.assertEqual(stale_skill.read_text(encoding="utf-8"), "canonical cities2-knowledge\n")
+
+    def test_sync_catalog_packages_exports_claude_and_codex_without_removing_other_plugins(self) -> None:
+        from cities2_mcp import plugin_metadata
+        from cities2_mcp import plugin_packages
+
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-catalog-sync-") as tmp:
+            root = Path(tmp) / "source"
+            catalog = Path(tmp) / "catalog"
+            self._write_plugin_sync_fixture(root)
+            (catalog / "plugins").mkdir(parents=True)
+            marketplace = catalog / ".agents" / "plugins" / "marketplace.json"
+            marketplace.parent.mkdir(parents=True)
+            marketplace.write_text(
+                json.dumps(
+                    {
+                        "name": "mayor-modder-cities2-plugins",
+                        "interface": {"displayName": "Mayor Modder Cities2 Plugins"},
+                        "x-extra": {"keep": True},
+                        "plugins": [
+                            {
+                                "name": "cities2-mcp",
+                                "source": {"source": "local", "path": "./stale/cities2-mcp"},
+                                "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+                                "category": "Stale",
+                            },
+                            {
+                                "name": "cities2-chief-of-staff",
+                                "source": {"source": "local", "path": "./plugins/cities2-chief-of-staff"},
+                                "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+                                "category": "Coding",
+                            }
+                        ],
+                    },
+                    indent=2,
+                    ensure_ascii=False,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            changed = plugin_packages.sync_catalog_packages(catalog, repo_root=root)
+
+            self.assertTrue(
+                (catalog / "integrations" / "anthropic" / "claude-plugin" / ".claude-plugin" / "plugin.json").is_file()
+            )
+            self.assertTrue((catalog / "plugins" / "cities2-mcp" / ".codex-plugin" / "plugin.json").is_file())
+            codex_marketplace = json.loads(marketplace.read_text(encoding="utf-8"))
+            claude_marketplace = json.loads(
+                (catalog / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(codex_marketplace["x-extra"], {"keep": True})
+            self.assertEqual(
+                [plugin["name"] for plugin in codex_marketplace["plugins"]],
+                ["cities2-chief-of-staff", "cities2-mcp"],
+            )
+            self.assertEqual(codex_marketplace["plugins"][1], plugin_metadata.codex_marketplace_entry())
+            self.assertEqual([plugin["name"] for plugin in claude_marketplace["plugins"]], ["cities2-mcp"])
+            self.assertTrue(any(path.name == "plugin.json" for path in changed))
+
+    def test_sync_catalog_packages_requires_catalog_checkout(self) -> None:
+        from cities2_mcp import plugin_packages
+
+        with tempfile.TemporaryDirectory(prefix="cities2-mcp-catalog-missing-") as tmp:
+            root = Path(tmp) / "source"
+            self._write_plugin_sync_fixture(root)
+
+            with self.assertRaises(FileNotFoundError):
+                plugin_packages.sync_catalog_packages(Path(tmp) / "missing-catalog", repo_root=root)
+
+            catalog_without_plugins = Path(tmp) / "catalog-without-plugins"
+            catalog_without_plugins.mkdir()
+
+            with self.assertRaises(FileNotFoundError):
+                plugin_packages.sync_catalog_packages(catalog_without_plugins, repo_root=root)
 
     def test_metadata_builders_are_deterministic(self) -> None:
         from cities2_mcp import plugin_metadata as meta
@@ -632,10 +774,22 @@ class PackagingTests(unittest.TestCase):
             "claude_plugin_json",
             "codex_plugin_json",
             "antigravity_plugin_json",
-            "claude_marketplace_json",
-            "codex_marketplace_json",
         ):
             self.assertEqual(parsed[label]["name"], meta.NAME, label)
+        self.assertEqual(parsed["claude_marketplace_json"]["name"], meta.CATALOG_NAME)
+        self.assertEqual(parsed["codex_marketplace_json"]["name"], meta.CATALOG_NAME)
+        self.assertEqual(
+            parsed["codex_marketplace_json"]["interface"]["displayName"],
+            meta.CATALOG_DISPLAY_NAME,
+        )
+        self.assertEqual(
+            parsed["claude_marketplace_json"]["plugins"][0],
+            meta.claude_marketplace_entry(),
+        )
+        self.assertEqual(
+            parsed["codex_marketplace_json"]["plugins"][0],
+            meta.codex_marketplace_entry(),
+        )
 
         self.assertEqual(parsed["claude_plugin_json"]["author"], meta.AUTHOR)
         self.assertEqual(parsed["codex_plugin_json"]["author"], meta.AUTHOR)
@@ -655,6 +809,10 @@ class PackagingTests(unittest.TestCase):
         self.assertIn(
             "claude plugin validate integrations/anthropic/claude-plugin --strict",
             meta.claude_readme_md(),
+        )
+        self.assertIn(
+            "codex plugin marketplace add mayor-modder/Mayor-Modder-Cities2-Plugins",
+            meta.codex_readme_md(),
         )
 
     @staticmethod

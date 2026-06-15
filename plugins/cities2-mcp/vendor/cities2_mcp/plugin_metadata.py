@@ -7,6 +7,9 @@ from cities2_mcp import __version__ as VERSION
 NAME = "cities2-mcp"
 DISPLAY_NAME = "Cities2 MCP and Modding Toolkit"
 AUTHOR = {"name": "mayor-modder", "url": "https://github.com/mayor-modder"}
+CATALOG_REPO = "mayor-modder/Mayor-Modder-Cities2-Plugins"
+CATALOG_NAME = "mayor-modder-cities2-plugins"
+CATALOG_DISPLAY_NAME = "Mayor Modder Cities2 Plugins"
 REPO_URL = "https://github.com/mayor-modder/Cities2-MCP"
 LICENSE = "MIT"
 PRIVACY_URL = "https://github.com/mayor-modder/Cities2-MCP/blob/main/PRIVACY.md"
@@ -143,21 +146,23 @@ def claude_mcp_json() -> str:
     )
 
 
+def claude_marketplace_entry() -> dict[str, object]:
+    return {
+        "name": NAME,
+        "source": "./integrations/anthropic/claude-plugin",
+        "description": CLAUDE_DESCRIPTION,
+        "version": VERSION,
+        "author": AUTHOR,
+    }
+
+
 def claude_marketplace_json() -> str:
     return _dumps(
         {
-            "name": NAME,
-            "description": CLAUDE_MARKETPLACE_DESCRIPTION,
+            "name": CATALOG_NAME,
+            "description": "Mayor Modder Cities2 Claude plugin marketplace.",
             "owner": AUTHOR,
-            "plugins": [
-                {
-                    "name": NAME,
-                    "source": "./integrations/anthropic/claude-plugin",
-                    "description": CLAUDE_DESCRIPTION,
-                    "version": VERSION,
-                    "author": AUTHOR,
-                }
-            ],
+            "plugins": [claude_marketplace_entry()],
         }
     )
 
@@ -217,19 +222,21 @@ def codex_mcp_json() -> str:
     )
 
 
+def codex_marketplace_entry() -> dict[str, object]:
+    return {
+        "name": NAME,
+        "source": {"source": "local", "path": "./plugins/cities2-mcp"},
+        "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+        "category": "Coding",
+    }
+
+
 def codex_marketplace_json() -> str:
     return _dumps(
         {
-            "name": NAME,
-            "interface": {"displayName": DISPLAY_NAME},
-            "plugins": [
-                {
-                    "name": NAME,
-                    "source": {"source": "local", "path": "./plugins/cities2-mcp"},
-                    "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
-                    "category": "Coding",
-                }
-            ],
+            "name": CATALOG_NAME,
+            "interface": {"displayName": CATALOG_DISPLAY_NAME},
+            "plugins": [codex_marketplace_entry()],
         }
     )
 
@@ -250,7 +257,7 @@ The plugin `.mcp.json` points at `bin/cities2-mcp-launcher.js`, which runs the v
 Install from this repository marketplace:
 
 ```sh
-codex plugin marketplace add mayor-modder/Cities2-MCP
+codex plugin marketplace add {CATALOG_REPO}
 ```
 """
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import tempfile
 from pathlib import Path
@@ -10,30 +11,68 @@ from cities2_mcp import plugin_metadata
 from cities2_mcp.plugin_metadata import SKILL_NAMES
 
 
+CLAUDE_PACKAGE_ROOT = Path("dist/integrations/anthropic/claude-plugin")
+CODEX_PACKAGE_ROOT = Path("dist/plugins/cities2-mcp")
+ANTIGRAVITY_PACKAGE_ROOT = Path("plugins/cities2-mcp")
+CATALOG_CLAUDE_PACKAGE_ROOT = Path("integrations/anthropic/claude-plugin")
+CATALOG_CODEX_PACKAGE_ROOT = Path("plugins/cities2-mcp")
+DEFAULT_CATALOG_ROOT = Path("../Mayor-Modder-Cities2-Plugins")
+
 PACKAGE_ROOTS = (
-    Path("integrations/anthropic/claude-plugin"),
-    Path("plugins/cities2-mcp"),
+    CLAUDE_PACKAGE_ROOT,
+    CODEX_PACKAGE_ROOT,
+    ANTIGRAVITY_PACKAGE_ROOT,
+)
+
+CHECK_PACKAGE_ROOTS = (ANTIGRAVITY_PACKAGE_ROOT,)
+
+CLAUDE_AND_CODEX_PACKAGE_ROOTS = (
+    CLAUDE_PACKAGE_ROOT,
+    CODEX_PACKAGE_ROOT,
+)
+
+CATALOG_PACKAGE_EXPORTS = (
+    (CLAUDE_PACKAGE_ROOT, CATALOG_CLAUDE_PACKAGE_ROOT),
+    (CODEX_PACKAGE_ROOT, CATALOG_CODEX_PACKAGE_ROOT),
 )
 
 METADATA_FILES: dict[Path, tuple[tuple[Path, Callable[[], str]], ...]] = {
-    Path("integrations/anthropic/claude-plugin"): (
+    CLAUDE_PACKAGE_ROOT: (
         (
-            Path("integrations/anthropic/claude-plugin/.claude-plugin/plugin.json"),
+            CLAUDE_PACKAGE_ROOT / ".claude-plugin" / "plugin.json",
             plugin_metadata.claude_plugin_json,
         ),
-        (Path("integrations/anthropic/claude-plugin/.mcp.json"), plugin_metadata.claude_mcp_json),
-        (Path("integrations/anthropic/claude-plugin/README.md"), plugin_metadata.claude_readme_md),
-        (Path(".claude-plugin/marketplace.json"), plugin_metadata.claude_marketplace_json),
+        (CLAUDE_PACKAGE_ROOT / ".mcp.json", plugin_metadata.claude_mcp_json),
+        (CLAUDE_PACKAGE_ROOT / "README.md", plugin_metadata.claude_readme_md),
+        (Path("dist/.claude-plugin/marketplace.json"), plugin_metadata.claude_marketplace_json),
     ),
-    Path("plugins/cities2-mcp"): (
-        (Path("plugins/cities2-mcp/.codex-plugin/plugin.json"), plugin_metadata.codex_plugin_json),
-        (Path("plugins/cities2-mcp/.mcp.json"), plugin_metadata.codex_mcp_json),
-        (Path("plugins/cities2-mcp/README.md"), plugin_metadata.codex_readme_md),
-        (Path(".agents/plugins/marketplace.json"), plugin_metadata.codex_marketplace_json),
-        (Path("plugins/cities2-mcp/plugin.json"), plugin_metadata.antigravity_plugin_json),
-        (Path("plugins/cities2-mcp/mcp_config.json"), plugin_metadata.antigravity_mcp_config_json),
+    CODEX_PACKAGE_ROOT: (
+        (CODEX_PACKAGE_ROOT / ".codex-plugin" / "plugin.json", plugin_metadata.codex_plugin_json),
+        (CODEX_PACKAGE_ROOT / ".mcp.json", plugin_metadata.codex_mcp_json),
+        (CODEX_PACKAGE_ROOT / "README.md", plugin_metadata.codex_readme_md),
+        (Path("dist/.agents/plugins/marketplace.json"), plugin_metadata.codex_marketplace_json),
+    ),
+    ANTIGRAVITY_PACKAGE_ROOT: (
+        (ANTIGRAVITY_PACKAGE_ROOT / "plugin.json", plugin_metadata.antigravity_plugin_json),
+        (ANTIGRAVITY_PACKAGE_ROOT / "mcp_config.json", plugin_metadata.antigravity_mcp_config_json),
     ),
 }
+
+CATALOG_MARKETPLACE_FILES: tuple[
+    tuple[Path, Callable[[], str], Callable[[], dict[str, object]]],
+    ...
+] = (
+    (
+        Path(".claude-plugin") / "marketplace.json",
+        plugin_metadata.claude_marketplace_json,
+        plugin_metadata.claude_marketplace_entry,
+    ),
+    (
+        Path(".agents") / "plugins" / "marketplace.json",
+        plugin_metadata.codex_marketplace_json,
+        plugin_metadata.codex_marketplace_entry,
+    ),
+)
 
 MANAGED_DIRS = ("skills", "vendor")
 MANAGED_FILES = (Path("bin") / "cities2-mcp-launcher.js",)
@@ -176,9 +215,10 @@ def sync_packages(
 ) -> tuple[Path, ...]:
     root = (repo_root or Path.cwd()).resolve()
     changed: list[Path] = []
+    selected_roots = _selected_package_roots(package_roots)
     with tempfile.TemporaryDirectory(prefix="cities2-mcp-plugin-packages-") as tmp:
         tmp_root = Path(tmp)
-        for package_rel in package_roots:
+        for package_rel in selected_roots:
             expected_root = tmp_root / package_rel
             actual_root = root / package_rel
             _write_payload(root, expected_root)
@@ -188,22 +228,73 @@ def sync_packages(
     return tuple(sorted(set(changed)))
 
 
+def sync_catalog_packages(
+    catalog_root: Path | str = DEFAULT_CATALOG_ROOT,
+    *,
+    repo_root: Path | str = Path.cwd(),
+) -> tuple[Path, ...]:
+    root = Path(repo_root).resolve()
+    catalog = Path(catalog_root).resolve()
+    _validate_catalog_root(catalog)
+    sync_packages(root, package_roots=CLAUDE_AND_CODEX_PACKAGE_ROOTS)
+
+    changed: list[Path] = []
+    for source_rel, target_rel in CATALOG_PACKAGE_EXPORTS:
+        source = root / source_rel
+        target = catalog / target_rel
+        _ensure_inside(catalog, target)
+        changed.extend(_changed_tree_paths(source, target))
+        if target.exists():
+            if target.is_dir():
+                shutil.rmtree(target)
+            else:
+                target.unlink()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(source, target)
+
+    changed.extend(_upsert_catalog_marketplaces(catalog))
+    return tuple(sorted(set(changed)))
+
+
 def check_packages(
     repo_root: Path | None = None,
     *,
-    package_roots: Iterable[Path] = PACKAGE_ROOTS,
+    package_roots: Iterable[Path] = CHECK_PACKAGE_ROOTS,
 ) -> tuple[Path, ...]:
     root = (repo_root or Path.cwd()).resolve()
     changed: list[Path] = []
+    selected_roots = _selected_package_roots(package_roots)
     with tempfile.TemporaryDirectory(prefix="cities2-mcp-plugin-packages-") as tmp:
         tmp_root = Path(tmp)
-        for package_rel in package_roots:
+        for package_rel in selected_roots:
             expected_root = tmp_root / package_rel
             actual_root = root / package_rel
             _write_payload(root, expected_root)
             changed.extend(_changed_paths(expected_root, actual_root))
             changed.extend(_check_metadata(root, package_rel))
     return tuple(sorted(set(changed)))
+
+
+def _validate_catalog_root(catalog: Path) -> None:
+    if not catalog.is_dir():
+        raise FileNotFoundError(f"Catalog root not found: {catalog}")
+    if not (catalog / "plugins").is_dir():
+        raise FileNotFoundError(f"Catalog plugins directory not found: {catalog / 'plugins'}")
+
+
+def _ensure_inside(root: Path, target: Path) -> None:
+    if not target.resolve().is_relative_to(root):
+        raise ValueError(f"Catalog target escapes catalog root: {target}")
+
+
+def _selected_package_roots(package_roots: Iterable[Path]) -> tuple[Path, ...]:
+    selected = tuple(Path(package_root) for package_root in package_roots)
+    unknown = tuple(package_root for package_root in selected if package_root not in METADATA_FILES)
+    if unknown:
+        unknown_text = ", ".join(str(package_root) for package_root in unknown)
+        known_text = ", ".join(str(package_root) for package_root in METADATA_FILES)
+        raise ValueError(f"Unknown package root(s): {unknown_text}. Expected one of: {known_text}")
+    return selected
 
 
 def _write_payload(repo_root: Path, package_root: Path) -> None:
@@ -311,13 +402,55 @@ def _is_ignored_payload_path(path: Path) -> bool:
     return "__pycache__" in path.parts or path.suffix == ".pyc"
 
 
+def _upsert_catalog_marketplaces(catalog: Path) -> list[Path]:
+    changed: list[Path] = []
+    for rel, default_builder, entry_builder in CATALOG_MARKETPLACE_FILES:
+        target = catalog / rel
+        _ensure_inside(catalog, target)
+        content = _catalog_marketplace_content(target, default_builder, entry_builder)
+        current = target.read_text(encoding="utf-8") if target.is_file() else None
+        if current != content:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content, encoding="utf-8")
+            changed.append(target)
+    return changed
+
+
+def _catalog_marketplace_content(
+    target: Path,
+    default_builder: Callable[[], str],
+    entry_builder: Callable[[], dict[str, object]],
+) -> str:
+    if target.is_file():
+        manifest = json.loads(target.read_text(encoding="utf-8"))
+    else:
+        manifest = json.loads(default_builder())
+
+    fresh = entry_builder()
+    fresh_name = fresh["name"]
+    existing_plugins = manifest.get("plugins", [])
+    plugins = existing_plugins if isinstance(existing_plugins, list) else []
+    manifest["plugins"] = [
+        plugin
+        for plugin in plugins
+        if not (isinstance(plugin, dict) and plugin.get("name") == fresh_name)
+    ]
+    manifest["plugins"].append(fresh)
+    return _json_dumps(manifest)
+
+
+def _json_dumps(obj: object) -> str:
+    return json.dumps(obj, indent=2, ensure_ascii=False) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m cities2_mcp.plugin_packages",
         description="Synchronize generated Cities2-MCP plugin package payloads.",
     )
-    parser.add_argument("command", choices=("sync", "check"))
+    parser.add_argument("command", choices=("sync", "check", "sync-catalog"))
     parser.add_argument("--repo-root", type=Path, default=Path.cwd())
+    parser.add_argument("--catalog-root", type=Path, default=DEFAULT_CATALOG_ROOT)
     args = parser.parse_args(argv)
 
     if args.command == "sync":
@@ -326,11 +459,17 @@ def main(argv: list[str] | None = None) -> int:
             print(f"updated {path}")
         return 0
 
+    if args.command == "sync-catalog":
+        changed = sync_catalog_packages(args.catalog_root, repo_root=args.repo_root)
+        for path in changed:
+            print(f"updated {path}")
+        return 0
+
     stale = check_packages(args.repo_root)
     if stale:
         print("Stale plugin package payloads: generated artifacts differ from canonical sources.")
         print("Canonical sources: skills/, cities2_mcp/, and cities2_mcp.plugin_metadata")
-        print("Generated copies: integrations/anthropic/claude-plugin/ and plugins/cities2-mcp/")
+        print("Generated copies: dist/integrations/anthropic/claude-plugin/, dist/plugins/cities2-mcp/, and plugins/cities2-mcp/ for Antigravity")
         print("Run: python -m cities2_mcp.plugin_packages sync")
         for path in stale:
             print(f"  {path}")

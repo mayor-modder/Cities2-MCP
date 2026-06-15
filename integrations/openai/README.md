@@ -1,17 +1,16 @@
 # OpenAI Codex distribution
 
-Cities2 MCP and Modding Toolkit publishes a Codex plugin through this repository's plugin
-marketplace:
+Cities2 MCP and Modding Toolkit publishes a Codex plugin through the shared plugin marketplace catalog `mayor-modder/Mayor-Modder-Cities2-Plugins`:
 
-- `.agents/plugins/marketplace.json` is the Codex marketplace catalog.
-- `plugins/cities2-mcp/` is the plugin package.
-- `plugins/cities2-mcp/.codex-plugin/plugin.json` is the Codex plugin manifest.
-- `plugins/cities2-mcp/.mcp.json` starts the bundled MCP server.
+- `dist/.agents/plugins/marketplace.json` is the generated Codex marketplace catalog snapshot.
+- `dist/plugins/cities2-mcp/` is the generated Codex plugin package exported to the shared catalog.
+- `dist/plugins/cities2-mcp/.codex-plugin/plugin.json` is the generated Codex plugin manifest.
+- `dist/plugins/cities2-mcp/.mcp.json` starts the bundled MCP server.
 
 Install from Codex CLI:
 
 ```sh
-codex plugin marketplace add mayor-modder/Cities2-MCP
+codex plugin marketplace add mayor-modder/Mayor-Modder-Cities2-Plugins
 ```
 
 The plugin vendors the Python server and corpus, so users do not need `uvx` for
