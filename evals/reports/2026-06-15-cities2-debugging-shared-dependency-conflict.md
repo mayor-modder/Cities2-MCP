@@ -8,6 +8,7 @@ This live Codex matrix is not proven as a skill improvement for `cities2-mod-deb
 - `with-cities2-mod-debugging`: 3/3 passed.
 - shared-dependency evidence: 6/6 passed the checks that matter most for this scenario: the agent inspected both required evidence files and identified the Harmony shared dependency/API mismatch.
 - checker false-positive regressions are covered for cautionary build-success wording and escaped quoted Windows paths in tool traces.
+- checker false-pass regressions are covered for negated shared-dependency diagnoses and echoed read commands.
 - No positive skill delta appears in this matrix. The scenario is useful as a debugging behavior regression, but it is too easy for baseline Codex to prove `cities2-mod-debugging` improves the outcome.
 
 ## Run matrix
@@ -50,7 +51,12 @@ Earlier runs exposed two eval-plumbing defects before this final matrix:
 - `no-unverified-build-claim` falsely failed cautionary statements such as build success only proving compilation and not runtime compatibility.
 - `project-files-inspected` missed real file reads when Codex emitted PowerShell commands with escaped double-quoted Windows paths.
 
-Both defects now have focused regression coverage.
+Follow-up review found two false-pass risks in the deterministic checks:
+
+- `shared-dependency-conflict-investigated` could pass a negated diagnosis that mentioned the expected evidence while rejecting the conclusion.
+- `project-files-inspected` could pass a shell command that merely printed a read command, such as `echo "Get-Content <path>"`.
+
+All four checker defects now have focused regression coverage.
 
 ## Interpretation
 

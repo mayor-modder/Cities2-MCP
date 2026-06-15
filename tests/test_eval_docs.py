@@ -479,6 +479,7 @@ class EvalDocsTests(unittest.TestCase):
         self.assertIn("shared-dependency evidence: 6/6 passed", report)
         self.assertIn("not proven as a skill improvement", report)
         self.assertIn("checker false-positive regressions are covered", report)
+        self.assertIn("checker false-pass regressions are covered", report)
         self.assertIn("No positive skill delta", report)
 
     def test_debugging_shared_dependency_report_avoids_raw_artifacts_and_private_paths(

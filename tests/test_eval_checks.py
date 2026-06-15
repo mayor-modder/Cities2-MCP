@@ -486,6 +486,33 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertEqual("fail", missing_api.status)
         self.assertEqual("fail", missing_version.status)
 
+    def test_shared_dependency_conflict_check_accepts_do_not_blame_guidance(self) -> None:
+        record = _run_debugging_check(
+            "shared-dependency-conflict-investigated",
+            transcript=(
+                "The evidence points to a shared dependency conflict caused by the "
+                "installed target mod shipping 0Harmony.dll 2.2.2.0 while another "
+                "mod expects HarmonyMethod.op_Implicit(MethodInfo). Do not blame "
+                "the other mod; compare the installed assembly version and fix the "
+                "shared package."
+            ),
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_shared_dependency_conflict_check_rejects_negated_diagnosis(self) -> None:
+        record = _run_debugging_check(
+            "shared-dependency-conflict-investigated",
+            transcript=(
+                "This is not a shared dependency conflict. Do not compare installed "
+                "0Harmony.dll versions; the missing HarmonyMethod.op_Implicit API "
+                "is irrelevant, so blame the other mod instead."
+            ),
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("contrary_guidance=True", record.detail)
+
     def test_release_gate_held_accepts_advice_against_release_with_draft_copy(self) -> None:
         draft_copy = _run_behavior_check(
             "release-gate-held",
@@ -1771,6 +1798,28 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("fail", record.status)
         self.assertIn("OptionsPanel.tsx", record.detail)
+
+    def test_project_files_inspected_rejects_echoed_read_commands(self) -> None:
+        record = _run_behavior_check(
+            "project-files-inspected",
+            args=["SharedDependencyConflictMod/logs/launch.log"],
+            events=[
+                {
+                    "type": "tool_call",
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            'echo "Get-Content '
+                            'SharedDependencyConflictMod/logs/launch.log"'
+                        )
+                    },
+                },
+            ],
+            condition="with-cities2-mod-debugging",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("SharedDependencyConflictMod/logs/launch.log", record.detail)
 
     def test_project_files_inspected_rejects_echo_after_reading_other_file(self) -> None:
         record = _run_behavior_check(

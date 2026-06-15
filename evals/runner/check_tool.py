@@ -328,23 +328,29 @@ def _shell_segment_reads_path(
 ) -> bool:
     if not _path_candidate_matches(segment, expected, allow_embedded=allow_embedded):
         return False
-    direct_read_patterns = (
-        r"(^|[\s\"'])get-content(\s|$)",
-        r"(^|[\s\"'])gc(\s|$)",
-        r"(^|[\s\"'])cat(\s|$)",
-        r"(^|[\s\"'])type(\s|$)",
-    )
-    search_patterns = (
-        r"(^|[\s\"'])rg\s+(-n|--line-number|--files-with-matches)\b",
-        r"(^|[\s\"'])select-string\b",
-        r"(^|[\s\"'])grep(\s|$)",
-    )
-    if any(re.search(pattern, segment) for pattern in direct_read_patterns):
-        return True
-    if any(re.search(pattern, segment) for pattern in search_patterns):
-        return _search_segment_reads_path(
-            segment, expected, allow_embedded=allow_embedded
+    tokens = _shell_tokens(segment)
+    if not tokens:
+        return False
+
+    command = Path(tokens[0]).name
+    if command in ("pwsh", "pwsh.exe", "powershell", "powershell.exe"):
+        for index, token in enumerate(tokens[:-1]):
+            if token in ("-command", "-c"):
+                inner_segment = " ".join(tokens[index + 1 :])
+                return _shell_segment_reads_path(
+                    inner_segment, expected, allow_embedded=allow_embedded
+                )
+        return False
+
+    if command in ("get-content", "gc", "cat", "type"):
+        return any(
+            _path_candidate_matches(token, expected, allow_embedded=allow_embedded)
+            for token in tokens[1:]
         )
+
+    if command in ("rg", "select-string", "grep"):
+        return _search_segment_reads_path(segment, expected, allow_embedded=allow_embedded)
+
     return False
 
 

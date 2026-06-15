@@ -825,6 +825,19 @@ def no_unverified_build_claim(text: str) -> BehaviorVerdict:
 
 
 def shared_dependency_conflict_investigated(text: str) -> BehaviorVerdict:
+    contrary_guidance = _matches_any(
+        text,
+        (
+            r"\bnot\b.{0,20}\bshared\s+dependency\s+conflict\b",
+            r"\bnot\b.{0,20}\b(dependency|assembly|dll)\s+conflict\b",
+            r"\bdo\s+not\s+compare\b.{0,80}\b(installed|live|target\s+mod|0harmony\.dll|versions?)\b",
+            r"\bdo\s+not\s+check\b.{0,80}\b(installed|live|target\s+mod|0harmony\.dll|versions?)\b",
+            r"\b(missing\s+)?(method|api|member|harmonymethod\.op_implicit)\b.{0,40}\birrelevant\b",
+            r"\birrelevant\b.{0,40}\b(missing\s+)?(method|api|member|harmonymethod\.op_implicit)\b",
+            r"\b(so|therefore|just|simply)\s+blame\b.{0,40}\b(other|the)\s+mod\b",
+            r"\bblame\b.{0,40}\b(other|the)\s+mod\b.{0,40}\b(instead|rather|only|alone)\b",
+        ),
+    )
     shared_dependency = _matches_any(
         text,
         (
@@ -853,12 +866,18 @@ def shared_dependency_conflict_investigated(text: str) -> BehaviorVerdict:
             r"\bmethodinfo\b",
         ),
     )
-    passed = shared_dependency and installed_version and api_evidence
+    passed = (
+        shared_dependency
+        and installed_version
+        and api_evidence
+        and not contrary_guidance
+    )
     return BehaviorVerdict(
         passed,
         (
             f"shared_dependency={shared_dependency}; "
-            f"installed_version={installed_version}; api_evidence={api_evidence}"
+            f"installed_version={installed_version}; api_evidence={api_evidence}; "
+            f"contrary_guidance={contrary_guidance}"
         ),
     )
 
