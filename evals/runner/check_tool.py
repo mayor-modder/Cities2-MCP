@@ -257,7 +257,8 @@ def _tool_argument_texts(run_dir: Path, expected_tool: str) -> list[str]:
 
 
 def _shell_command_segments(arguments: str) -> list[str]:
-    normalized = re.sub(r"/+", "/", arguments.replace("\\", "/")).lower()
+    unescaped = arguments.replace('\\"', '"').replace("\\'", "'")
+    normalized = re.sub(r"/+", "/", unescaped.replace("\\", "/")).lower()
     return [
         segment.strip()
         for segment in re.split(r"\s*(?:;|&&|\|\||\||\r?\n)\s*", normalized)
@@ -367,7 +368,10 @@ def _expected_path_candidate_rules(expected: str) -> list[tuple[str, bool]]:
 def _looks_like_file_inspection(tool_name: str, arguments: str, expected: str) -> bool:
     normalized_expected = re.sub(r"/+", "/", expected.replace("\\", "/")).lower()
     expected_paths = _expected_path_candidate_rules(expected)
-    normalized_arguments = re.sub(r"/+", "/", arguments.replace("\\", "/")).lower()
+    unescaped_arguments = arguments.replace('\\"', '"').replace("\\'", "'")
+    normalized_arguments = re.sub(
+        r"/+", "/", unescaped_arguments.replace("\\", "/")
+    ).lower()
     allow_embedded_path = "/" not in normalized_expected
     if not any(
         _path_candidate_matches(

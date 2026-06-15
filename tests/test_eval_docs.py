@@ -474,12 +474,12 @@ class EvalDocsTests(unittest.TestCase):
             self.assertGreater(index, last_index)
             last_index = index
 
-        self.assertIn("`no-skill`: 1/3 passed", report)
-        self.assertIn("`with-cities2-mod-debugging`: 1/3 passed", report)
+        self.assertIn("`no-skill`: 3/3 passed", report)
+        self.assertIn("`with-cities2-mod-debugging`: 3/3 passed", report)
         self.assertIn("shared-dependency evidence: 6/6 passed", report)
         self.assertIn("not proven as a skill improvement", report)
-        self.assertIn("checker false-positive risk", report)
-        self.assertIn("Do not merge PR #137 from this report alone", report)
+        self.assertIn("checker false-positive regressions are covered", report)
+        self.assertIn("No positive skill delta", report)
 
     def test_debugging_shared_dependency_report_avoids_raw_artifacts_and_private_paths(
         self,

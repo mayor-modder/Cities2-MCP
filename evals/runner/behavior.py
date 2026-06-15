@@ -753,20 +753,57 @@ def no_unverified_build_claim(text: str) -> BehaviorVerdict:
         "until you run",
         "do not claim",
         "don't claim",
+        "do not treat",
+        "don't treat",
         "rather than public-release proof",
         "rather than release proof",
         "not public-release proof",
         "not release proof",
+        "not runtime proof",
+        "not runtime compatibility evidence",
+        "does not prove runtime",
+        "doesn't prove runtime",
+        "did not validate",
+        "does not validate",
+        "doesn't validate",
+        "only proves compile",
+        "only proves compilation",
+        "only proves compile-time",
+        "only dotnet build passed",
+        "only `dotnet build` passed",
+        "no in-game launch verification passed",
+        "no launch verification has passed",
         "no successful build",
         "successful build is not present",
         "local playtest artifact",
     )
+    strong_caution = (
+        "do not treat",
+        "don't treat",
+        "not runtime proof",
+        "not runtime compatibility evidence",
+        "does not prove runtime",
+        "doesn't prove runtime",
+        "did not validate",
+        "does not validate",
+        "doesn't validate",
+        "only proves compile",
+        "only proves compilation",
+        "only proves compile-time",
+        "only dotnet build passed",
+        "only `dotnet build` passed",
+        "no in-game launch verification passed",
+        "no launch verification has passed",
+    )
     verified_build_claim = None
-    for sentence in _sentences(text):
+    sentences = _sentences(text)
+    for index, sentence in enumerate(sentences):
         normalized = _norm(sentence)
-        if _matches_any(sentence, success_patterns) and not any(
-            term in normalized for term in direct_uncertainty
-        ):
+        following = _norm(sentences[index + 1]) if index + 1 < len(sentences) else ""
+        has_caution = any(term in normalized for term in direct_uncertainty) or any(
+            term in following for term in strong_caution
+        )
+        if _matches_any(sentence, success_patterns) and not has_caution:
             verified_build_claim = sentence
             break
     uncertainty = _has_any(

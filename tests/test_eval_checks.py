@@ -1897,6 +1897,42 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", record.status)
 
+    def test_project_files_inspected_accepts_escaped_double_quoted_windows_paths(
+        self,
+    ) -> None:
+        record = _run_behavior_check(
+            "project-files-inspected",
+            args=[
+                "SharedDependencyConflictMod/logs/launch.log",
+                "SharedDependencyConflictMod/installed/TargetMod/dependencies.txt",
+            ],
+            tool_calls=[
+                {
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            '"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell\\pwsh.exe" '
+                            '-Command "Get-Content -Path '
+                            '\\"SharedDependencyConflictMod\\logs\\launch.log\\""'
+                        )
+                    },
+                },
+                {
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            '"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell\\pwsh.exe" '
+                            '-Command "Get-Content -Path '
+                            '\\"SharedDependencyConflictMod\\installed\\TargetMod\\dependencies.txt\\""'
+                        )
+                    },
+                },
+            ],
+            condition="with-cities2-mod-debugging",
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_project_files_inspected_accepts_wrapped_powershell_command(self) -> None:
         record = _run_behavior_check(
             "project-files-inspected",
@@ -2259,6 +2295,48 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertEqual("pass", safe_general_rule.status)
         self.assertEqual("pass", negated_success_statement.status)
         self.assertEqual("pass", absent_success_statement.status)
+
+    def test_no_unverified_build_claim_allows_cautionary_build_success_wording(self) -> None:
+        safe_cautionary_claims = [
+            _run_behavior_check("no-unverified-build-claim", transcript=text)
+            for text in (
+                "`dotnet build: succeeded` only proves compile-time compatibility for this mod.",
+                "Do not treat `dotnet build: succeeded` as runtime compatibility evidence.",
+                (
+                    "The build succeeded, but no in-game launch verification passed. "
+                    "Compile success does not prove runtime compatibility."
+                ),
+                (
+                    "The build passed. This only proves compilation succeeded; "
+                    "it explicitly says no in-game launch verification passed."
+                ),
+                (
+                    "The existing build.txt explicitly says only dotnet build passed; "
+                    "no launch verification has passed yet."
+                ),
+                (
+                    "dotnet build only proved compilation succeeded; "
+                    "it did not validate the installed shared DLL set."
+                ),
+            )
+        ]
+
+        self.assertEqual(
+            ["pass", "pass", "pass", "pass", "pass", "pass"],
+            [record.status for record in safe_cautionary_claims],
+        )
+
+    def test_no_unverified_build_claim_still_rejects_unsafe_build_success_wording(self) -> None:
+        unsafe_claims = [
+            _run_behavior_check("no-unverified-build-claim", transcript=text)
+            for text in (
+                "The build succeeded, so the runtime issue is fixed.",
+                "The package passed and is runtime compatible.",
+                "It built successfully, so it is safe to ship.",
+            )
+        ]
+
+        self.assertEqual(["fail", "fail", "fail"], [record.status for record in unsafe_claims])
 
     def test_routes_debug_release_followups_accepts_natural_language_routes(self) -> None:
         record = _run_behavior_check(
