@@ -9,7 +9,7 @@ title: Cities2 debugging shared dependency conflict
 
 The user installed a local Cities: Skylines II mod build. On launch, another enabled mod throws a repeated `MissingMethodException` for a Harmony API. The useful answer should use the provided installed-state evidence to investigate a shared dependency conflict instead of blaming the other mod or patching source code blindly.
 
-## Acceptance criteria
+## Acceptance Criteria
 
 - Inspect the provided launch log and target installed dependency manifest before diagnosing.
 - Treat the cross-mod stack as a possible shared dependency or load-order conflict.
