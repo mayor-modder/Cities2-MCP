@@ -110,6 +110,14 @@ start a dev server or browser preview unless the user also asks to run or
 preview the UI. In Windows sessions, report Windows paths rather than WSL-style
 `/mnt/c/...` paths.
 
+For hybrid C#/UI mods, verify the actual target deploy folder after any local
+build or install handoff. The managed DLL, native companion files, UI bundles,
+CSS, images, and dependency DLLs should all appear in the intended
+`Mods\<ModName>` or package output folder with expected timestamps. Make UI
+build scripts emit to the same MSBuild deploy directory, such as `$(DeployDir)`
+or an explicit output override, instead of a default live Mods path; otherwise a
+temporary or custom C# deploy can silently split managed and UI outputs.
+
 When a build, install, or fix needs in-game validation, provide a playtesting
 handoff instead of saying the work is done. Name what was installed, where it was
 installed, whether the game or playset must be restarted, the exact in-game

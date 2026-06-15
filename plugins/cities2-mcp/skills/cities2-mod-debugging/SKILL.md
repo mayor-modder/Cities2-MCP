@@ -73,6 +73,14 @@ Start in the current workspace and explicitly authorized target paths. Runtime e
 
 If needed installed-state evidence is not authorized, stop at a diagnosis, state what remains unverified, and give the user a focused log, debugger, install-layout, or playtesting collection step.
 
+## Shared dependency conflicts
+
+When installing or replacing the target mod makes another enabled mod fail on launch, treat that as possible shared dependency or load-order evidence before blaming the other mod. This is especially important for shared assemblies such as `0Harmony.dll`.
+
+With authorized installed-state evidence, compare the target mod's installed dependency DLLs, versions, file timestamps, and candidate loaded assembly versions against the API named by the exception. For `MissingMethodException`, check whether the installed or loaded assembly actually contains the missing method or member, using assembly metadata or reflection when practical. A stack trace in another mod can still be caused by the target mod shipping an older shared DLL.
+
+Apply one package or dependency fix only after the version/API evidence points there. If you manually replace a DLL as a local mitigation, label it as a local playtest mitigation, verify the installed file afterward, and still keep compile, deploy, launch, and gameplay verification as separate claims.
+
 ## Red Flags - STOP
 
 If you catch yourself thinking any of these, return to evidence before editing:
@@ -87,6 +95,8 @@ If you catch yourself thinking any of these, return to evidence before editing:
 - "This is not blind because I checked `dist/ui.js`."
 - "I'll compare against another installed mod as an example."
 - "I'll copy it into the Mods folder so they can test quickly."
+- "The stack trace points at another mod, so that mod owns the bug."
+- "The build compiled, so the installed shared DLLs are fine."
 
 All of these are guesses for CS2 runtime/UI failures. A fast source scan is not
 root-cause evidence when the missing evidence is installed state, logs, playset
@@ -95,6 +105,7 @@ state, or debugger state.
 ## Evidence Sources
 
 - Build output, package output, project file, manifest, dependency list, generated artifacts, and install location.
+- Installed dependency DLL versions, timestamps, and API/member availability for authorized target mod packages.
 - `Modding.log`, `Unity/Player logs`, game launch output, exception stack traces, and mod loader messages.
 - UI debugger evidence from `localhost:9444` for React/TypeScript UI mods when the game and debugger are available.
 - Screenshots, reproduction steps, user playtesting notes, save copies, and version/build numbers.
@@ -106,7 +117,7 @@ For runtime or UI behavior that fails only in game, first distinguish package la
 
 - Toolchain: missing .NET runtime, post-processor issues, bad project references, stale generated files, or wrong output folders.
 - Packaging: missing manifest data, bad thumbnail path, included build junk, missing dependencies, or archive layout mismatch.
-- Runtime: load order, Harmony patch fragility, null game systems, unchecked reflection, settings migration errors, or unsupported API assumptions.
+- Runtime: load order, shared dependency version conflicts, Harmony patch fragility, null game systems, unchecked reflection, settings migration errors, or unsupported API assumptions.
 - UI: failed asset build, stale bundles, bad bindings, broken localization keys, debugger unreachable, or frontend/backend contract mismatch.
 - Saves and gameplay: data mutation risks, versioned component changes, assumptions about simulation timing, or live save edits.
 

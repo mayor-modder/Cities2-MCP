@@ -53,6 +53,10 @@ MOD_REVIEW_IMPROVEMENT_RERUN = (
     REPORTS
     / "2026-06-14-cities2-mod-review-improvement-rerun.md"
 )
+DEBUGGING_SHARED_DEPENDENCY_RERUN = (
+    REPORTS
+    / "2026-06-15-cities2-debugging-shared-dependency-conflict.md"
+)
 
 
 class EvalDocsTests(unittest.TestCase):
@@ -434,6 +438,54 @@ class EvalDocsTests(unittest.TestCase):
         self,
     ) -> None:
         report = MOD_REVIEW_IMPROVEMENT_RERUN.read_text(encoding="utf-8")
+
+        forbidden = [
+            "coding-agent-tool-calls.jsonl",
+            "transcript.txt",
+            "verdict.json",
+            "coding-agent-config",
+            "coding-agent-workdir",
+            "C:" + "\\" + "Users",
+            "\\" + "Users" + "\\",
+            "/" + "Users" + "/",
+            "OPENAI_API_KEY" + "=",
+        ]
+        for needle in forbidden:
+            self.assertNotIn(needle, report)
+        self.assertIsNone(re.search(r"sk-[A-Za-z0-9_-]{20,}", report))
+
+    def test_debugging_shared_dependency_report_has_actionable_structure(self) -> None:
+        report = DEBUGGING_SHARED_DEPENDENCY_RERUN.read_text(encoding="utf-8")
+
+        expected_sections = [
+            "# Cities2 debugging shared dependency conflict eval",
+            "## Short version",
+            "## Run matrix",
+            "## Verdict table",
+            "## Failure patterns",
+            "## Interpretation",
+            "## Follow-up status",
+            "## Privacy note",
+        ]
+        last_index = -1
+        for section in expected_sections:
+            index = report.find(section)
+            self.assertNotEqual(index, -1)
+            self.assertGreater(index, last_index)
+            last_index = index
+
+        self.assertIn("`no-skill`: 3/3 passed", report)
+        self.assertIn("`with-cities2-mod-debugging`: 3/3 passed", report)
+        self.assertIn("shared-dependency evidence: 6/6 passed", report)
+        self.assertIn("not proven as a skill improvement", report)
+        self.assertIn("checker false-positive regressions are covered", report)
+        self.assertIn("checker false-pass regressions are covered", report)
+        self.assertIn("No positive skill delta", report)
+
+    def test_debugging_shared_dependency_report_avoids_raw_artifacts_and_private_paths(
+        self,
+    ) -> None:
+        report = DEBUGGING_SHARED_DEPENDENCY_RERUN.read_text(encoding="utf-8")
 
         forbidden = [
             "coding-agent-tool-calls.jsonl",

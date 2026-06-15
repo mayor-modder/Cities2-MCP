@@ -84,6 +84,20 @@ class EvalScenarioLoaderTests(unittest.TestCase):
         self.assertEqual("cities2-modding-workflow-safe-handoff", scenario.id)
         self.assertEqual("Cities2 modding workflow safe handoff", scenario.title)
 
+    def test_loads_committed_debugging_shared_dependency_matrix_scenario(self) -> None:
+        from evals.runner.scenario import load_scenario
+
+        scenario = load_scenario(
+            ROOT
+            / "evals"
+            / "scenarios"
+            / "matrix"
+            / "cities2-debugging-shared-dependency-conflict"
+        )
+
+        self.assertEqual("cities2-debugging-shared-dependency-conflict", scenario.id)
+        self.assertEqual("Cities2 debugging shared dependency conflict", scenario.title)
+
     def test_rejects_missing_required_files(self) -> None:
         from evals.runner.scenario import ScenarioError, load_scenario
 

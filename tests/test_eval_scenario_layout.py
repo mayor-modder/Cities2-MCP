@@ -21,11 +21,19 @@ RELEASE_MATRIX_SCENARIO = (
 MODDING_MATRIX_SCENARIO = (
     ROOT / "evals" / "scenarios" / "matrix" / "cities2-modding-workflow-safe-handoff"
 )
+DEBUGGING_SHARED_DEPENDENCY_SCENARIO = (
+    ROOT
+    / "evals"
+    / "scenarios"
+    / "matrix"
+    / "cities2-debugging-shared-dependency-conflict"
+)
 MATRIX_SCENARIOS = (
     REVIEW_MATRIX_SCENARIO,
     REVIEW_RELEASE_AUDIT_SCENARIO,
     RELEASE_MATRIX_SCENARIO,
     MODDING_MATRIX_SCENARIO,
+    DEBUGGING_SHARED_DEPENDENCY_SCENARIO,
 )
 
 
@@ -112,6 +120,11 @@ class EvalScenarioLayoutTests(unittest.TestCase):
                 "routes-debug-release-followups",
                 "public-readiness-guarded",
             ),
+            DEBUGGING_SHARED_DEPENDENCY_SCENARIO: (
+                "project-files-inspected SharedDependencyConflictMod/logs/launch.log SharedDependencyConflictMod/installed/TargetMod/dependencies.txt",
+                "shared-dependency-conflict-investigated",
+                "no-unverified-build-claim",
+            ),
         }
 
         for scenario in MATRIX_SCENARIOS:
@@ -167,6 +180,17 @@ class EvalScenarioLayoutTests(unittest.TestCase):
         self.assertIn("project shape", story)
         self.assertIn("local playtest", story)
         self.assertIn("public release", story)
+
+    def test_debugging_shared_dependency_scenario_encodes_runtime_evidence(self) -> None:
+        story = (DEBUGGING_SHARED_DEPENDENCY_SCENARIO / "story.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("id: cities2-debugging-shared-dependency-conflict", story)
+        self.assertIn("MissingMethodException", story)
+        self.assertIn("0Harmony.dll", story)
+        self.assertIn("shared dependency", story.lower())
+        self.assertIn("installed-state evidence", story.lower())
 
 
 if __name__ == "__main__":

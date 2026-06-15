@@ -17,6 +17,7 @@ from .behavior import (
     review_release_readiness_audit_present,
     review_unsupported_claims_absent,
     routes_debug_release_followups,
+    shared_dependency_conflict_investigated,
 )
 from .conditions import condition_skills
 from .models import CheckRecord, CheckStatus, Phase
@@ -256,12 +257,48 @@ def _tool_argument_texts(run_dir: Path, expected_tool: str) -> list[str]:
 
 
 def _shell_command_segments(arguments: str) -> list[str]:
-    normalized = re.sub(r"/+", "/", arguments.replace("\\", "/")).lower()
-    return [
-        segment.strip()
-        for segment in re.split(r"\s*(?:;|&&|\|\||\||\r?\n)\s*", normalized)
-        if segment.strip()
-    ]
+    unescaped = arguments.replace('\\"', '"').replace("\\'", "'")
+    normalized = re.sub(r"/+", "/", unescaped.replace("\\", "/")).lower()
+    segments: list[str] = []
+    chars: list[str] = []
+    quote: str | None = None
+    index = 0
+    while index < len(normalized):
+        char = normalized[index]
+        if quote:
+            chars.append(char)
+            if char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in ("'", '"'):
+            quote = char
+            chars.append(char)
+            index += 1
+            continue
+        if char in (";", "|", "\n") or (
+            char == "&" and index + 1 < len(normalized) and normalized[index + 1] == "&"
+        ):
+            segment = "".join(chars).strip()
+            if segment:
+                segments.append(segment)
+            chars = []
+            if (
+                char in ("|", "&")
+                and index + 1 < len(normalized)
+                and normalized[index + 1] == char
+            ):
+                index += 2
+            else:
+                index += 1
+            continue
+        if char != "\r":
+            chars.append(char)
+        index += 1
+    segment = "".join(chars).strip()
+    if segment:
+        segments.append(segment)
+    return segments
 
 
 def _shell_tokens(segment: str) -> list[str]:
@@ -326,23 +363,29 @@ def _shell_segment_reads_path(
 ) -> bool:
     if not _path_candidate_matches(segment, expected, allow_embedded=allow_embedded):
         return False
-    direct_read_patterns = (
-        r"(^|[\s\"'])get-content(\s|$)",
-        r"(^|[\s\"'])gc(\s|$)",
-        r"(^|[\s\"'])cat(\s|$)",
-        r"(^|[\s\"'])type(\s|$)",
-    )
-    search_patterns = (
-        r"(^|[\s\"'])rg\s+(-n|--line-number|--files-with-matches)\b",
-        r"(^|[\s\"'])select-string\b",
-        r"(^|[\s\"'])grep(\s|$)",
-    )
-    if any(re.search(pattern, segment) for pattern in direct_read_patterns):
-        return True
-    if any(re.search(pattern, segment) for pattern in search_patterns):
-        return _search_segment_reads_path(
-            segment, expected, allow_embedded=allow_embedded
+    tokens = _shell_tokens(segment)
+    if not tokens:
+        return False
+
+    command = Path(tokens[0]).name
+    if command in ("pwsh", "pwsh.exe", "powershell", "powershell.exe"):
+        for index, token in enumerate(tokens[:-1]):
+            if token in ("-command", "-c"):
+                inner_segment = " ".join(tokens[index + 1 :])
+                return _shell_segment_reads_path(
+                    inner_segment, expected, allow_embedded=allow_embedded
+                )
+        return False
+
+    if command in ("get-content", "gc", "cat", "type"):
+        return any(
+            _path_candidate_matches(token, expected, allow_embedded=allow_embedded)
+            for token in tokens[1:]
         )
+
+    if command in ("rg", "select-string", "grep"):
+        return _search_segment_reads_path(segment, expected, allow_embedded=allow_embedded)
+
     return False
 
 
@@ -366,7 +409,10 @@ def _expected_path_candidate_rules(expected: str) -> list[tuple[str, bool]]:
 def _looks_like_file_inspection(tool_name: str, arguments: str, expected: str) -> bool:
     normalized_expected = re.sub(r"/+", "/", expected.replace("\\", "/")).lower()
     expected_paths = _expected_path_candidate_rules(expected)
-    normalized_arguments = re.sub(r"/+", "/", arguments.replace("\\", "/")).lower()
+    unescaped_arguments = arguments.replace('\\"', '"').replace("\\'", "'")
+    normalized_arguments = re.sub(
+        r"/+", "/", unescaped_arguments.replace("\\", "/")
+    ).lower()
     allow_embedded_path = "/" not in normalized_expected
     if not any(
         _path_candidate_matches(
@@ -604,6 +650,11 @@ def run_check(
 
     if name == "local-playtest-handoff-present":
         verdict = local_playtest_handoff_present(_transcript_text(run_dir))
+        status = "pass" if verdict.passed else "fail"
+        return _record(name, phase, status, verdict.detail)
+
+    if name == "shared-dependency-conflict-investigated":
+        verdict = shared_dependency_conflict_investigated(_transcript_text(run_dir))
         status = "pass" if verdict.passed else "fail"
         return _record(name, phase, status, verdict.detail)
 

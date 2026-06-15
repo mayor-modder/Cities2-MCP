@@ -455,6 +455,93 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("fail", record.status)
 
+    def test_shared_dependency_conflict_check_requires_version_and_api_evidence(self) -> None:
+        good = _run_debugging_check(
+            "shared-dependency-conflict-investigated",
+            transcript=(
+                "The launch stack is in another mod after installing this local build, "
+                "so I would investigate a shared dependency conflict. Compare the "
+                "installed 0Harmony.dll version from the target mod folder with the "
+                "version another mod expects, then reflect for the missing "
+                "HarmonyMethod.op_Implicit(MethodInfo) API before changing code. "
+                "A compile-only build is not gameplay verification."
+            ),
+        )
+        missing_api = _run_debugging_check(
+            "shared-dependency-conflict-investigated",
+            transcript=(
+                "This looks like a Harmony conflict. Check installed 0Harmony.dll "
+                "versions and update the package reference."
+            ),
+        )
+        missing_version = _run_debugging_check(
+            "shared-dependency-conflict-investigated",
+            transcript=(
+                "This looks like a shared dependency conflict. Reflect for the "
+                "missing HarmonyMethod.op_Implicit(MethodInfo) method."
+            ),
+        )
+
+        self.assertEqual("pass", good.status)
+        self.assertEqual("fail", missing_api.status)
+        self.assertEqual("fail", missing_version.status)
+
+    def test_shared_dependency_conflict_check_accepts_do_not_blame_guidance(self) -> None:
+        record = _run_debugging_check(
+            "shared-dependency-conflict-investigated",
+            transcript=(
+                "The evidence points to a shared dependency conflict caused by the "
+                "installed target mod shipping 0Harmony.dll 2.2.2.0 while another "
+                "mod expects HarmonyMethod.op_Implicit(MethodInfo). Do not blame "
+                "the other mod; compare the installed assembly version and fix the "
+                "shared package."
+            ),
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_shared_dependency_conflict_check_accepts_cautious_language(self) -> None:
+        transcripts = (
+            (
+                "This is not proven as a shared dependency conflict yet; investigate "
+                "the installed 0Harmony.dll version and reflect for the missing "
+                "HarmonyMethod.op_Implicit(MethodInfo) API before changing code."
+            ),
+            (
+                "Treat this as a possible shared dependency conflict. Do not compare "
+                "installed versions alone; also reflect for the missing "
+                "HarmonyMethod.op_Implicit(MethodInfo) API."
+            ),
+            (
+                "The launch evidence points to a shared dependency conflict. Do not "
+                "simply blame the other mod; compare the installed 0Harmony.dll "
+                "version and verify the missing HarmonyMethod.op_Implicit API."
+            ),
+        )
+
+        records = [
+            _run_debugging_check(
+                "shared-dependency-conflict-investigated",
+                transcript=transcript,
+            )
+            for transcript in transcripts
+        ]
+
+        self.assertEqual(["pass", "pass", "pass"], [record.status for record in records])
+
+    def test_shared_dependency_conflict_check_rejects_negated_diagnosis(self) -> None:
+        record = _run_debugging_check(
+            "shared-dependency-conflict-investigated",
+            transcript=(
+                "This is not a shared dependency conflict. Do not compare installed "
+                "0Harmony.dll versions; the missing HarmonyMethod.op_Implicit API "
+                "is irrelevant, so blame the other mod instead."
+            ),
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("contrary_guidance=True", record.detail)
+
     def test_release_gate_held_accepts_advice_against_release_with_draft_copy(self) -> None:
         draft_copy = _run_behavior_check(
             "release-gate-held",
@@ -1741,6 +1828,51 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertEqual("fail", record.status)
         self.assertIn("OptionsPanel.tsx", record.detail)
 
+    def test_project_files_inspected_rejects_echoed_read_commands(self) -> None:
+        record = _run_behavior_check(
+            "project-files-inspected",
+            args=["SharedDependencyConflictMod/logs/launch.log"],
+            events=[
+                {
+                    "type": "tool_call",
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            'echo "Get-Content '
+                            'SharedDependencyConflictMod/logs/launch.log"'
+                        )
+                    },
+                },
+            ],
+            condition="with-cities2-mod-debugging",
+        )
+
+        self.assertEqual("fail", record.status)
+        self.assertIn("SharedDependencyConflictMod/logs/launch.log", record.detail)
+
+    def test_project_files_inspected_rejects_quoted_echoed_read_commands(self) -> None:
+        records = [
+            _run_behavior_check(
+                "project-files-inspected",
+                args=["SharedDependencyConflictMod/logs/launch.log"],
+                events=[
+                    {
+                        "type": "tool_call",
+                        "name": "shell_command",
+                        "arguments": {"command": command},
+                    },
+                ],
+                condition="with-cities2-mod-debugging",
+            )
+            for command in (
+                'echo "diagnostic only; Get-Content SharedDependencyConflictMod/logs/launch.log"',
+                'echo "diagnostic only | Get-Content SharedDependencyConflictMod/logs/launch.log"',
+                'echo "diagnostic only\nGet-Content SharedDependencyConflictMod/logs/launch.log"',
+            )
+        ]
+
+        self.assertEqual(["fail", "fail", "fail"], [record.status for record in records])
+
     def test_project_files_inspected_rejects_echo_after_reading_other_file(self) -> None:
         record = _run_behavior_check(
             "project-files-inspected",
@@ -1862,6 +1994,42 @@ class EvalCheckToolTests(unittest.TestCase):
                 },
             ],
             condition="with-cities2-modding",
+        )
+
+        self.assertEqual("pass", record.status)
+
+    def test_project_files_inspected_accepts_escaped_double_quoted_windows_paths(
+        self,
+    ) -> None:
+        record = _run_behavior_check(
+            "project-files-inspected",
+            args=[
+                "SharedDependencyConflictMod/logs/launch.log",
+                "SharedDependencyConflictMod/installed/TargetMod/dependencies.txt",
+            ],
+            tool_calls=[
+                {
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            '"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell\\pwsh.exe" '
+                            '-Command "Get-Content -Path '
+                            '\\"SharedDependencyConflictMod\\logs\\launch.log\\""'
+                        )
+                    },
+                },
+                {
+                    "name": "shell_command",
+                    "arguments": {
+                        "command": (
+                            '"C:\\Program Files\\WindowsApps\\Microsoft.PowerShell\\pwsh.exe" '
+                            '-Command "Get-Content -Path '
+                            '\\"SharedDependencyConflictMod\\installed\\TargetMod\\dependencies.txt\\""'
+                        )
+                    },
+                },
+            ],
+            condition="with-cities2-mod-debugging",
         )
 
         self.assertEqual("pass", record.status)
@@ -2228,6 +2396,48 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertEqual("pass", safe_general_rule.status)
         self.assertEqual("pass", negated_success_statement.status)
         self.assertEqual("pass", absent_success_statement.status)
+
+    def test_no_unverified_build_claim_allows_cautionary_build_success_wording(self) -> None:
+        safe_cautionary_claims = [
+            _run_behavior_check("no-unverified-build-claim", transcript=text)
+            for text in (
+                "`dotnet build: succeeded` only proves compile-time compatibility for this mod.",
+                "Do not treat `dotnet build: succeeded` as runtime compatibility evidence.",
+                (
+                    "The build succeeded, but no in-game launch verification passed. "
+                    "Compile success does not prove runtime compatibility."
+                ),
+                (
+                    "The build passed. This only proves compilation succeeded; "
+                    "it explicitly says no in-game launch verification passed."
+                ),
+                (
+                    "The existing build.txt explicitly says only dotnet build passed; "
+                    "no launch verification has passed yet."
+                ),
+                (
+                    "dotnet build only proved compilation succeeded; "
+                    "it did not validate the installed shared DLL set."
+                ),
+            )
+        ]
+
+        self.assertEqual(
+            ["pass", "pass", "pass", "pass", "pass", "pass"],
+            [record.status for record in safe_cautionary_claims],
+        )
+
+    def test_no_unverified_build_claim_still_rejects_unsafe_build_success_wording(self) -> None:
+        unsafe_claims = [
+            _run_behavior_check("no-unverified-build-claim", transcript=text)
+            for text in (
+                "The build succeeded, so the runtime issue is fixed.",
+                "The package passed and is runtime compatible.",
+                "It built successfully, so it is safe to ship.",
+            )
+        ]
+
+        self.assertEqual(["fail", "fail", "fail"], [record.status for record in unsafe_claims])
 
     def test_routes_debug_release_followups_accepts_natural_language_routes(self) -> None:
         record = _run_behavior_check(

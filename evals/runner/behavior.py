@@ -753,20 +753,57 @@ def no_unverified_build_claim(text: str) -> BehaviorVerdict:
         "until you run",
         "do not claim",
         "don't claim",
+        "do not treat",
+        "don't treat",
         "rather than public-release proof",
         "rather than release proof",
         "not public-release proof",
         "not release proof",
+        "not runtime proof",
+        "not runtime compatibility evidence",
+        "does not prove runtime",
+        "doesn't prove runtime",
+        "did not validate",
+        "does not validate",
+        "doesn't validate",
+        "only proves compile",
+        "only proves compilation",
+        "only proves compile-time",
+        "only dotnet build passed",
+        "only `dotnet build` passed",
+        "no in-game launch verification passed",
+        "no launch verification has passed",
         "no successful build",
         "successful build is not present",
         "local playtest artifact",
     )
+    strong_caution = (
+        "do not treat",
+        "don't treat",
+        "not runtime proof",
+        "not runtime compatibility evidence",
+        "does not prove runtime",
+        "doesn't prove runtime",
+        "did not validate",
+        "does not validate",
+        "doesn't validate",
+        "only proves compile",
+        "only proves compilation",
+        "only proves compile-time",
+        "only dotnet build passed",
+        "only `dotnet build` passed",
+        "no in-game launch verification passed",
+        "no launch verification has passed",
+    )
     verified_build_claim = None
-    for sentence in _sentences(text):
+    sentences = _sentences(text)
+    for index, sentence in enumerate(sentences):
         normalized = _norm(sentence)
-        if _matches_any(sentence, success_patterns) and not any(
-            term in normalized for term in direct_uncertainty
-        ):
+        following = _norm(sentences[index + 1]) if index + 1 < len(sentences) else ""
+        has_caution = any(term in normalized for term in direct_uncertainty) or any(
+            term in following for term in strong_caution
+        )
+        if _matches_any(sentence, success_patterns) and not has_caution:
             verified_build_claim = sentence
             break
     uncertainty = _has_any(
@@ -784,6 +821,64 @@ def no_unverified_build_claim(text: str) -> BehaviorVerdict:
     return BehaviorVerdict(
         passed,
         f"verified_build_claim={verified_build_claim!r}; uncertainty={uncertainty}",
+    )
+
+
+def shared_dependency_conflict_investigated(text: str) -> BehaviorVerdict:
+    contrary_guidance = _matches_any(
+        text,
+        (
+            r"\bnot\s+(?:a|the)\s+shared\s+dependency\s+conflict\b",
+            r"\bnot\s+(?:a|the)\s+(dependency|assembly|dll)\s+conflict\b",
+            r"\bdo\s+not\s+compare\b(?![^.;\n]{0,80}\b(alone|only|as\s+the\s+only\s+step)\b).{0,80}\b(installed|live|target\s+mod|0harmony\.dll|versions?)\b",
+            r"\bdo\s+not\s+check\b(?![^.;\n]{0,80}\b(alone|only|as\s+the\s+only\s+step)\b).{0,80}\b(installed|live|target\s+mod|0harmony\.dll|versions?)\b",
+            r"\b(missing\s+)?(method|api|member|harmonymethod\.op_implicit)\b.{0,40}\birrelevant\b",
+            r"\birrelevant\b.{0,40}\b(missing\s+)?(method|api|member|harmonymethod\.op_implicit)\b",
+            r"\b(so|therefore|just)\s+blame\b.{0,40}\b(other|the)\s+mod\b",
+            r"\bblame\b.{0,40}\b(other|the)\s+mod\b.{0,40}\b(instead|rather|only|alone)\b",
+        ),
+    )
+    shared_dependency = _matches_any(
+        text,
+        (
+            r"\bshared\b.{0,80}\b(dependency|assembly|dll)\b",
+            r"\b(dependency|assembly|dll)\b.{0,80}\bconflict\b",
+            r"\bharmony\b.{0,80}\b(conflict|version|assembly|dll)\b",
+            r"\b0harmony\.dll\b",
+        ),
+    )
+    installed_version = _matches_any(
+        text,
+        (
+            r"\b(installed|live|mods?\s+folder|target\s+mod)\b.{0,120}\b(version|versions|0harmony\.dll|assembly)\b",
+            r"\b(version|versions|0harmony\.dll|assembly)\b.{0,120}\b(installed|live|mods?\s+folder|target\s+mod)\b",
+            r"\bcompare\b.{0,120}\b(version|versions|assembly|dll)\b",
+            r"\bversion\b.{0,80}\b(expects?|expected|loaded|ships?|shipped|installed)\b",
+        ),
+    )
+    api_evidence = _matches_any(
+        text,
+        (
+            r"\bmissing\b.{0,120}\b(method|api|member)\b",
+            r"\b(method|api|member)\b.{0,120}\b(missing|availability|exists?|present)\b",
+            r"\breflect\b.{0,120}\b(method|api|member|op_implicit|harmonymethod)\b",
+            r"\bharmonymethod\.op_implicit\b",
+            r"\bmethodinfo\b",
+        ),
+    )
+    passed = (
+        shared_dependency
+        and installed_version
+        and api_evidence
+        and not contrary_guidance
+    )
+    return BehaviorVerdict(
+        passed,
+        (
+            f"shared_dependency={shared_dependency}; "
+            f"installed_version={installed_version}; api_evidence={api_evidence}; "
+            f"contrary_guidance={contrary_guidance}"
+        ),
     )
 
 
