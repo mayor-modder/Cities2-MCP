@@ -259,11 +259,46 @@ def _tool_argument_texts(run_dir: Path, expected_tool: str) -> list[str]:
 def _shell_command_segments(arguments: str) -> list[str]:
     unescaped = arguments.replace('\\"', '"').replace("\\'", "'")
     normalized = re.sub(r"/+", "/", unescaped.replace("\\", "/")).lower()
-    return [
-        segment.strip()
-        for segment in re.split(r"\s*(?:;|&&|\|\||\||\r?\n)\s*", normalized)
-        if segment.strip()
-    ]
+    segments: list[str] = []
+    chars: list[str] = []
+    quote: str | None = None
+    index = 0
+    while index < len(normalized):
+        char = normalized[index]
+        if quote:
+            chars.append(char)
+            if char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in ("'", '"'):
+            quote = char
+            chars.append(char)
+            index += 1
+            continue
+        if char in (";", "|", "\n") or (
+            char == "&" and index + 1 < len(normalized) and normalized[index + 1] == "&"
+        ):
+            segment = "".join(chars).strip()
+            if segment:
+                segments.append(segment)
+            chars = []
+            if (
+                char in ("|", "&")
+                and index + 1 < len(normalized)
+                and normalized[index + 1] == char
+            ):
+                index += 2
+            else:
+                index += 1
+            continue
+        if char != "\r":
+            chars.append(char)
+        index += 1
+    segment = "".join(chars).strip()
+    if segment:
+        segments.append(segment)
+    return segments
 
 
 def _shell_tokens(segment: str) -> list[str]:

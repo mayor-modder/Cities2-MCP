@@ -828,13 +828,13 @@ def shared_dependency_conflict_investigated(text: str) -> BehaviorVerdict:
     contrary_guidance = _matches_any(
         text,
         (
-            r"\bnot\b.{0,20}\bshared\s+dependency\s+conflict\b",
-            r"\bnot\b.{0,20}\b(dependency|assembly|dll)\s+conflict\b",
-            r"\bdo\s+not\s+compare\b.{0,80}\b(installed|live|target\s+mod|0harmony\.dll|versions?)\b",
-            r"\bdo\s+not\s+check\b.{0,80}\b(installed|live|target\s+mod|0harmony\.dll|versions?)\b",
+            r"\bnot\s+(?:a|the)\s+shared\s+dependency\s+conflict\b",
+            r"\bnot\s+(?:a|the)\s+(dependency|assembly|dll)\s+conflict\b",
+            r"\bdo\s+not\s+compare\b(?![^.;\n]{0,80}\b(alone|only|as\s+the\s+only\s+step)\b).{0,80}\b(installed|live|target\s+mod|0harmony\.dll|versions?)\b",
+            r"\bdo\s+not\s+check\b(?![^.;\n]{0,80}\b(alone|only|as\s+the\s+only\s+step)\b).{0,80}\b(installed|live|target\s+mod|0harmony\.dll|versions?)\b",
             r"\b(missing\s+)?(method|api|member|harmonymethod\.op_implicit)\b.{0,40}\birrelevant\b",
             r"\birrelevant\b.{0,40}\b(missing\s+)?(method|api|member|harmonymethod\.op_implicit)\b",
-            r"\b(so|therefore|just|simply)\s+blame\b.{0,40}\b(other|the)\s+mod\b",
+            r"\b(so|therefore|just)\s+blame\b.{0,40}\b(other|the)\s+mod\b",
             r"\bblame\b.{0,40}\b(other|the)\s+mod\b.{0,40}\b(instead|rather|only|alone)\b",
         ),
     )
@@ -850,9 +850,9 @@ def shared_dependency_conflict_investigated(text: str) -> BehaviorVerdict:
     installed_version = _matches_any(
         text,
         (
-            r"\b(installed|live|mods?\s+folder|target\s+mod)\b.{0,120}\b(version|0harmony\.dll|assembly)\b",
-            r"\b(version|0harmony\.dll|assembly)\b.{0,120}\b(installed|live|mods?\s+folder|target\s+mod)\b",
-            r"\bcompare\b.{0,120}\b(version|assembly|dll)\b",
+            r"\b(installed|live|mods?\s+folder|target\s+mod)\b.{0,120}\b(version|versions|0harmony\.dll|assembly)\b",
+            r"\b(version|versions|0harmony\.dll|assembly)\b.{0,120}\b(installed|live|mods?\s+folder|target\s+mod)\b",
+            r"\bcompare\b.{0,120}\b(version|versions|assembly|dll)\b",
             r"\bversion\b.{0,80}\b(expects?|expected|loaded|ships?|shipped|installed)\b",
         ),
     )
