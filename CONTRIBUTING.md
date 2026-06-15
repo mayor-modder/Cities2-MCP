@@ -63,18 +63,25 @@ Canonical sources — edit these:
 - root `skills/` — the five bundled agent skills.
 - root `cities2_mcp/` — the Python package vendored into each distribution.
 
-Generated — do not hand-edit; run `sync` and commit the result:
+Generated — do not hand-edit; run `sync` and commit only repo-visible results that belong in this repository:
 
-- Claude: `integrations/anthropic/claude-plugin/.claude-plugin/plugin.json`, `integrations/anthropic/claude-plugin/.mcp.json`, `integrations/anthropic/claude-plugin/README.md`, and root `.claude-plugin/marketplace.json`.
-- Codex: `plugins/cities2-mcp/.codex-plugin/plugin.json`, `plugins/cities2-mcp/.mcp.json`, `plugins/cities2-mcp/README.md`, and root `.agents/plugins/marketplace.json`.
-- Antigravity: `plugins/cities2-mcp/plugin.json` and `plugins/cities2-mcp/mcp_config.json`.
-- Per-distribution payloads under each root: `skills/`, `vendor/`, `bin/cities2-mcp-launcher.js`, and `vendor/run_server.py`.
+- Claude and Codex package artifacts are written under ignored `dist/` for local inspection.
+- Antigravity package files under `plugins/cities2-mcp/` are committed and must stay in sync.
+- Per-distribution payloads include `skills/`, `vendor/`, `bin/cities2-mcp-launcher.js`, and `vendor/run_server.py`.
+
+Export Claude and Codex package snapshots to the shared catalog repository when that catalog needs an update:
+
+```sh
+python -m cities2_mcp.plugin_packages sync-catalog --catalog-root <path-to-Mayor-Modder-Cities2-Plugins>
+```
+
+Do not commit Claude or Codex package snapshots in this repository.
 
 Regenerate and verify:
 
 ```sh
-py -3 -m cities2_mcp.plugin_packages sync
-py -3 -m cities2_mcp.plugin_packages check
+python -m cities2_mcp.plugin_packages sync
+python -m cities2_mcp.plugin_packages check
 ```
 
 When changing skills:

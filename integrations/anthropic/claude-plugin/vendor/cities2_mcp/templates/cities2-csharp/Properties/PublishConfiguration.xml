@@ -1,6 +1,0 @@
-<PublishConfiguration>
-  <DisplayName>{{DISPLAY_NAME_XML}}</DisplayName>
-  <ShortDescription>{{SHORT_DESCRIPTION_XML}}</ShortDescription>
-  <Version>{{VERSION_XML}}</Version>
-  <GameVersion>{{GAME_VERSION_XML}}</GameVersion>
-</PublishConfiguration>

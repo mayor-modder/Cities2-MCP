@@ -9,7 +9,7 @@ Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude d
 Run these inside Claude Code:
 
 ```text
-/plugin marketplace add mayor-modder/Cities2-MCP
+/plugin marketplace add mayor-modder/Mayor-Modder-Cities2-Plugins
 ```
 
 ```text
@@ -24,7 +24,7 @@ Start a new Claude Code session in your mod project folder. The plugin starts `c
 2. Select **Customize** in the sidebar.
 3. Next to **Personal plugins**, click **+**.
 4. Choose **Create Plugin** > **Add marketplace**.
-5. Enter `mayor-modder/Cities2-MCP`.
+5. Enter `mayor-modder/Mayor-Modder-Cities2-Plugins`.
 6. Install and enable **Cities2 MCP and Modding Toolkit**.
 
 ### Using skills in Claude
@@ -48,7 +48,7 @@ Start a new Claude Code session in your mod project folder. The plugin starts `c
 In your system terminal, add this repository as a Codex plugin marketplace:
 
 ```sh
-codex plugin marketplace add mayor-modder/Cities2-MCP
+codex plugin marketplace add mayor-modder/Mayor-Modder-Cities2-Plugins
 ```
 
 Then start Codex from your project folder:
@@ -64,7 +64,7 @@ Enter `/plugin`, install **Cities2 MCP and Modding Toolkit**, then restart Codex
 1. Open the Codex app and choose **Plugins** from the sidebar.
 2. Next to the "Search plugins" input, click **Built by OpenAI**.
 3. Click **+ Add more**.
-4. Enter source `mayor-modder/Cities2-MCP` and click **Add Marketplace**.
+4. Enter source `mayor-modder/Mayor-Modder-Cities2-Plugins` and click **Add Marketplace**.
 5. Install and enable **Cities2 MCP and Modding Toolkit**.
 6. Fully exit Codex and restart.
 

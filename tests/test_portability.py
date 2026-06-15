@@ -7,9 +7,16 @@ import unittest
 from pathlib import Path, PureWindowsPath
 from unittest import mock
 
-from cities2_mcp import mcp_server
+from cities2_mcp import mcp_server, plugin_metadata
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def packaged_skill_paths(skill_name: str) -> tuple[Path, Path]:
+    return (
+        ROOT / "skills" / skill_name / "SKILL.md",
+        ROOT / "plugins" / "cities2-mcp" / "skills" / skill_name / "SKILL.md",
+    )
 
 
 def load_module(name: str, path: Path):
@@ -180,8 +187,9 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("Personal plugins", text)
             self.assertIn("Create Plugin", text)
             self.assertIn("Add marketplace", text)
-            self.assertIn("mayor-modder/Cities2-MCP", text)
-        self.assertIn("/plugin marketplace add mayor-modder/Cities2-MCP", install_text)
+            self.assertIn("mayor-modder/Mayor-Modder-Cities2-Plugins", text)
+        self.assertIn("/plugin marketplace add mayor-modder/Mayor-Modder-Cities2-Plugins", install_text)
+        self.assertNotIn("/plugin marketplace add mayor-modder/Cities2-MCP", install_text)
         self.assertIn("INSTALL.md#install-in-claude-code", readme_text)
         self.assertIn("INSTALL.md#install-in-claude-desktop", readme_text)
         self.assertIn("INSTALL.md", readme_text)
@@ -190,9 +198,10 @@ class PortabilityTests(unittest.TestCase):
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
         openai_readme = (ROOT / "integrations" / "openai" / "README.md").read_text(encoding="utf-8")
-        codex_plugin_readme = (ROOT / "plugins" / "cities2-mcp" / "README.md").read_text(encoding="utf-8")
 
-        self.assertIn("codex plugin marketplace add mayor-modder/Cities2-MCP", install_text)
+        for text in (install_text, openai_readme):
+            self.assertIn("codex plugin marketplace add mayor-modder/Mayor-Modder-Cities2-Plugins", text)
+            self.assertNotIn("codex plugin marketplace add mayor-modder/Cities2-MCP", text)
         self.assertIn("/skills", install_text)
         self.assertIn("INSTALL.md#install-in-codex-cli", readme_text)
         self.assertIn("INSTALL.md#install-in-the-codex-app", readme_text)
@@ -204,9 +213,7 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn(skill_name, readme_text)
             self.assertIn(f"skills/{skill_name}/SKILL.md", readme_text)
         self.assertIn("allowlist", openai_readme)
-        self.assertIn("template-copy fallback", codex_plugin_readme)
         self.assertNotIn("MCP workspace is the current Codex project folder", openai_readme)
-        self.assertNotIn("MCP workspace is the current project folder", codex_plugin_readme)
 
     def test_docs_include_antigravity_install_paths(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
@@ -246,14 +253,21 @@ class PortabilityTests(unittest.TestCase):
         self.assertNotIn("gemini extensions install", public_text)
         self.assertNotIn("Gemini CLI extension package", public_text)
 
+    def test_claude_and_codex_package_snapshots_are_not_committed(self) -> None:
+        self.assertFalse((ROOT / ".claude-plugin" / "marketplace.json").exists())
+        self.assertFalse((ROOT / ".agents" / "plugins" / "marketplace.json").exists())
+        self.assertFalse((ROOT / "integrations" / "anthropic" / "claude-plugin").exists())
+        self.assertFalse((ROOT / "plugins" / "cities2-mcp" / ".codex-plugin").exists())
+        self.assertFalse((ROOT / "plugins" / "cities2-mcp" / ".mcp.json").exists())
+
     def test_anthropic_integration_docs_treat_plugin_as_only_documented_install_path(self) -> None:
         anthropic_readme = (ROOT / "integrations" / "anthropic" / "README.md").read_text(encoding="utf-8")
-        claude_plugin_readme = (
-            ROOT / "integrations" / "anthropic" / "claude-plugin" / "README.md"
-        ).read_text(encoding="utf-8")
+        claude_plugin_readme = plugin_metadata.claude_readme_md()
 
-        self.assertIn("primary Claude package", anthropic_readme)
+        self.assertIn("shared catalog", anthropic_readme)
+        self.assertIn("mayor-modder/Mayor-Modder-Cities2-Plugins", anthropic_readme)
         self.assertIn("plugin marketplace", anthropic_readme)
+        self.assertNotIn("claude plugin validate", anthropic_readme)
         self.assertIn("/cities2-knowledge", claude_plugin_readme)
         self.assertIn("/cities2-modding", claude_plugin_readme)
         self.assertNotIn("/cities2-mcp:cities2-knowledge", claude_plugin_readme)
@@ -287,29 +301,17 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn(f"${skill_name}", metadata_text)
             self.assertIn(skill_name, readme_text)
             self.assertIn(f"skills/{skill_name}/SKILL.md", readme_text)
-            for distributed_root in (
-                ROOT / "plugins" / "cities2-mcp" / "skills",
-                ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills",
-            ):
-                distributed_text = (distributed_root / skill_name / "SKILL.md").read_text(encoding="utf-8")
-                self.assertEqual(
-                    skill_text,
-                    distributed_text,
-                    f"{skill_name} drifted from {distributed_root}",
-                )
+            distributed_text = (
+                ROOT / "plugins" / "cities2-mcp" / "skills" / skill_name / "SKILL.md"
+            ).read_text(encoding="utf-8")
+            self.assertEqual(
+                skill_text,
+                distributed_text,
+                f"{skill_name} drifted from Antigravity package skills",
+            )
 
         self.assertFalse((ROOT / "skills" / "cities2-skill-style-review").exists())
         self.assertFalse((ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-skill-style-review").exists())
-        self.assertFalse(
-            (
-                ROOT
-                / "integrations"
-                / "anthropic"
-                / "claude-plugin"
-                / "skills"
-                / "cities2-skill-style-review"
-            ).exists()
-        )
 
         self.assertIn(
             "compact source note",
@@ -322,6 +324,9 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("load local agent skills separately", install_text)
         legacy_skill_wording = "client supports MCP servers" + " but not plugin skills"
         self.assertNotIn(legacy_skill_wording, install_text)
+
+    def test_packaged_skills_include_agent_files(self) -> None:
+        self.test_agent_skills_are_packaged_and_documented()
 
     def test_modding_quality_skills_encode_review_debug_release_rules(self) -> None:
         review = (ROOT / "skills" / "cities2-mod-review" / "SKILL.md").read_text(encoding="utf-8")
@@ -371,17 +376,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("cities2-mod-release", modding)
 
     def test_release_override_gate_requires_explicit_risk_ack_in_all_copies(self) -> None:
-        skill_paths = [
-            ROOT / "skills" / "cities2-mod-release" / "SKILL.md",
-            ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-mod-release" / "SKILL.md",
-            ROOT
-            / "integrations"
-            / "anthropic"
-            / "claude-plugin"
-            / "skills"
-            / "cities2-mod-release"
-            / "SKILL.md",
-        ]
+        skill_paths = packaged_skill_paths("cities2-mod-release")
 
         for path in skill_paths:
             lowered = path.read_text(encoding="utf-8").lower()
@@ -413,17 +408,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("not gameplay-verified", pressure_test)
 
     def test_debugging_installed_state_boundaries_in_all_copies(self) -> None:
-        skill_paths = [
-            ROOT / "skills" / "cities2-mod-debugging" / "SKILL.md",
-            ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-mod-debugging" / "SKILL.md",
-            ROOT
-            / "integrations"
-            / "anthropic"
-            / "claude-plugin"
-            / "skills"
-            / "cities2-mod-debugging"
-            / "SKILL.md",
-        ]
+        skill_paths = packaged_skill_paths("cities2-mod-debugging")
 
         for path in skill_paths:
             text = path.read_text(encoding="utf-8")
@@ -453,17 +438,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("Stay scoped and ask for explicit authorization", pressure_test)
 
     def test_review_skill_grounds_findings_by_evidence_in_all_copies(self) -> None:
-        skill_paths = [
-            ROOT / "skills" / "cities2-mod-review" / "SKILL.md",
-            ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-mod-review" / "SKILL.md",
-            ROOT
-            / "integrations"
-            / "anthropic"
-            / "claude-plugin"
-            / "skills"
-            / "cities2-mod-review"
-            / "SKILL.md",
-        ]
+        skill_paths = packaged_skill_paths("cities2-mod-review")
 
         for path in skill_paths:
             lowered = path.read_text(encoding="utf-8").lower()
@@ -499,17 +474,7 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("not imported", pressure_test)
 
     def test_mod_review_skill_offers_portable_multi_agent_review(self) -> None:
-        skill_paths = [
-            ROOT / "skills" / "cities2-mod-review" / "SKILL.md",
-            ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-mod-review" / "SKILL.md",
-            ROOT
-            / "integrations"
-            / "anthropic"
-            / "claude-plugin"
-            / "skills"
-            / "cities2-mod-review"
-            / "SKILL.md",
-        ]
+        skill_paths = packaged_skill_paths("cities2-mod-review")
 
         for path in skill_paths:
             text = path.read_text(encoding="utf-8")
@@ -537,11 +502,7 @@ class PortabilityTests(unittest.TestCase):
             self.assertNotIn("--allow-any-workspace", path.read_text(encoding="utf-8"))
 
     def test_modding_skill_describes_codex_workspace_fallback_honestly(self) -> None:
-        skill_paths = [
-            ROOT / "skills" / "cities2-modding" / "SKILL.md",
-            ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-modding" / "SKILL.md",
-            ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-modding" / "SKILL.md",
-        ]
+        skill_paths = packaged_skill_paths("cities2-modding")
 
         for path in skill_paths:
             text = path.read_text(encoding="utf-8")
@@ -563,11 +524,7 @@ class PortabilityTests(unittest.TestCase):
             self.assertNotIn("Claude Code and Codex, project-scoped plugin", text)
 
     def test_modding_skill_requires_incomplete_project_handoff_evidence(self) -> None:
-        skill_paths = [
-            ROOT / "skills" / "cities2-modding" / "SKILL.md",
-            ROOT / "plugins" / "cities2-mcp" / "skills" / "cities2-modding" / "SKILL.md",
-            ROOT / "integrations" / "anthropic" / "claude-plugin" / "skills" / "cities2-modding" / "SKILL.md",
-        ]
+        skill_paths = packaged_skill_paths("cities2-modding")
 
         for path in skill_paths:
             text = path.read_text(encoding="utf-8")
@@ -576,6 +533,9 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("installable local artifact", text)
             self.assertIn("package/installable artifact", text)
             self.assertIn("launch, playset, logs, UI debugger, and confirmation", text)
+
+    def test_modding_skill_requires_real_build_verification(self) -> None:
+        self.test_modding_skill_requires_incomplete_project_handoff_evidence()
 
     def test_install_guide_explains_workspace_allowlist_for_mod_repos(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
@@ -597,7 +557,8 @@ class PortabilityTests(unittest.TestCase):
     def test_install_guide_uses_current_claude_code_mcp_locations(self) -> None:
         install_text = (ROOT / "INSTALL.md").read_text(encoding="utf-8")
 
-        self.assertIn("/plugin marketplace add mayor-modder/Cities2-MCP", install_text)
+        self.assertIn("/plugin marketplace add mayor-modder/Mayor-Modder-Cities2-Plugins", install_text)
+        self.assertNotIn("/plugin marketplace add mayor-modder/Cities2-MCP", install_text)
         self.assertNotIn(".claude/settings.local.json", install_text)
         self.assertNotIn("~/.claude.json", install_text)
         self.assertNotIn(".mcp.json", install_text)
