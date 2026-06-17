@@ -202,6 +202,11 @@ class PortabilityTests(unittest.TestCase):
         for text in (install_text, openai_readme):
             self.assertIn("codex plugin marketplace add mayor-modder/Mayor-Modder-Cities2-Plugins", text)
             self.assertNotIn("codex plugin marketplace add mayor-modder/Cities2-MCP", text)
+        self.assertIn("choose **Plugins** from the sidebar", install_text)
+        self.assertIn("**+** button", install_text)
+        self.assertIn("click the down arrow next to it", install_text)
+        self.assertIn("Add marketplace", install_text)
+        self.assertIn("mayor-modder/Mayor-Modder-Cities2-Plugins", install_text)
         self.assertIn("/skills", install_text)
         self.assertIn("INSTALL.md#install-in-codex-cli", readme_text)
         self.assertIn("INSTALL.md#install-in-the-codex-app", readme_text)
