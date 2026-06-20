@@ -10,6 +10,12 @@ import sys
 from pathlib import Path
 
 from evals.runner.checks import _bash_path, _is_wsl_bash, run_checks_phase
+from evals.runner.claude_adapter import (
+    build_claude_print_command,
+    minimal_claude_env,
+    prepare_claude_home,
+    seed_claude_auth,
+)
 from evals.runner.conditions import CONDITION_SKILLS, condition_skills
 from evals.runner.codex_adapter import (
     build_codex_exec_command,
@@ -20,10 +26,11 @@ from evals.runner.codex_adapter import (
 from evals.runner.models import CheckRecord, RunMetadata, RunPaths, Verdict
 from evals.runner.scenario import Scenario, load_scenario
 from evals.runner.summary import generate_digest, write_digest
-from evals.runner.trace import normalize_codex_events
+from evals.runner.trace import normalize_claude_events, normalize_codex_events
 
 
 RUNNER_VERSION = "1"
+SUPPORTED_BACKENDS = ("codex", "claude")
 KNOWLEDGE_MCP_PREFLIGHT_TOOLS = ("source_status", "search")
 MCP_PREFLIGHT_TIMEOUT_SECONDS = 45
 
@@ -111,7 +118,8 @@ def _metadata(
     scenario: Scenario,
     condition: str,
     trial: int,
-    codex_command: str,
+    backend_name: str,
+    backend_executable: str,
     repo_root: Path,
     skills: tuple[str, ...],
 ) -> RunMetadata:
@@ -120,8 +128,8 @@ def _metadata(
         scenario_version="1",
         condition_id=condition,
         trial=trial,
-        backend_name="codex",
-        backend_executable=codex_command,
+        backend_name=backend_name,
+        backend_executable=backend_executable,
         repo_commit=_repo_commit(repo_root),
         runner_version=RUNNER_VERSION,
         run_started_at=dt.datetime.now(dt.timezone.utc)
@@ -153,6 +161,25 @@ def _codex_command_with_prefix(
         codex_command=codex_command, workdir=workdir, prompt=prompt
     )
     return [command[0], *codex_args_prefix, *command[1:]]
+
+
+def _claude_command_with_prefix(
+    *,
+    claude_command: str,
+    claude_args_prefix: tuple[str, ...],
+    workdir: Path,
+    prompt: str,
+    mcp_config: Path,
+    plugin_dir: Path | None,
+) -> list[str]:
+    command = build_claude_print_command(
+        claude_command=claude_command,
+        workdir=workdir,
+        prompt=prompt,
+        mcp_config=mcp_config,
+        plugin_dir=plugin_dir,
+    )
+    return [command[0], *claude_args_prefix, *command[1:]]
 
 
 def _append_stderr(raw_events: Path, stderr: str) -> None:
@@ -195,6 +222,25 @@ def _mcp_error_messages(raw_events: Path) -> list[str]:
             continue
         if not isinstance(event, dict):
             continue
+        event_error = event.get("error")
+        if isinstance(event_error, str) and event_error:
+            detail = event_error
+            message = event.get("message")
+            if isinstance(message, dict):
+                content = message.get("content")
+                if isinstance(content, list):
+                    text_blocks = [
+                        block.get("text")
+                        for block in content
+                        if isinstance(block, dict) and isinstance(block.get("text"), str)
+                    ]
+                    if text_blocks:
+                        detail += f": {' '.join(text_blocks)}"
+            messages.append(detail)
+        if event.get("is_error") is True:
+            result = event.get("result")
+            if isinstance(result, str) and result:
+                messages.append(result)
         item = event.get("item")
         if not isinstance(item, dict):
             continue
@@ -207,22 +253,39 @@ def _mcp_error_messages(raw_events: Path) -> list[str]:
     return messages
 
 
-def _run_codex_mcp_tool_preflight(
+def _normalize_backend_events(
+    backend: str, raw_events: Path, tool_calls: Path, transcript: Path
+) -> None:
+    if backend == "codex":
+        normalize_codex_events(raw_events, tool_calls, transcript)
+        return
+    if backend == "claude":
+        normalize_claude_events(raw_events, tool_calls, transcript)
+        return
+    raise ValueError(f"unsupported backend: {backend}")
+
+
+def _run_mcp_tool_preflight(
     *,
     paths: RunPaths,
+    backend: str,
     condition: str,
     repo_root: Path,
     codex_command: str,
     codex_args_prefix: tuple[str, ...],
+    claude_command: str,
+    claude_args_prefix: tuple[str, ...],
+    claude_mcp_config: Path | None,
+    claude_plugin_dir: Path | None,
     env: dict[str, str],
 ) -> CheckRecord | None:
     expected_tools = _mcp_preflight_tools(condition)
     if not expected_tools:
         return None
 
-    raw_events = paths.run_dir / "codex-preflight-events.jsonl"
-    tool_calls = paths.run_dir / "codex-preflight-tool-calls.jsonl"
-    transcript = paths.run_dir / "codex-preflight-transcript.txt"
+    raw_events = paths.run_dir / f"{backend}-preflight-events.jsonl"
+    tool_calls = paths.run_dir / f"{backend}-preflight-tool-calls.jsonl"
+    transcript = paths.run_dir / f"{backend}-preflight-transcript.txt"
     prompt = (
         "Eval plumbing preflight. Use $cities2-knowledge and the cities2-mcp MCP "
         "server. Call source_status(), then call search(query=\"office demand\", "
@@ -231,17 +294,31 @@ def _run_codex_mcp_tool_preflight(
         "and answer with only MCP preflight failed. After both tool calls succeed, "
         "answer with only MCP preflight passed."
     )
-    command = _codex_command_with_prefix(
-        codex_command=codex_command,
-        codex_args_prefix=codex_args_prefix,
-        workdir=paths.workdir,
-        prompt=prompt,
-    )
+    if backend == "codex":
+        command = _codex_command_with_prefix(
+            codex_command=codex_command,
+            codex_args_prefix=codex_args_prefix,
+            workdir=paths.workdir,
+            prompt=prompt,
+        )
+    elif backend == "claude":
+        if claude_mcp_config is None:
+            raise ValueError("claude_mcp_config is required for Claude preflight")
+        command = _claude_command_with_prefix(
+            claude_command=claude_command,
+            claude_args_prefix=claude_args_prefix,
+            workdir=paths.workdir,
+            prompt=prompt,
+            mcp_config=claude_mcp_config,
+            plugin_dir=claude_plugin_dir,
+        )
+    else:
+        raise ValueError(f"unsupported backend: {backend}")
     try:
         with raw_events.open("w", encoding="utf-8") as stdout:
             result = subprocess.run(
                 command,
-                cwd=repo_root,
+                cwd=repo_root if backend == "codex" else paths.workdir,
                 env=env,
                 text=True,
                 stdout=stdout,
@@ -249,7 +326,7 @@ def _run_codex_mcp_tool_preflight(
                 timeout=MCP_PREFLIGHT_TIMEOUT_SECONDS,
             )
     except subprocess.TimeoutExpired:
-        normalize_codex_events(raw_events, tool_calls, transcript)
+        _normalize_backend_events(backend, raw_events, tool_calls, transcript)
         names = _trace_tool_names(tool_calls)
         errors = _mcp_error_messages(raw_events)
         detail = (
@@ -259,14 +336,14 @@ def _run_codex_mcp_tool_preflight(
         if errors:
             detail += f"; errors={errors[:3]}"
         return CheckRecord(
-            name="codex-mcp-tool-exposure",
+            name=f"{backend}-mcp-tool-exposure",
             phase="pre",
             status="indeterminate",
             detail=detail,
         )
     if result.returncode != 0:
         _append_stderr(raw_events, result.stderr or "")
-    normalize_codex_events(raw_events, tool_calls, transcript)
+    _normalize_backend_events(backend, raw_events, tool_calls, transcript)
 
     names = _trace_tool_names(tool_calls)
     has_expected = all(
@@ -280,7 +357,7 @@ def _run_codex_mcp_tool_preflight(
     if result.returncode != 0:
         detail += f"; exit={result.returncode}"
     return CheckRecord(
-        name="codex-mcp-tool-exposure",
+        name=f"{backend}-mcp-tool-exposure",
         phase="pre",
         status="pass" if has_expected and result.returncode == 0 else "indeterminate",
         detail=detail,
@@ -293,11 +370,16 @@ def run_eval(
     condition: str,
     repo_root: Path,
     results_root: Path,
+    backend: str = "codex",
     codex_command: str = "codex",
     codex_args_prefix: tuple[str, ...] = (),
+    claude_command: str = "claude",
+    claude_args_prefix: tuple[str, ...] = (),
     live_auth: bool = True,
     trial: int = 1,
 ) -> RunPaths:
+    if backend not in SUPPORTED_BACKENDS:
+        raise ValueError(f"unsupported backend: {backend}")
     scenario = load_scenario(scenario_path)
     skills = _condition_skills(condition)
     paths = RunPaths.from_run_dir(
@@ -306,18 +388,37 @@ def run_eval(
     prompt = _prompt_from_story(scenario.story)
 
     paths.workdir.mkdir()
-    prepare_codex_home(
-        repo_root=repo_root,
-        codex_home=paths.agent_home,
-        workspace=paths.workdir,
-        skills=skills,
-    )
     _run_setup(scenario.setup.resolve(), paths.workdir)
-    env = minimal_codex_env(
-        codex_home=paths.agent_home, repo_root=repo_root, include_auth=live_auth
-    )
-    if live_auth:
-        seed_codex_auth(codex_home=paths.agent_home, env=env)
+    claude_mcp_config: Path | None = None
+    claude_plugin_dir: Path | None = None
+    if backend == "codex":
+        prepare_codex_home(
+            repo_root=repo_root,
+            codex_home=paths.agent_home,
+            workspace=paths.workdir,
+            skills=skills,
+        )
+        env = minimal_codex_env(
+            codex_home=paths.agent_home, repo_root=repo_root, include_auth=live_auth
+        )
+        if live_auth:
+            seed_codex_auth(codex_home=paths.agent_home, env=env)
+        backend_executable = codex_command
+    else:
+        claude_config = prepare_claude_home(
+            repo_root=repo_root,
+            claude_home=paths.agent_home,
+            workspace=paths.workdir,
+            skills=skills,
+        )
+        claude_mcp_config = claude_config.mcp_config
+        claude_plugin_dir = claude_config.plugin_dir
+        env = minimal_claude_env(
+            claude_home=paths.agent_home, repo_root=repo_root, include_auth=live_auth
+        )
+        if live_auth:
+            seed_claude_auth(claude_home=paths.agent_home, env=env)
+        backend_executable = claude_command
 
     pre_records = run_checks_phase(
         scenario.checks,
@@ -329,41 +430,58 @@ def run_eval(
         repo_root=repo_root,
     )
     if all(record.status == "pass" for record in pre_records):
-        preflight = _run_codex_mcp_tool_preflight(
+        preflight = _run_mcp_tool_preflight(
             paths=paths,
+            backend=backend,
             condition=condition,
             repo_root=repo_root,
             codex_command=codex_command,
             codex_args_prefix=codex_args_prefix,
+            claude_command=claude_command,
+            claude_args_prefix=claude_args_prefix,
+            claude_mcp_config=claude_mcp_config,
+            claude_plugin_dir=claude_plugin_dir,
             env=env,
         )
         if preflight is not None:
             pre_records.append(preflight)
 
-    codex_return_code: int | None = None
+    backend_return_code: int | None = None
     if all(record.status == "pass" for record in pre_records):
-        command = _codex_command_with_prefix(
-            codex_command=codex_command,
-            codex_args_prefix=codex_args_prefix,
-            workdir=paths.workdir,
-            prompt=prompt,
-        )
+        if backend == "codex":
+            command = _codex_command_with_prefix(
+                codex_command=codex_command,
+                codex_args_prefix=codex_args_prefix,
+                workdir=paths.workdir,
+                prompt=prompt,
+            )
+        else:
+            if claude_mcp_config is None:
+                raise ValueError("claude_mcp_config is required for Claude run")
+            command = _claude_command_with_prefix(
+                claude_command=claude_command,
+                claude_args_prefix=claude_args_prefix,
+                workdir=paths.workdir,
+                prompt=prompt,
+                mcp_config=claude_mcp_config,
+                plugin_dir=claude_plugin_dir,
+            )
         with paths.raw_events.open("w", encoding="utf-8") as stdout:
             result = subprocess.run(
                 command,
-                cwd=repo_root,
+                cwd=repo_root if backend == "codex" else paths.workdir,
                 env=env,
                 text=True,
                 stdout=stdout,
                 stderr=subprocess.PIPE,
             )
-        codex_return_code = result.returncode
+        backend_return_code = result.returncode
         if result.returncode != 0:
             _append_stderr(paths.raw_events, result.stderr or "")
     else:
         paths.raw_events.write_text("", encoding="utf-8")
 
-    normalize_codex_events(paths.raw_events, paths.tool_calls, paths.transcript)
+    _normalize_backend_events(backend, paths.raw_events, paths.tool_calls, paths.transcript)
     post_records: list[CheckRecord] = []
     if all(record.status == "pass" for record in pre_records):
         post_records = run_checks_phase(
@@ -375,13 +493,13 @@ def run_eval(
             condition=condition,
             repo_root=repo_root,
         )
-    if codex_return_code not in (None, 0):
+    if backend_return_code not in (None, 0):
         post_records.append(
             CheckRecord(
-                name="codex-exit",
+                name=f"{backend}-exit",
                 phase="post",
                 status="fail",
-                detail=f"exit={codex_return_code}",
+                detail=f"exit={backend_return_code}",
             )
         )
     all_records = pre_records + post_records
@@ -390,7 +508,8 @@ def run_eval(
         scenario=scenario,
         condition=condition,
         trial=trial,
-        codex_command=codex_command,
+        backend_name=backend,
+        backend_executable=backend_executable,
         repo_root=repo_root,
         skills=skills,
     )
@@ -418,7 +537,9 @@ def _run_eval_command(argv: list[str] | None = None) -> int:
         required=True,
     )
     parser.add_argument("--results-root", type=Path, default=Path("evals/results"))
+    parser.add_argument("--backend", choices=SUPPORTED_BACKENDS, default="codex")
     parser.add_argument("--codex-command", default="codex")
+    parser.add_argument("--claude-command", default="claude")
     parser.add_argument("--no-live-auth", action="store_true")
     parser.add_argument("--trial", type=int, default=1)
     args = parser.parse_args(argv)
@@ -428,7 +549,9 @@ def _run_eval_command(argv: list[str] | None = None) -> int:
         condition=args.condition,
         repo_root=Path.cwd(),
         results_root=args.results_root,
+        backend=args.backend,
         codex_command=args.codex_command,
+        claude_command=args.claude_command,
         live_auth=not args.no_live_auth,
         trial=args.trial,
     )
