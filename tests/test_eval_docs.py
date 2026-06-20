@@ -57,6 +57,10 @@ DEBUGGING_SHARED_DEPENDENCY_RERUN = (
     REPORTS
     / "2026-06-15-cities2-debugging-shared-dependency-conflict.md"
 )
+CLAUDE_BACKEND_PILOT = (
+    REPORTS
+    / "2026-06-20-claude-backend-pilot.md"
+)
 
 
 class EvalDocsTests(unittest.TestCase):
@@ -486,6 +490,52 @@ class EvalDocsTests(unittest.TestCase):
         self,
     ) -> None:
         report = DEBUGGING_SHARED_DEPENDENCY_RERUN.read_text(encoding="utf-8")
+
+        forbidden = [
+            "coding-agent-tool-calls.jsonl",
+            "transcript.txt",
+            "verdict.json",
+            "coding-agent-config",
+            "coding-agent-workdir",
+            "C:" + "\\" + "Users",
+            "\\" + "Users" + "\\",
+            "/" + "Users" + "/",
+            "OPENAI_API_KEY" + "=",
+        ]
+        for needle in forbidden:
+            self.assertNotIn(needle, report)
+        self.assertIsNone(re.search(r"sk-[A-Za-z0-9_-]{20,}", report))
+
+    def test_claude_backend_pilot_report_has_actionable_structure(self) -> None:
+        report = CLAUDE_BACKEND_PILOT.read_text(encoding="utf-8")
+
+        expected_sections = [
+            "# Claude backend exploratory pilot",
+            "## Short version",
+            "## Run matrix",
+            "## Verdict table",
+            "## Failure patterns",
+            "## Interpretation",
+            "## Follow-up status",
+            "## Privacy note",
+        ]
+        last_index = -1
+        for section in expected_sections:
+            index = report.find(section)
+            self.assertNotEqual(index, -1)
+            self.assertGreater(index, last_index)
+            last_index = index
+
+        self.assertIn("`cities2-knowledge-office-demand`: `no-skill` failed", report)
+        self.assertIn("`with-cities2-knowledge` | 102 | pass", report)
+        self.assertIn("`cities2-modding-workflow-safe-handoff`: both conditions failed", report)
+        self.assertIn("exploratory client-adapter evidence", report)
+        self.assertIn("checker calibration work for Claude wording", report)
+
+    def test_claude_backend_pilot_report_avoids_raw_artifacts_and_private_paths(
+        self,
+    ) -> None:
+        report = CLAUDE_BACKEND_PILOT.read_text(encoding="utf-8")
 
         forbidden = [
             "coding-agent-tool-calls.jsonl",
