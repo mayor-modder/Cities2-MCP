@@ -288,6 +288,35 @@ class EvalCheckToolTests(unittest.TestCase):
         self.assertEqual("pass", record.status)
         self.assertIn("cities2-mod-debugging", record.detail)
 
+    def test_condition_skill_set_supports_claude_plugin_skill_layout(self) -> None:
+        from evals.runner.check_tool import run_check
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-check-") as tmp:
+            run_dir = Path(tmp)
+            workdir = run_dir / "coding-agent-workdir"
+            agent_home = run_dir / "coding-agent-config"
+            workdir.mkdir()
+            (
+                agent_home
+                / "plugins"
+                / "cities2-mcp-eval"
+                / "skills"
+                / "cities2-knowledge"
+            ).mkdir(parents=True)
+
+            record = run_check(
+                "condition-skill-set",
+                [],
+                run_dir=run_dir,
+                workdir=workdir,
+                agent_home=agent_home,
+                condition="with-cities2-knowledge",
+                phase="pre",
+            )
+
+        self.assertEqual("pass", record.status)
+        self.assertIn("cities2-knowledge", record.detail)
+
     def test_condition_skill_set_supports_all_matrix_target_conditions(self) -> None:
         from evals.runner.check_tool import run_check
 

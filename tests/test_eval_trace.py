@@ -287,6 +287,78 @@ class EvalTraceTests(unittest.TestCase):
             ]
             self.assertEqual(["source_status"], [record["name"] for record in call_records])
 
+    def test_normalizes_claude_stream_json_tool_events_and_transcript(self) -> None:
+        from evals.runner.trace import normalize_claude_events
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-trace-") as tmp:
+            run_dir = Path(tmp)
+            raw = run_dir / "claude-events.jsonl"
+            calls = run_dir / "coding-agent-tool-calls.jsonl"
+            transcript = run_dir / "transcript.txt"
+
+            events = [
+                {
+                    "type": "assistant",
+                    "message": {
+                        "content": [
+                            {
+                                "type": "tool_use",
+                                "name": "Bash",
+                                "input": {"command": "Get-Content Mod.cs"},
+                            },
+                            {
+                                "type": "tool_use",
+                                "name": "mcp__cities2-mcp__source_status",
+                                "input": {},
+                            },
+                            {
+                                "type": "text",
+                                "text": "I inspected the mod and checked sources.",
+                            },
+                        ]
+                    },
+                },
+            ]
+            raw.write_text(
+                "".join(json.dumps(event) + "\n" for event in events),
+                encoding="utf-8",
+            )
+
+            normalize_claude_events(raw, calls, transcript)
+
+            call_records = [
+                json.loads(line)
+                for line in calls.read_text(encoding="utf-8").splitlines()
+            ]
+            self.assertEqual(
+                ["shell_command", "mcp__cities2-mcp__source_status"],
+                [record["name"] for record in call_records],
+            )
+            self.assertEqual({"command": "Get-Content Mod.cs"}, call_records[0]["arguments"])
+            self.assertEqual(
+                "I inspected the mod and checked sources.",
+                transcript.read_text(encoding="utf-8"),
+            )
+
+    def test_claude_normalizer_falls_back_to_result_text(self) -> None:
+        from evals.runner.trace import normalize_claude_events
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-trace-") as tmp:
+            run_dir = Path(tmp)
+            raw = run_dir / "claude-events.jsonl"
+            calls = run_dir / "coding-agent-tool-calls.jsonl"
+            transcript = run_dir / "transcript.txt"
+
+            raw.write_text(
+                json.dumps({"type": "result", "result": "Final answer."}) + "\n",
+                encoding="utf-8",
+            )
+
+            normalize_claude_events(raw, calls, transcript)
+
+            self.assertEqual("", calls.read_text(encoding="utf-8"))
+            self.assertEqual("Final answer.", transcript.read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

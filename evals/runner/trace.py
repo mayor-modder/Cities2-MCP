@@ -124,3 +124,76 @@ def normalize_codex_events(
         encoding="utf-8",
     )
     transcript.write_text("\n\n".join(messages), encoding="utf-8")
+
+
+def _claude_content_blocks(event: dict[str, Any]) -> list[dict[str, Any]]:
+    message = event.get("message")
+    if isinstance(message, dict):
+        content = message.get("content")
+    else:
+        content = event.get("content")
+    if not isinstance(content, list):
+        return []
+    return [block for block in content if isinstance(block, dict)]
+
+
+def _claude_tool_call(block: dict[str, Any]) -> dict[str, Any] | None:
+    if block.get("type") not in {"tool_use", "server_tool_use"}:
+        return None
+    name = block.get("name")
+    if not isinstance(name, str):
+        name = block.get("tool_name")
+    if not isinstance(name, str):
+        return None
+    arguments = block.get("input")
+    if not isinstance(arguments, dict):
+        arguments = _arguments(block.get("arguments"))
+    if name == "Bash":
+        name = "shell_command"
+    return {
+        "name": name,
+        "arguments": arguments if isinstance(arguments, dict) else {},
+        "raw_type": f"claude_{block.get('type')}",
+    }
+
+
+def _claude_text(block: dict[str, Any]) -> str | None:
+    if block.get("type") != "text":
+        return None
+    text = block.get("text")
+    return text if isinstance(text, str) else None
+
+
+def normalize_claude_events(
+    raw_events: Path, tool_calls: Path, transcript: Path
+) -> None:
+    calls: list[dict[str, Any]] = []
+    messages: list[str] = []
+    result_messages: list[str] = []
+
+    for event in _iter_json_lines(raw_events):
+        if event.get("type") == "assistant":
+            for block in _claude_content_blocks(event):
+                call = _claude_tool_call(block)
+                if call is not None:
+                    calls.append(call)
+                text = _claude_text(block)
+                if text is not None:
+                    messages.append(text)
+        elif event.get("type") in {"tool_use", "server_tool_use"}:
+            call = _claude_tool_call(event)
+            if call is not None:
+                calls.append(call)
+        elif event.get("type") == "result":
+            result = event.get("result")
+            if isinstance(result, str):
+                result_messages.append(result)
+
+    if not messages:
+        messages = result_messages
+
+    tool_calls.write_text(
+        "".join(json.dumps(call, sort_keys=True) + "\n" for call in calls),
+        encoding="utf-8",
+    )
+    transcript.write_text("\n\n".join(messages), encoding="utf-8")

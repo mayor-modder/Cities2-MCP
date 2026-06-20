@@ -24,14 +24,22 @@ Run the required offline harness smoke:
 python -m unittest tests.test_eval_runner_cli -v
 ```
 
-This uses a local test process that emits Codex-style events to validate clean-room setup, trace capture, checks, verdict writing, and `evals/results/` handling without live model auth.
+This uses local test processes that emit Codex-style and Claude-style events to validate clean-room setup, trace capture, checks, verdict writing, and `evals/results/` handling without live model auth.
 
-The runner CLI invokes the real Codex client and is reserved for optional maintainer-local smoke runs:
+The runner CLI invokes a real agent client and is reserved for optional maintainer-local smoke runs. Codex remains the default backend:
 
 ```powershell
 python -m evals.runner evals/scenarios/spike/cities2-knowledge-office-demand --condition with-cities2-knowledge --trial 1
 python -m evals.runner evals/scenarios/spike/cities2-knowledge-office-demand --condition no-skill --trial 1
 ```
+
+Claude Code runs use the same scenario and condition contract:
+
+```powershell
+python -m evals.runner evals/scenarios/spike/cities2-knowledge-office-demand --backend claude --condition with-cities2-knowledge --trial 1
+```
+
+Claude evals run with a generated per-run Claude config directory, a generated MCP config, and a generated plugin containing only the condition's declared skill. Live Claude evals seed that clean room from local Claude OAuth credentials, matching the Codex runner's local-auth fallback. If `ANTHROPIC_API_KEY` is explicitly present, Claude may use it instead, but maintainers normally should run with their existing Claude login. If the preflight reports `Not logged in`, run `/login` in Claude Code and retry the eval.
 
 ## Summarize local verdicts
 
@@ -45,4 +53,4 @@ python -m evals.runner summarize --output $output $verdict
 
 Review the generated digest before committing it. The digest writer rejects obvious private paths and generated agent config markers, but it is not a substitute for the repository privacy review.
 
-The runner creates a fresh `CODEX_HOME` inside each run directory and installs only the skill files declared by the condition. Future client adapters should preserve the same isolation contract for `codex`, `claude`, and `agy`.
+The runner creates a fresh agent home inside each run directory and installs only the skill files declared by the condition. Client adapters should preserve the same isolation contract for `codex`, `claude`, and future `agy` support.

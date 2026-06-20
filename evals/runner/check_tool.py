@@ -479,10 +479,16 @@ def _is_edit_tool_call(event: dict[str, object]) -> bool:
 
 
 def _skill_dirs(agent_home: Path) -> list[str]:
+    names: set[str] = set()
     skills = agent_home / "skills"
-    if not skills.is_dir():
-        return []
-    return sorted(child.name for child in skills.iterdir() if child.is_dir())
+    if skills.is_dir():
+        names.update(child.name for child in skills.iterdir() if child.is_dir())
+    plugins = agent_home / "plugins"
+    if plugins.is_dir():
+        for plugin_skills in plugins.glob("*/skills"):
+            if plugin_skills.is_dir():
+                names.update(child.name for child in plugin_skills.iterdir() if child.is_dir())
+    return sorted(names)
 
 
 def _record(name: str, phase: Phase, status: CheckStatus, detail: str) -> CheckRecord:

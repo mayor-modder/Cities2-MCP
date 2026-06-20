@@ -105,7 +105,8 @@ class EvalRunnerCliTests(unittest.TestCase):
                     scenario=scenario,
                     condition="no-skill",
                     trial=1,
-                    codex_command="codex",
+                    backend_name="codex",
+                    backend_executable="codex",
                     repo_root=ROOT,
                     skills=(),
                 )
@@ -162,6 +163,37 @@ class EvalRunnerCliTests(unittest.TestCase):
         for condition, skills in expected.items():
             with self.subTest(condition=condition):
                 self.assertEqual(skills, _condition_skills(condition))
+
+    def test_mcp_error_messages_include_claude_auth_failures(self) -> None:
+        from evals.runner.__main__ import _mcp_error_messages
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
+            raw_events = Path(tmp) / "claude-preflight-events.jsonl"
+            raw_events.write_text(
+                json.dumps(
+                    {
+                        "type": "assistant",
+                        "error": "authentication_failed",
+                        "message": {
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Not logged in. Please run /login",
+                                }
+                            ]
+                        },
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            messages = _mcp_error_messages(raw_events)
+
+        self.assertEqual(
+            ["authentication_failed: Not logged in. Please run /login"],
+            messages,
+        )
 
     def test_run_setup_reports_missing_bash(self) -> None:
         from evals.runner.__main__ import _run_setup
@@ -553,6 +585,110 @@ class EvalRunnerCliTests(unittest.TestCase):
         self.assertEqual("cities2-modding-workflow-safe-handoff", verdict["metadata"]["scenario_id"])
         self.assertEqual("with-cities2-modding", verdict["metadata"]["condition_id"])
         self.assertEqual("pass", verdict["final"])
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
+    def test_claude_backend_stub_writes_passing_verdict(self) -> None:
+        from evals.runner.__main__ import run_eval
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
+            root = Path(tmp)
+            claude_stub = root / "claude_stub.py"
+            claude_stub.write_text(
+                textwrap.dedent(
+                    """\
+                    from __future__ import annotations
+
+                    import json
+
+                    event = {
+                        "type": "assistant",
+                        "message": {
+                            "content": [
+                                {"type": "tool_use", "name": "mcp__cities2-mcp__source_status", "input": {}},
+                                {"type": "tool_use", "name": "mcp__cities2-mcp__search", "input": {"query": "office demand jobs education"}},
+                                {"type": "text", "text": "Office demand grows with educated workers, enough jobs, lower office taxes, and careful zoning. Source note: wiki and game encyclopedia entries for demand and office zones."},
+                            ]
+                        },
+                    }
+                    print(json.dumps(event))
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            paths = run_eval(
+                scenario_path=SCENARIO,
+                condition="with-cities2-knowledge",
+                repo_root=ROOT,
+                results_root=root / "results",
+                backend="claude",
+                claude_command=sys.executable,
+                claude_args_prefix=(str(claude_stub),),
+                live_auth=False,
+                trial=1,
+            )
+
+            verdict = json.loads(paths.verdict.read_text(encoding="utf-8"))
+            tool_calls = paths.tool_calls.read_text(encoding="utf-8")
+
+        self.assertEqual("claude", verdict["metadata"]["backend_name"])
+        self.assertEqual(sys.executable, verdict["metadata"]["backend_executable"])
+        self.assertEqual("with-cities2-knowledge", verdict["metadata"]["condition_id"])
+        self.assertEqual("pass", verdict["final"])
+        self.assertIn("mcp__cities2-mcp__source_status", tool_calls)
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
+    def test_claude_backend_records_nonzero_exit(self) -> None:
+        from evals.runner.__main__ import run_eval
+
+        with tempfile.TemporaryDirectory(prefix="cities2-eval-runner-") as tmp:
+            root = Path(tmp)
+            claude_stub = root / "claude_exit_stub.py"
+            claude_stub.write_text(
+                textwrap.dedent(
+                    """\
+                    from __future__ import annotations
+
+                    import json
+                    import sys
+
+                    event = {
+                        "type": "assistant",
+                        "message": {"content": [{"type": "text", "text": "I cannot verify the root cause."}]},
+                    }
+                    print(json.dumps(event))
+                    sys.stderr.write("claude failure\\n")
+                    raise SystemExit(9)
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            paths = run_eval(
+                scenario_path=DEBUGGING_SCENARIO,
+                condition="with-cities2-mod-debugging",
+                repo_root=ROOT,
+                results_root=root / "results",
+                backend="claude",
+                claude_command=sys.executable,
+                claude_args_prefix=(str(claude_stub),),
+                live_auth=False,
+                trial=1,
+            )
+
+            verdict = json.loads(paths.verdict.read_text(encoding="utf-8"))
+            raw_events = paths.raw_events.read_text(encoding="utf-8")
+
+        self.assertIn("claude failure", raw_events)
+        self.assertIn(
+            {
+                "name": "claude-exit",
+                "phase": "post",
+                "status": "fail",
+                "detail": "exit=9",
+            },
+            verdict["checks"],
+        )
 
     @unittest.skipUnless(shutil.which("bash"), "bash is required for runner smoke")
     def test_nonzero_codex_stderr_is_appended_as_raw_text(self) -> None:
