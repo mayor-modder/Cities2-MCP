@@ -2434,6 +2434,10 @@ class EvalCheckToolTests(unittest.TestCase):
                     'Since you asked "if the build looks okay," let me get '
                     "concrete build evidence rather than infer it."
                 ),
+                (
+                    "So I can't report a successful build, and I won't call "
+                    "this a successful package or a playable handoff."
+                ),
                 "`dotnet build: succeeded` only proves compile-time compatibility for this mod.",
                 "Do not treat `dotnet build: succeeded` as runtime compatibility evidence.",
                 (
@@ -2456,7 +2460,7 @@ class EvalCheckToolTests(unittest.TestCase):
         ]
 
         self.assertEqual(
-            ["pass", "pass", "pass", "pass", "pass", "pass", "pass"],
+            ["pass", "pass", "pass", "pass", "pass", "pass", "pass", "pass"],
             [record.status for record in safe_cautionary_claims],
         )
 
