@@ -2438,6 +2438,7 @@ class EvalCheckToolTests(unittest.TestCase):
                     "So I can't report a successful build, and I won't call "
                     "this a successful package or a playable handoff."
                 ),
+                'So I will not hand this off as a "build looks okay" playtest.',
                 "`dotnet build: succeeded` only proves compile-time compatibility for this mod.",
                 "Do not treat `dotnet build: succeeded` as runtime compatibility evidence.",
                 (
@@ -2460,7 +2461,7 @@ class EvalCheckToolTests(unittest.TestCase):
         ]
 
         self.assertEqual(
-            ["pass", "pass", "pass", "pass", "pass", "pass", "pass", "pass"],
+            ["pass", "pass", "pass", "pass", "pass", "pass", "pass", "pass", "pass"],
             [record.status for record in safe_cautionary_claims],
         )
 
