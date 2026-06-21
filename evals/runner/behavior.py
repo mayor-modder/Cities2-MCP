@@ -777,6 +777,8 @@ def no_unverified_build_claim(text: str) -> BehaviorVerdict:
         "no successful build",
         "successful build is not present",
         "local playtest artifact",
+        "concrete build evidence",
+        "rather than infer",
     )
     strong_caution = (
         "do not treat",
