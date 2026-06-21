@@ -61,6 +61,10 @@ CLAUDE_BACKEND_PILOT = (
     REPORTS
     / "2026-06-20-claude-backend-pilot.md"
 )
+CLAUDE_KNOWLEDGE_MODDING_MATRIX = (
+    REPORTS
+    / "2026-06-20-claude-knowledge-modding-matrix.md"
+)
 
 
 class EvalDocsTests(unittest.TestCase):
@@ -536,6 +540,56 @@ class EvalDocsTests(unittest.TestCase):
         self,
     ) -> None:
         report = CLAUDE_BACKEND_PILOT.read_text(encoding="utf-8")
+
+        forbidden = [
+            "coding-agent-tool-calls.jsonl",
+            "transcript.txt",
+            "verdict.json",
+            "coding-agent-config",
+            "coding-agent-workdir",
+            "C:" + "\\" + "Users",
+            "\\" + "Users" + "\\",
+            "/" + "Users" + "/",
+            "OPENAI_API_KEY" + "=",
+        ]
+        for needle in forbidden:
+            self.assertNotIn(needle, report)
+        self.assertIsNone(re.search(r"sk-[A-Za-z0-9_-]{20,}", report))
+
+    def test_claude_knowledge_modding_matrix_report_has_actionable_structure(
+        self,
+    ) -> None:
+        report = CLAUDE_KNOWLEDGE_MODDING_MATRIX.read_text(encoding="utf-8")
+
+        expected_sections = [
+            "# Claude knowledge and modding matrix",
+            "## Short version",
+            "## Run matrix",
+            "## Verdict table",
+            "## Failure patterns",
+            "## Knowledge result",
+            "## Modding result",
+            "## Follow-up status",
+            "## Privacy note",
+        ]
+        last_index = -1
+        for section in expected_sections:
+            index = report.find(section)
+            self.assertNotEqual(index, -1)
+            self.assertGreater(index, last_index)
+            last_index = index
+
+        self.assertIn("`cities2-knowledge-office-demand`: `no-skill` failed 3/3", report)
+        self.assertIn("`with-cities2-knowledge` | 203 | pass", report)
+        self.assertIn("`cities2-modding-workflow-safe-handoff`: `no-skill` failed 3/3", report)
+        self.assertIn("`with-cities2-modding` failed 3/3", report)
+        self.assertIn("question-style readiness heading", report)
+        self.assertIn("not proven by this matrix", report)
+
+    def test_claude_knowledge_modding_matrix_report_avoids_raw_artifacts_and_private_paths(
+        self,
+    ) -> None:
+        report = CLAUDE_KNOWLEDGE_MODDING_MATRIX.read_text(encoding="utf-8")
 
         forbidden = [
             "coding-agent-tool-calls.jsonl",
