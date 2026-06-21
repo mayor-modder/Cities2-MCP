@@ -899,7 +899,12 @@ def local_playtest_handoff_present(text: str) -> BehaviorVerdict:
             r"\b(create|generate|build|produce)\b.{0,40}\b(package|package artifact|package output)\b",
         ),
     )
-    launch_step = _has_any(text, ("launch the game", "start the game", "load the game"))
+    launch_step = _has_any(text, ("launch the game", "start the game", "load the game")) or _matches_any(
+        text,
+        (
+            r"\blaunch\b.{0,80}\b(enable|confirm)\b.{0,80}\b(mod|playset)\b",
+        ),
+    )
     playset_step = _has_any(text, ("playset",))
     log_evidence = _has_any(
         text,
