@@ -2760,11 +2760,22 @@ class EvalCheckToolTests(unittest.TestCase):
                 "capture confirmation of the expected result."
             ),
         )
+        relaunch_playset = _run_behavior_check(
+            "local-playtest-handoff-present",
+            transcript=(
+                "For local playtesting, build and install a package artifact. "
+                "Close Cities: Skylines II before install, then relaunch and "
+                "confirm the playset is active. Collect Modding.log, Player.log, "
+                "localhost:9444 UI debugger output, and capture the expected "
+                "result confirmation."
+            ),
+        )
 
         self.assertEqual("fail", shallow.status)
         self.assertEqual("fail", negated_package_output.status)
         self.assertEqual("pass", complete.status)
         self.assertEqual("pass", natural_launch_playset.status)
+        self.assertEqual("pass", relaunch_playset.status)
 
     def test_knowledge_office_demand_grounding_requires_sources_and_practical_answer(self) -> None:
         grounded = _run_behavior_check(
