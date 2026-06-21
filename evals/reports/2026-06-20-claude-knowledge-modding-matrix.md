@@ -10,8 +10,9 @@ This matrix extends the exploratory Claude backend pilot after the Claude adapte
 
 - `cities2-knowledge-office-demand`: `no-skill` failed 3/3 and `with-cities2-knowledge` passed 3/3.
 - `cities2-modding-workflow-safe-handoff`: `no-skill` failed 3/3 and `with-cities2-modding` failed 3/3, but the target-skill condition improved several deterministic behaviors.
+- Post-fix rerun on 2026-06-21: `cities2-modding-workflow-safe-handoff` / `with-cities2-modding` passed 3/3 after the handoff wording and checker calibrations landed.
 
-The knowledge result is a clear positive Claude skill delta for this scenario. The modding result is not a pass for `cities2-modding`; it is a useful diagnostic showing better project inspection and routing while still missing local playtest or public-readiness gates.
+The knowledge result is a clear positive Claude skill delta for this scenario. The original modding matrix was not a pass for `cities2-modding`; it was a useful diagnostic showing better project inspection and routing while still missing local playtest or public-readiness gates. The later focused rerun supports the specific post-fix `with-cities2-modding` behavior for this scenario, but does not replace the historical no-skill baseline or prove broad Claude modding quality.
 
 ## Run matrix
 
@@ -82,14 +83,28 @@ The target-skill failures were narrower than baseline, but still enough to fail 
 
 This points to a mix of skill/handoff precision work and checker calibration. The trial 201 public-readiness failure should be manually reviewed before changing either the checker or `cities2-modding`.
 
+## Post-fix modding rerun
+
+On 2026-06-21, after the targeted handoff wording and checker calibration fixes landed, the `cities2-modding-workflow-safe-handoff` / `with-cities2-modding` condition was rerun for trials 201, 202, and 203 on repository commit `9ae5ef3`.
+
+All three focused reruns passed:
+
+| Backend | Scenario | Condition | Trial | Final | Failed checks |
+| --- | --- | --- | ---: | --- | --- |
+| claude | `cities2-modding-workflow-safe-handoff` | `with-cities2-modding` | 201 | pass | none |
+| claude | `cities2-modding-workflow-safe-handoff` | `with-cities2-modding` | 202 | pass | none |
+| claude | `cities2-modding-workflow-safe-handoff` | `with-cities2-modding` | 203 | pass | none |
+
+The passing post-checks included project file inspection, no unverified build claim, local playtest handoff, release/debug follow-up routing, and public-readiness guarding in all three trials. The no-skill condition was not rerun in this post-fix pass, so the comparison baseline remains the original 2026-06-20 no-skill matrix above.
+
 ## Follow-up status
 
 Recommended next steps:
 
 - Treat `cities2-knowledge` as a proven Claude-positive scenario for this runner and scenario version.
-- Keep `cities2-modding` exploratory until the local playtest handoff wording is more reliable under Claude.
-- Add or adjust checker tests for question-style release-readiness headings only after reviewing the sanitized target-skill trial 201 behavior.
-- If `cities2-modding` is edited, rerun this same Claude matrix and compare against the three failed target-skill trials above.
+- Treat the focused `with-cities2-modding` post-fix rerun as a positive regression result for this scenario and checker set.
+- Keep broader Claude modding skill quality labeled exploratory until more scenarios and/or no-skill reruns are repeated on the same post-fix commit.
+- Use the original failed target-skill trials as historical diagnostics for the handoff wording and checker calibration issues that were addressed after this matrix.
 
 ## Privacy note
 
