@@ -93,22 +93,10 @@ Known Codex behavior: plugin-bundled MCP servers currently launch from the insta
 Run this once in PowerShell:
 
 ```powershell
-$repo = Join-Path ([System.IO.Path]::GetTempPath()) ("Cities2-MCP-" + [guid]::NewGuid())
-$plugin = "$env:USERPROFILE\.gemini\config\plugins\cities2-mcp"
-if (Test-Path -LiteralPath $plugin) {
-    Write-Error "Cities2-MCP already exists at $plugin. Move or replace that one folder before reinstalling."
-    exit 1
-}
-git clone --depth 1 https://github.com/mayor-modder/Cities2-MCP $repo
-New-Item -ItemType Directory -Force (Split-Path $plugin) | Out-Null
-Copy-Item -Recurse -LiteralPath (Join-Path $repo "plugins\cities2-mcp") -Destination $plugin
+agy plugin install https://github.com/mayor-modder/Cities2-MCP/
 ```
 
-Then restart the Google Antigravity app, or open Antigravity CLI with `agy` from your mod workspace. Both apps read plugins from this folder.
-
-If you download the GitHub ZIP instead, copy the extracted `plugins/cities2-mcp` folder to the Antigravity plugin folder. `plugin.json` should be directly inside it.
-
-To update later, replace only the existing `cities2-mcp` plugin folder. Do not clear the parent Antigravity `plugins` folder. Direct URL installs are not currently supported for this plugin.
+Then restart the Google Antigravity app, or open Antigravity CLI with `agy` from your mod workspace.
 
 ### Using skills in Google Antigravity
 
