@@ -2702,6 +2702,19 @@ class EvalCheckToolTests(unittest.TestCase):
 
         self.assertEqual("pass", record.status)
 
+    def test_public_readiness_guarded_accepts_question_heading_with_blocked_answer(self) -> None:
+        record = _run_behavior_check(
+            "public-readiness-guarded",
+            transcript=(
+                "## Ready for public release?\n"
+                "No. Public release is blocked until clean build, package artifact, "
+                "and local playtest evidence exist. The package artifact is "
+                "unverified and local playtest logs are missing."
+            ),
+        )
+
+        self.assertEqual("pass", record.status)
+
     def test_local_playtest_handoff_requires_package_runtime_and_confirmation(self) -> None:
         shallow = _run_behavior_check(
             "local-playtest-handoff-present",
