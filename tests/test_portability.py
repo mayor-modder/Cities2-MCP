@@ -412,6 +412,24 @@ class PortabilityTests(unittest.TestCase):
         self.assertIn("final package text", pressure_test)
         self.assertIn("not gameplay-verified", pressure_test)
 
+    def test_modding_incomplete_project_pressure_test_encodes_blocked_handoff(self) -> None:
+        path = (
+            ROOT
+            / "docs"
+            / "superpowers"
+            / "pressure-tests"
+            / "cs2-modding-quality"
+            / "modding-incomplete-project-handoff.md"
+        )
+        self.assertTrue(path.exists(), "incomplete project handoff pressure test is missing")
+        pressure_test = path.read_text(encoding="utf-8")
+
+        self.assertIn("no installable local artifact yet", pressure_test)
+        self.assertIn("local playtesting is blocked until one exists", pressure_test)
+        self.assertIn("Name the exact package or install step", pressure_test)
+        self.assertIn("launch the game, confirm the playset, collect logs", pressure_test)
+        self.assertIn("Do not call the mod playable, installed, or ready", pressure_test)
+
     def test_debugging_installed_state_boundaries_in_all_copies(self) -> None:
         skill_paths = packaged_skill_paths("cities2-mod-debugging")
 
@@ -537,7 +555,17 @@ class PortabilityTests(unittest.TestCase):
             self.assertIn("no generated build output", text)
             self.assertIn("installable local artifact", text)
             self.assertIn("package/installable artifact", text)
-            self.assertIn("launch, playset, logs, UI debugger, and confirmation", text)
+            self.assertIn(
+                "launch the game, confirm the playset, collect logs, "
+                "check the UI debugger, and capture confirmation",
+                text,
+            )
+            self.assertIn("name the exact package/install step", text)
+            self.assertIn("create or install a package", text)
+            self.assertRegex(
+                text,
+                r"For incomplete-project handoffs, [^\n]*launch the game",
+            )
 
     def test_modding_skill_requires_real_build_verification(self) -> None:
         self.test_modding_skill_requires_incomplete_project_handoff_evidence()

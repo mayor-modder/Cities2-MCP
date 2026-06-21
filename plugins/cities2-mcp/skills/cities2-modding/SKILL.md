@@ -125,7 +125,7 @@ checks to perform, the expected success signal, the likely failure signal, and
 relevant evidence such as `Modding.log`, Unity/Player logs, UI debugger output
 at `localhost:9444`, installed files, or playset state.
 
-For incomplete-project handoffs, keep the local playtest section concrete even when playtesting is not ready yet: state the package/installable artifact status, then list the evidence required for a future handoff: launch, playset, logs, UI debugger, and confirmation. If there is no installable local artifact, say local playtesting is blocked until one exists, then name the exact package/install step that would unblock it.
+For incomplete-project handoffs, keep the local playtest section concrete even when playtesting is not ready yet: state the package/installable artifact status, then list the evidence required for a future handoff: launch the game, confirm the playset, collect logs, check the UI debugger, and capture confirmation. If there is no installable local artifact, say local playtesting is blocked until one exists, then name the exact package/install step that would unblock it, such as create or install a package/installable artifact for local playtesting.
 
 Cities: Skylines II must be closed before installing or replacing a local mod
 build. If the game is running, stop and tell the user to close Cities: Skylines II before install. After install, tell the user to launch the game,
