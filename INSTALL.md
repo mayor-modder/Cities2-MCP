@@ -64,7 +64,7 @@ Enter `/plugin`, install **Cities2 MCP and Modding Toolkit**, then restart Codex
 ### Install in the Codex app
 
 1. Open the Codex app and choose **Plugins** from the sidebar.
-2. Look for the **+** button and click the down arrow next to it.
+2. Click the arrow on the side of the **Create** button to open the dropdown.
 3. Click **Add marketplace**.
 4. Enter source `mayor-modder/Mayor-Modder-Cities2-Plugins` and click **Add marketplace**.
 5. Install and enable **Cities2 MCP and Modding Toolkit**.
