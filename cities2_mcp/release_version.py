@@ -11,6 +11,7 @@ from typing import Iterable, Literal, Sequence
 ReleaseLevel = Literal["patch", "minor", "major"]
 TagAction = Literal["create", "exists"]
 VERSION_RE = re.compile(r'\A__version__ = "(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"\n?\Z')
+LEGACY_VERSION_RE = re.compile(r'(?m)^__version__ = "(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"$')
 RELEASE_LABELS: dict[str, ReleaseLevel] = {
     "release:minor": "minor",
     "release:major": "major",
@@ -67,15 +68,32 @@ def _version_from_text(text: str) -> SemVer:
     return SemVer(*(int(part) for part in match.groups()))
 
 
+def _legacy_version_from_text(text: str) -> SemVer:
+    match = LEGACY_VERSION_RE.search(text)
+    if match is None:
+        raise ValueError("Legacy package version has an unexpected format")
+    return SemVer(*(int(part) for part in match.groups()))
+
+
 def version_from_ref(repo_root: Path, ref: str) -> SemVer:
-    result = subprocess.run(
+    canonical = subprocess.run(
         ["git", "show", f"{ref}:cities2_mcp/_version.py"],
+        cwd=repo_root,
+        text=True,
+        capture_output=True,
+    )
+    if canonical.returncode == 0:
+        return _version_from_text(canonical.stdout)
+
+    legacy = subprocess.run(
+        ["git", "show", f"{ref}:cities2_mcp/__init__.py"],
         cwd=repo_root,
         text=True,
         capture_output=True,
         check=True,
     )
-    return _version_from_text(result.stdout)
+    return _legacy_version_from_text(legacy.stdout)
+
 
 
 def _sync_and_check(repo_root: Path) -> None:

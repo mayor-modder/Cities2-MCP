@@ -62,7 +62,7 @@ class ReleaseVersionTests(unittest.TestCase):
             self.assertEqual(sync.call_count, 2)
 
     def test_version_from_ref_reads_canonical_file_from_git(self) -> None:
-        completed = mock.Mock(stdout='__version__ = "1.2.3"\n')
+        completed = mock.Mock(returncode=0, stdout='__version__ = "1.2.3"\n')
         with mock.patch("cities2_mcp.release_version.subprocess.run", return_value=completed) as run:
             version = version_from_ref(Path("repo"), "origin/main")
 
@@ -72,7 +72,21 @@ class ReleaseVersionTests(unittest.TestCase):
             cwd=Path("repo"),
             text=True,
             capture_output=True,
-            check=True,
+        )
+
+    def test_version_from_ref_falls_back_to_legacy_init_version(self) -> None:
+        missing = mock.Mock(returncode=128, stdout="", stderr="fatal: path not found")
+        legacy = mock.Mock(stdout='from pathlib import Path\n\n__version__ = "0.1.9"\n')
+        with mock.patch("cities2_mcp.release_version.subprocess.run", side_effect=(missing, legacy)) as run:
+            version = version_from_ref(Path("repo"), "origin/main")
+
+        self.assertEqual(version, SemVer.parse("0.1.9"))
+        self.assertEqual(
+            [call.args[0] for call in run.call_args_list],
+            [
+                ["git", "show", "origin/main:cities2_mcp/_version.py"],
+                ["git", "show", "origin/main:cities2_mcp/__init__.py"],
+            ],
         )
 
     def test_version_from_ref_reads_committed_canonical_file(self) -> None:
@@ -90,6 +104,22 @@ class ReleaseVersionTests(unittest.TestCase):
             version = version_from_ref(root, "HEAD")
 
         self.assertEqual(version, SemVer(0, 2, 4))
+
+    def test_version_from_ref_reads_legacy_committed_init_file(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="cities2-release-git-ref-") as tmp:
+            root = Path(tmp)
+            init_file = root / "cities2_mcp" / "__init__.py"
+            init_file.parent.mkdir(parents=True)
+            init_file.write_text('from pathlib import Path\n\n__version__ = "0.1.9"\n', encoding="utf-8")
+            subprocess.run(["git", "init"], cwd=root, check=True, capture_output=True)
+            subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.name", "Release Test"], cwd=root, check=True)
+            subprocess.run(["git", "add", "cities2_mcp/__init__.py"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-m", "version"], cwd=root, check=True, capture_output=True)
+
+            version = version_from_ref(root, "HEAD")
+
+        self.assertEqual(version, SemVer(0, 1, 9))
 
     def test_cli_help_lists_prepare_arguments(self) -> None:
         result = subprocess.run(
