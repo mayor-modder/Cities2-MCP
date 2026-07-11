@@ -16,7 +16,21 @@ jobs:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
+      - name: Check release automation setup
+        id: setup
+        env:
+          RELEASE_APP_CLIENT_ID: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+        run: |
+          if [[ -n "$RELEASE_APP_CLIENT_ID" && -n "$RELEASE_APP_PRIVATE_KEY" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Release automation app credentials are not configured yet; skipping automatic version commit."
+          fi
+
       - name: Create release automation token
+        if: steps.setup.outputs.configured == 'true'
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
@@ -24,6 +38,7 @@ jobs:
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
       - name: Checkout pull request branch
+        if: steps.setup.outputs.configured == 'true'
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.ref }}
@@ -31,11 +46,13 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
+        if: steps.setup.outputs.configured == 'true'
         uses: actions/setup-python@v6
         with:
           python-version: "3.14"
 
       - name: Prepare semantic version
+        if: steps.setup.outputs.configured == 'true'
         id: version
         shell: bash
         run: |
@@ -50,6 +67,7 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Commit generated release metadata
+        if: steps.setup.outputs.configured == 'true'
         shell: bash
         run: |
           if git diff --quiet; then

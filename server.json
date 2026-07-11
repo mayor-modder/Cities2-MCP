@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.mayor-modder/cities2-mcp",
   "title": "Cities2 MCP and Modding Toolkit",
-  "description": "Cities: Skylines II knowledge and modding tools for AI agents.",
+  "description": "Cities: Skylines II wiki, encyclopedia, and mod workflow tools for AI agents.",
   "repository": {
     "url": "https://github.com/mayor-modder/Cities2-MCP",
     "source": "github"

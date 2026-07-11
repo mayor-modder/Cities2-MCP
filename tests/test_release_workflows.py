@@ -16,6 +16,8 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("actions/create-github-app-token@v3", text)
         self.assertIn("RELEASE_APP_CLIENT_ID", text)
         self.assertIn("RELEASE_APP_PRIVATE_KEY", text)
+        self.assertIn("configured=false", text)
+        self.assertIn("skipping automatic version commit", text)
         self.assertIn("cities2_mcp.release_version prepare", text)
         self.assertIn("git push", text)
         self.assertIn("unsupported-fork", text)
