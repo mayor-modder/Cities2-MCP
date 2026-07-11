@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cities2-mcp"
-version = "0.1.9"
+dynamic = ["version"]
 description = "Local MCP server for Cities: Skylines II game knowledge and modding workflows."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -41,6 +41,9 @@ Issues = "https://github.com/mayor-modder/Cities2-MCP/issues"
 
 [project.scripts]
 cities2-mcp = "cities2_mcp.mcp_server:main"
+
+[tool.hatch.version]
+path = "cities2_mcp/_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["cities2_mcp"]

@@ -1,0 +1,71 @@
+name: Prepare release version
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prepare-release-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release automation token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Checkout pull request branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Prepare semantic version
+        id: version
+        shell: bash
+        run: |
+          git fetch origin "$GITHUB_BASE_REF"
+          # Supported release labels: release:minor, release:major.
+          mapfile -t labels < <(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH")
+          args=()
+          for label in "${labels[@]}"; do
+            args+=(--label "$label")
+          done
+          version=$(python -m cities2_mcp.release_version prepare --base-ref "origin/$GITHUB_BASE_REF" "${args[@]}")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Commit generated release metadata
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "cities2-release[bot]"
+          git config user.email "cities2-release[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Prepare release v${{ steps.version.outputs.version }}"
+          git push origin "HEAD:$GITHUB_HEAD_REF"
+
+  unsupported-fork:
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain fork limitation
+        run: |
+          echo "Automated release preparation requires a maintainer-owned branch."
+          exit 1

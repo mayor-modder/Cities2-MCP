@@ -56,6 +56,30 @@ CLAUDE_USER_CONFIG = {
     },
 }
 
+SERVER_ENVIRONMENT_VARIABLES = [
+    {
+        "name": "CITIES2_MODS_DIR",
+        "description": "Optional path to the Cities: Skylines II Mods directory.",
+        "isRequired": False,
+        "format": "string",
+        "isSecret": False,
+    },
+    {
+        "name": "CITIES2_GAME_DIR",
+        "description": "Optional path to the Cities: Skylines II install directory when auto-detection cannot find the game.",
+        "isRequired": False,
+        "format": "string",
+        "isSecret": False,
+    },
+    {
+        "name": "CITIES2_LOCALE_COK",
+        "description": "Optional path to Locale.cok when the in-game encyclopedia file should be selected directly.",
+        "isRequired": False,
+        "format": "string",
+        "isSecret": False,
+    },
+]
+
 CODEX_INTERFACE = {
     "displayName": DISPLAY_NAME,
     "shortDescription": "Cities: Skylines II knowledge and modding tools",
@@ -104,6 +128,28 @@ _GENERATED_MARKER = (
 
 def _dumps(obj: object) -> str:
     return json.dumps(obj, indent=2, ensure_ascii=False) + "\n"
+
+
+def server_json() -> str:
+    return _dumps(
+        {
+            "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+            "name": "io.github.mayor-modder/cities2-mcp",
+            "title": DISPLAY_NAME,
+            "description": "Cities: Skylines II knowledge and modding tools for AI agents.",
+            "repository": {"url": REPO_URL, "source": "github"},
+            "version": VERSION,
+            "packages": [
+                {
+                    "registryType": "pypi",
+                    "identifier": "cities2-mcp",
+                    "version": VERSION,
+                    "transport": {"type": "stdio"},
+                    "environmentVariables": SERVER_ENVIRONMENT_VARIABLES,
+                }
+            ],
+        }
+    )
 
 
 def claude_plugin_json() -> str:
