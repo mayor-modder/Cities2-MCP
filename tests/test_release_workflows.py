@@ -36,6 +36,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
     def test_release_workflow_syncs_catalog_after_publish(self) -> None:
         text = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
         self.assertIn("catalog:", text)
+        self.assertIn("permissions:\n  contents: read", text)
         self.assertIn("needs: publish", text)
         self.assertIn("mayor-modder/Mayor-Modder-Cities2-Plugins", text)
         self.assertIn("cities2_mcp.plugin_packages sync-catalog", text)
