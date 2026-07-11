@@ -2,6 +2,8 @@
 
 Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [Codex app](INSTALL.md#install-in-the-codex-app) | [Google Antigravity](INSTALL.md#install-in-google-antigravity)
 
+Marketplace installs include the bundled wiki corpus, the optional local game encyclopedia lookup, five agent skills, and the plugin-local MCP server launcher. Use the direct MCP command only when a client cannot install plugins or when you want to pin the Python package directly.
+
 ## Claude
 
 ### Install in Claude Code
@@ -116,7 +118,7 @@ Type `/cities2` and choose one of the Cities2 skills.
 
 ## Workspace access
 
-Game knowledge and encyclopedia lookup work immediately. Mod workflow tools need a trusted workspace, and Claude and Codex usually use the project you opened:
+Game knowledge and encyclopedia lookup work immediately after install. Mod workflow tools need a trusted workspace, and Claude and Codex usually use the project you opened:
 
 - In Claude Code and Codex CLI, start the client from the mod project folder.
 - If a tool reports `Path must stay inside configured workspaces`, add the mod project folder or a trusted parent folder and restart the client.
@@ -124,7 +126,7 @@ Game knowledge and encyclopedia lookup work immediately. Mod workflow tools need
 
 Codex plugin MCP servers may launch from the plugin cache. If a direct workflow tool is allowlist-blocked, invoke `cities2-modding`; it has a bundled-template fallback.
 
-Builds run project commands through `npm`, `dotnet`, and packaging steps; only build projects you trust.
+Builds run project commands through `npm`, `dotnet`, and packaging steps; only build projects you trust. The skills should still hand local playtesting back to you before calling a mod ready to share.
 
 ## Optional build prerequisites
 

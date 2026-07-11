@@ -15,6 +15,7 @@ from pathlib import Path, PureWindowsPath
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, unquote
 
+from . import __version__
 from .build_runner import BuildRunner
 from .game_encyclopedia import (
     GAME_ENCYCLOPEDIA_WARNING,
@@ -34,7 +35,6 @@ from .retrieval.mcp_server import (
 )
 from .retrieval import mcp_server as retrieval_impl
 
-__version__ = "0.1.9"
 JSON = Dict[str, Any]
 SERVER_NAME = "Cities2-MCP — game knowledge and modding tools for Cities: Skylines II"
 SERVER_INSTRUCTIONS = (

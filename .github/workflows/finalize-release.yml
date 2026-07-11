@@ -1,0 +1,71 @@
+name: Finalize release
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: finalize-release
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release automation token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Checkout merged release
+        uses: actions/checkout@v5
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Verify repository state
+        run: |
+          python -m unittest discover -s tests -v
+          python -m cities2_mcp.plugin_packages check
+
+      - name: Create release tag
+        shell: bash
+        run: |
+          version=$(python -c 'import cities2_mcp; print(cities2_mcp.__version__)')
+          tag="v$version"
+          git fetch --tags origin
+          existing=""
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            existing=$(git rev-list -n 1 "$tag")
+          fi
+          action=$(python -m cities2_mcp.release_version tag-state --version "$version" --commit-sha "$GITHUB_SHA" --existing-sha "$existing")
+          if [[ "$action" == "exists" ]]; then
+            exit 0
+          fi
+          pypi_status=$(curl --retry 3 --silent --show-error --output /dev/null --write-out '%{http_code}' "https://pypi.org/pypi/cities2-mcp/$version/json")
+          case "$pypi_status" in
+            200)
+              echo "cities2-mcp $version already exists on PyPI without a matching tag at this commit" >&2
+              exit 1
+              ;;
+            404)
+              ;;
+            *)
+              echo "Unable to verify cities2-mcp $version on PyPI (HTTP $pypi_status)" >&2
+              exit 1
+              ;;
+          esac
+          git config user.name "cities2-release[bot]"
+          git config user.email "cities2-release[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "Release $tag" "$GITHUB_SHA"
+          git push origin "$tag"

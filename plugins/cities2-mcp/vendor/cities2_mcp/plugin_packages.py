@@ -36,6 +36,10 @@ CATALOG_PACKAGE_EXPORTS = (
     (CODEX_PACKAGE_ROOT, CATALOG_CODEX_PACKAGE_ROOT),
 )
 
+ROOT_METADATA_FILES: tuple[tuple[Path, Callable[[], str]], ...] = (
+    (Path("server.json"), plugin_metadata.server_json),
+)
+
 METADATA_FILES: dict[Path, tuple[tuple[Path, Callable[[], str]], ...]] = {
     CLAUDE_PACKAGE_ROOT: (
         (
@@ -215,6 +219,7 @@ def sync_packages(
 ) -> tuple[Path, ...]:
     root = (repo_root or Path.cwd()).resolve()
     changed: list[Path] = []
+    changed.extend(_sync_root_metadata(root))
     selected_roots = _selected_package_roots(package_roots)
     with tempfile.TemporaryDirectory(prefix="cities2-mcp-plugin-packages-") as tmp:
         tmp_root = Path(tmp)
@@ -263,6 +268,7 @@ def check_packages(
 ) -> tuple[Path, ...]:
     root = (repo_root or Path.cwd()).resolve()
     changed: list[Path] = []
+    changed.extend(_check_root_metadata(root))
     selected_roots = _selected_package_roots(package_roots)
     with tempfile.TemporaryDirectory(prefix="cities2-mcp-plugin-packages-") as tmp:
         tmp_root = Path(tmp)
@@ -295,6 +301,28 @@ def _selected_package_roots(package_roots: Iterable[Path]) -> tuple[Path, ...]:
         known_text = ", ".join(str(package_root) for package_root in METADATA_FILES)
         raise ValueError(f"Unknown package root(s): {unknown_text}. Expected one of: {known_text}")
     return selected
+
+
+def _sync_root_metadata(repo_root: Path) -> list[Path]:
+    changed: list[Path] = []
+    for rel, builder in ROOT_METADATA_FILES:
+        target = repo_root / rel
+        content = builder()
+        current = target.read_text(encoding="utf-8") if target.is_file() else None
+        if current != content:
+            target.write_text(content, encoding="utf-8")
+            changed.append(target)
+    return changed
+
+
+def _check_root_metadata(repo_root: Path) -> list[Path]:
+    stale: list[Path] = []
+    for rel, builder in ROOT_METADATA_FILES:
+        target = repo_root / rel
+        current = target.read_text(encoding="utf-8") if target.is_file() else None
+        if current != builder():
+            stale.append(target)
+    return stale
 
 
 def _write_payload(repo_root: Path, package_root: Path) -> None:

@@ -13,8 +13,7 @@ Install from Codex CLI:
 codex plugin marketplace add mayor-modder/Mayor-Modder-Cities2-Plugins
 ```
 
-The plugin vendors the Python server and corpus, so users do not need `uvx` for
-the Codex plugin path.
+The plugin vendors the Python MCP server, the bundled Cities: Skylines II Wiki corpus, the skill files, and the local project workflow templates, so users do not need `uvx` for the Codex plugin path. It can also read the user's installed game encyclopedia when Cities: Skylines II is available locally.
 
 Current Codex plugin behavior starts the bundled MCP server from the installed
 plugin cache. Knowledge tools work immediately, but direct MCP workflow tools

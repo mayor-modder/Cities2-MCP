@@ -24,9 +24,10 @@ SKILL_NAMES = (
     "cities2-mod-release",
 )
 
-CLAUDE_DESCRIPTION = "Cities2 MCP and Modding Toolkit for Claude."
-CODEX_DESCRIPTION = "Cities2 MCP and Modding Toolkit for Codex."
-ANTIGRAVITY_DESCRIPTION = "Cities: Skylines II knowledge and modding tools for AI agents."
+PUBLIC_DESCRIPTION = "Cities: Skylines II wiki, encyclopedia, and mod workflow tools for AI agents."
+CLAUDE_DESCRIPTION = "Cities: Skylines II wiki, encyclopedia, and mod workflow tools for Claude."
+CODEX_DESCRIPTION = "Cities: Skylines II wiki, encyclopedia, and mod workflow tools for Codex."
+ANTIGRAVITY_DESCRIPTION = PUBLIC_DESCRIPTION
 CLAUDE_MARKETPLACE_DESCRIPTION = "Claude plugin marketplace for Cities2 MCP and Modding Toolkit."
 
 CLAUDE_USER_CONFIG = {
@@ -56,10 +57,34 @@ CLAUDE_USER_CONFIG = {
     },
 }
 
+SERVER_ENVIRONMENT_VARIABLES = [
+    {
+        "name": "CITIES2_MODS_DIR",
+        "description": "Optional path to the Cities: Skylines II Mods directory.",
+        "isRequired": False,
+        "format": "string",
+        "isSecret": False,
+    },
+    {
+        "name": "CITIES2_GAME_DIR",
+        "description": "Optional path to the Cities: Skylines II install directory when auto-detection cannot find the game.",
+        "isRequired": False,
+        "format": "string",
+        "isSecret": False,
+    },
+    {
+        "name": "CITIES2_LOCALE_COK",
+        "description": "Optional path to Locale.cok when the in-game encyclopedia file should be selected directly.",
+        "isRequired": False,
+        "format": "string",
+        "isSecret": False,
+    },
+]
+
 CODEX_INTERFACE = {
     "displayName": DISPLAY_NAME,
-    "shortDescription": "Cities: Skylines II knowledge and modding tools",
-    "longDescription": "Cities2 MCP and Modding Toolkit gives Codex local access to bundled Cities: Skylines II Wiki text, the user's installed in-game encyclopedia when available, and mod project workflow tools inside the current workspace.",
+    "shortDescription": "CS2 wiki, encyclopedia, and mod workflows",
+    "longDescription": "Cities2 MCP and Modding Toolkit gives Codex local access to bundled Cities: Skylines II Wiki text, the user's installed in-game encyclopedia when available, five agent skills, and mod project workflow tools for trusted workspaces.",
     "developerName": "mayor-modder",
     "category": "Coding",
     "capabilities": ["Read", "Write"],
@@ -104,6 +129,28 @@ _GENERATED_MARKER = (
 
 def _dumps(obj: object) -> str:
     return json.dumps(obj, indent=2, ensure_ascii=False) + "\n"
+
+
+def server_json() -> str:
+    return _dumps(
+        {
+            "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+            "name": "io.github.mayor-modder/cities2-mcp",
+            "title": DISPLAY_NAME,
+            "description": PUBLIC_DESCRIPTION,
+            "repository": {"url": REPO_URL, "source": "github"},
+            "version": VERSION,
+            "packages": [
+                {
+                    "registryType": "pypi",
+                    "identifier": "cities2-mcp",
+                    "version": VERSION,
+                    "transport": {"type": "stdio"},
+                    "environmentVariables": SERVER_ENVIRONMENT_VARIABLES,
+                }
+            ],
+        }
+    )
 
 
 def claude_plugin_json() -> str:
@@ -173,7 +220,7 @@ def claude_readme_md() -> str:
 
 # Cities2 MCP and Modding Toolkit Claude plugin
 
-This is the Claude plugin package for Cities2 MCP and Modding Toolkit. It bundles five user-facing agent skills and a plugin-local MCP server launcher.
+This is the Claude plugin package for Cities2 MCP and Modding Toolkit. It bundles five user-facing agent skills, the Cities: Skylines II Wiki corpus, local game encyclopedia lookup when the game is installed, project workflow templates, and a plugin-local MCP server launcher.
 
 The plugin gives Claude:
 
@@ -248,7 +295,7 @@ def codex_readme_md() -> str:
 
 # Cities2 MCP and Modding Toolkit Codex plugin
 
-This is the Codex plugin package for Cities2 MCP and Modding Toolkit. It bundles five user-facing agent skills and a plugin-local MCP server launcher.
+This is the Codex plugin package for Cities2 MCP and Modding Toolkit. It bundles five user-facing agent skills, the Cities: Skylines II Wiki corpus, local game encyclopedia lookup when the game is installed, project workflow templates, and a plugin-local MCP server launcher.
 
 Included skills: {included}.
 

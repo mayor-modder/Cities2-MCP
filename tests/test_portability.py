@@ -168,6 +168,8 @@ class PortabilityTests(unittest.TestCase):
 
         for text in (install_text, readme_text):
             self.assertIn("agent skills", text.lower())
+            self.assertIn("game encyclopedia", text.lower())
+            self.assertIn("wiki corpus", text.lower())
             self.assertIn("cities2-knowledge", text)
             self.assertIn("cities2-modding", text)
             self.assertNotIn("MCP prompt templates", text)
