@@ -4,6 +4,7 @@ import importlib
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -72,6 +73,19 @@ class PluginPackagingTests(unittest.TestCase):
         self.assertIn("wiki knowledge", project["description"])
         self.assertIn("game encyclopedia", project["description"])
         self.assertIn("agent skills", project["description"])
+
+    def test_pypi_readme_links_are_absolute(self) -> None:
+        pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        self.assertEqual(pyproject["project"]["readme"], "README.md")
+
+        readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+        relative_links = [
+            target
+            for target in re.findall(r"(?<!!)\[[^\]]+\]\(([^)]+)\)", readme_text)
+            if not re.match(r"[a-z][a-z0-9+.-]*:", target) and not target.startswith("#")
+        ]
+
+        self.assertEqual([], relative_links)
 
     def test_pyproject_reads_version_from_canonical_module(self) -> None:
         pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
@@ -241,7 +255,7 @@ class PluginPackagingTests(unittest.TestCase):
         self.assertEqual(marketplace["name"], plugin_metadata.CATALOG_NAME)
         self.assertEqual(marketplace["plugins"][0]["source"], "./integrations/anthropic/claude-plugin")
         self.assertEqual(marketplace["plugins"][0]["version"], PACKAGE_VERSION)
-        self.assertIn("[PRIVACY.md](PRIVACY.md)", readme_text)
+        self.assertIn("[PRIVACY.md](https://github.com/mayor-modder/Cities2-MCP/blob/main/PRIVACY.md)", readme_text)
         self.assertIn("does not collect telemetry", privacy_text)
         self.assertIn("doesn't send any data to the cloud", privacy_text)
         self.assertIn("does not collect telemetry, phone home, or send data to its authors", privacy_text)

@@ -624,7 +624,7 @@ class PortabilityTests(unittest.TestCase):
         readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
         privacy_text = (ROOT / "PRIVACY.md").read_text(encoding="utf-8")
 
-        self.assertIn("[PRIVACY.md](PRIVACY.md)", readme_text)
+        self.assertIn("[PRIVACY.md](https://github.com/mayor-modder/Cities2-MCP/blob/main/PRIVACY.md)", readme_text)
         self.assertIn("does not collect telemetry", privacy_text)
         self.assertIn("configured trusted workspace paths", privacy_text)
         self.assertNotIn("## Privacy policy", readme_text)
