@@ -6,13 +6,13 @@ Cities2 MCP and Modding Toolkit is a local MCP server and agent skill bundle for
 
 It gives AI agents access to a bundled, searchable Cities: Skylines II Wiki corpus and, when the game is installed locally, the in-game encyclopedia. Agents can use those sources to answer gameplay questions, summarize patch/update information, and explain city systems with source notes. The package also includes five agent skills for game knowledge, modding, review, debugging, and release readiness, plus local MCP workflow tools for scaffolding, inspecting, building, and packaging CS2 mod projects inside trusted workspaces.
 
-**The plugin is in active development.** Package checks, direct MCP smoke tests, and selected client workflows are covered in the repository test suite and eval reports, but client plugin behavior can vary by host and version. See the [known issues](https://github.com/mayor-modder/Cities2-MCP/issues) and [eval reports](evals/reports/) for the latest verification notes.
+**The plugin is in active development.** Package checks, direct MCP smoke tests, and selected client workflows are covered in the repository test suite and eval reports, but client plugin behavior can vary by host and version. See the [known issues](https://github.com/mayor-modder/Cities2-MCP/issues) and [eval reports](https://github.com/mayor-modder/Cities2-MCP/tree/main/evals/reports) for the latest verification notes.
 
 ## Quick install
 
-Choose your client: [Claude Code](INSTALL.md#install-in-claude-code) | [Claude desktop](INSTALL.md#install-in-claude-desktop) | [Codex CLI](INSTALL.md#install-in-codex-cli) | [Codex app](INSTALL.md#install-in-the-codex-app) | [Google Antigravity](INSTALL.md#install-in-google-antigravity)
+Choose your client: [Claude Code](https://github.com/mayor-modder/Cities2-MCP/blob/main/INSTALL.md#install-in-claude-code) | [Claude desktop](https://github.com/mayor-modder/Cities2-MCP/blob/main/INSTALL.md#install-in-claude-desktop) | [Codex CLI](https://github.com/mayor-modder/Cities2-MCP/blob/main/INSTALL.md#install-in-codex-cli) | [Codex app](https://github.com/mayor-modder/Cities2-MCP/blob/main/INSTALL.md#install-in-the-codex-app) | [Google Antigravity](https://github.com/mayor-modder/Cities2-MCP/blob/main/INSTALL.md#install-in-google-antigravity)
 
-See [INSTALL.md](INSTALL.md) for full installation details, direct MCP config, workspace setup, build prerequisites, and troubleshooting.
+See [INSTALL.md](https://github.com/mayor-modder/Cities2-MCP/blob/main/INSTALL.md) for full installation details, direct MCP config, workspace setup, build prerequisites, and troubleshooting.
 
 ## What it can do
 
@@ -44,17 +44,17 @@ These tools are meant for local development workflows. Claude, Codex, and Antigr
 
 ## Agent skills
 
-- [`cities2-knowledge`](skills/cities2-knowledge/SKILL.md): answers gameplay, city-system, and player-facing patch/update questions.
-- [`cities2-modding`](skills/cities2-modding/SKILL.md): handles general modding questions and local mod project workflows.
-- [`cities2-mod-review`](skills/cities2-mod-review/SKILL.md): reviews CS2 mods for safety, maintainability, user value, packaging hygiene, and verification gaps.
-- [`cities2-mod-debugging`](skills/cities2-mod-debugging/SKILL.md): helps debug CS2 mod build, packaging, runtime, log, UI debugger, and in-game behavior issues.
-- [`cities2-mod-release`](skills/cities2-mod-release/SKILL.md): checks whether a mod is ready to share.
+- [`cities2-knowledge`](https://github.com/mayor-modder/Cities2-MCP/blob/main/skills/cities2-knowledge/SKILL.md): answers gameplay, city-system, and player-facing patch/update questions.
+- [`cities2-modding`](https://github.com/mayor-modder/Cities2-MCP/blob/main/skills/cities2-modding/SKILL.md): handles general modding questions and local mod project workflows.
+- [`cities2-mod-review`](https://github.com/mayor-modder/Cities2-MCP/blob/main/skills/cities2-mod-review/SKILL.md): reviews CS2 mods for safety, maintainability, user value, packaging hygiene, and verification gaps.
+- [`cities2-mod-debugging`](https://github.com/mayor-modder/Cities2-MCP/blob/main/skills/cities2-mod-debugging/SKILL.md): helps debug CS2 mod build, packaging, runtime, log, UI debugger, and in-game behavior issues.
+- [`cities2-mod-release`](https://github.com/mayor-modder/Cities2-MCP/blob/main/skills/cities2-mod-release/SKILL.md): checks whether a mod is ready to share.
 
 The modding quality skills use documented CS2 best practices and negative constraints as defaults, and they do not present a mod as ready to share until it has been locally playtested.
 
 ## Privacy
 
-The MCP server runs locally and does not collect telemetry. See [PRIVACY.md](PRIVACY.md) for details.
+The MCP server runs locally and does not collect telemetry. See [PRIVACY.md](https://github.com/mayor-modder/Cities2-MCP/blob/main/PRIVACY.md) for details.
 
 ## Licensing
 
