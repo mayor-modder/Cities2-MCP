@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
 from cities2_mcp.research import ResearchValidationError, load_reports, parse_report
+
+
+ROOT = Path(__file__).resolve().parents[1]
+REPORTS = ROOT / "cities2-research" / "reports"
+RESEARCH_DATA = ROOT / "cities2_mcp" / "research_data"
 
 
 VALID_BODY = """---
@@ -171,6 +178,44 @@ class ResearchReportTests(unittest.TestCase):
                 sync_dataset(reports, output)
 
             self.assertEqual(sentinel.read_text(encoding="utf-8"), "sentinel\n")
+
+
+class BundledResearchTests(unittest.TestCase):
+    def test_private_source_directory_ignores_nested_material(self) -> None:
+        result = subprocess.run(
+            ["git", "check-ignore", "cities2-research/sources/nested/full-transcript.txt"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((ROOT / "cities2-research" / "sources" / ".gitignore").is_file())
+
+    def test_first_report_has_verified_publication_date(self) -> None:
+        from cities2_mcp.research import parse_report
+
+        path = REPORTS / "2024-10-09-tapping-ecs-cities-skylines-ii.md"
+        report = parse_report(path)
+        self.assertEqual(report.metadata["published_at"], "2024-10-09")
+        self.assertEqual(report.metadata["publication_date_basis"], "source_metadata")
+        self.assertEqual(report.metadata["creators"], "Damien Morello")
+
+    def test_bundled_research_data_is_current_and_private_path_free(self) -> None:
+        from cities2_mcp.research import check_dataset
+
+        self.assertEqual(check_dataset(REPORTS, RESEARCH_DATA), ())
+        private_markers = ("C:\\Users\\", "OneDrive\\Documents", "hello and welcome to my talk")
+        for path in RESEARCH_DATA.rglob("*"):
+            if path.is_file():
+                text = path.read_text(encoding="utf-8")
+                self.assertFalse(any(marker in text for marker in private_markers), path)
+
+    def test_bundled_research_manifest_identifies_separate_dataset(self) -> None:
+        manifest = json.loads((RESEARCH_DATA / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["name"], "cities2-research")
+        self.assertEqual(manifest["report_count"], 1)
+        self.assertGreater(manifest["chunk_count"], 1)
 
 
 if __name__ == "__main__":
