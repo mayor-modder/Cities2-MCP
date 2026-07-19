@@ -34,6 +34,7 @@ REQUIRED_SECTIONS = (
     "Sources",
 )
 DATE_BASES = frozenset(("source_metadata", "user_confirmed"))
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 SECTION_RE = re.compile(r"^## ([^\n]+)\n", re.MULTILINE)
 
@@ -99,6 +100,9 @@ def _validate_metadata(path: Path, metadata: dict[str, str]) -> list[str]:
     for field in ("published_at", "report_created_at", "report_updated_at"):
         value = metadata.get(field)
         if value:
+            if not DATE_RE.fullmatch(value):
+                errors.append(f"{path}: {field} must be a real YYYY-MM-DD date")
+                continue
             try:
                 dt.date.fromisoformat(value)
             except ValueError:

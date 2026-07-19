@@ -78,6 +78,18 @@ class ResearchReportTests(unittest.TestCase):
             with self.assertRaisesRegex(ResearchValidationError, "confirm the publication date with the maintainer"):
                 parse_report(self.write_report(Path(tmp), text))
 
+    def test_parse_report_rejects_compact_published_date(self) -> None:
+        text = VALID_BODY.replace("published_at: 2024-10-09", "published_at: 20241009")
+        with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+            with self.assertRaisesRegex(ResearchValidationError, "published_at must be a real YYYY-MM-DD date"):
+                parse_report(self.write_report(Path(tmp), text, "20241009-test-research-source.md"))
+
+    def test_parse_report_rejects_iso_week_published_date(self) -> None:
+        text = VALID_BODY.replace("published_at: 2024-10-09", "published_at: 2024-W41-3")
+        with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+            with self.assertRaisesRegex(ResearchValidationError, "published_at must be a real YYYY-MM-DD date"):
+                parse_report(self.write_report(Path(tmp), text, "2024-W41-3-test-research-source.md"))
+
     def test_parse_report_rejects_invalid_date_basis_and_filename_mismatch(self) -> None:
         text = VALID_BODY.replace("publication_date_basis: source_metadata", "publication_date_basis: guessed")
         with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
