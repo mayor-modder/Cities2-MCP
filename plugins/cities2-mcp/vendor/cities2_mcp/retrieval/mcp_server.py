@@ -278,7 +278,14 @@ class Corpus:
 
         for p in dataset_pages.values():
             sections = p.get("sections", []) or []
-            text = "\n".join([str(p.get("title", "")), str(p.get("url", "")), *[str(x) for x in sections]])
+            text = "\n".join(
+                [
+                    str(p.get("title", "")),
+                    str(p.get("url", "")),
+                    *[str(x) for x in sections],
+                    *[str(value) for value in provenance_fields(p).values()],
+                ]
+            )
             ref_doc = {
                 "page_id": p.get("page_id"),
                 "title": p.get("title"),
@@ -287,6 +294,7 @@ class Corpus:
                 "text": text,
                 "sections": sections,
                 "dataset": dataset_name,
+                **provenance_fields(p),
             }
             self.reference_docs.append(ref_doc)
             dataset_ref_docs.append(ref_doc)
@@ -340,21 +348,18 @@ class Corpus:
         return any(idx is not None for idx in self._snippet_indexes)
 
     def resolve_page_id(self, page_id: str) -> Optional[str]:
-        """Resolve a page_id, handling single-dataset backward compatibility.
+        """Resolve a page_id, accepting bare IDs only when they are unique across datasets.
 
-        When only one dataset is loaded, accepts both bare 'page-id' and 'dataset:page-id'.
-        When multiple datasets are loaded, requires the 'dataset:page-id' format.
+        Qualified 'dataset:page-id' values always work. Bare 'page-id' values are accepted when exactly one loaded dataset owns them and require qualification on collision.
         """
-        # Direct lookup first (works for prefixed IDs)
+        # Direct lookup first (works for qualified IDs)
         if page_id in self.pages:
             return page_id
 
-        # Single-dataset backward compat: try prefixing with the only dataset name
-        if self.single_dataset and self.dataset_names:
-            prefixed = f"{self.dataset_names[0]}:{page_id}"
-            if prefixed in self.pages:
-                return prefixed
-
+        suffix = f":{page_id}"
+        matches = [candidate for candidate in self.pages if candidate.endswith(suffix)]
+        if len(matches) == 1:
+            return matches[0]
         return None
 
     def page_markdown(self, page_id: str) -> str:
@@ -457,6 +462,7 @@ def handle_resources_read(req_id: object, params: JSON, corpus: Corpus) -> JSON:
             "links": row.get("links", []),
             "images": row.get("images", []),
             "markdown": md,
+            **provenance_fields(row),
         }
     elif uri.startswith(chunk_prefix):
         chunk_id = unquote(uri[len(chunk_prefix):])
@@ -596,6 +602,21 @@ def tools_catalog() -> List[JSON]:
     ]
 
 
+PROVENANCE_KEYS = (
+    "published_at",
+    "publication_date_basis",
+    "source_type",
+    "creators",
+    "organizations",
+    "report_created_at",
+    "report_updated_at",
+)
+
+
+def provenance_fields(row: JSON) -> JSON:
+    return {key: row[key] for key in PROVENANCE_KEYS if row.get(key) not in (None, "")}
+
+
 def format_doc_result(score: float, doc: JSON) -> JSON:
     text = str(doc.get("text", "")).strip()
     return {
@@ -607,6 +628,7 @@ def format_doc_result(score: float, doc: JSON) -> JSON:
         "url": doc.get("url"),
         "dataset": doc.get("dataset"),
         "snippet": text[:900] + ("..." if len(text) > 900 else ""),
+        **provenance_fields(doc),
     }
 
 
@@ -684,6 +706,7 @@ def handle_tools_call(
                 "links": row.get("links", []),
                 "images": row.get("images", []),
                 "markdown": md,
+                **provenance_fields(row),
             }
             return {"jsonrpc": "2.0", "id": req_id, "result": text_result(payload)}
 
@@ -716,6 +739,7 @@ def handle_tools_call(
                         "oldid": d.get("oldid"),
                         "dataset": d.get("dataset"),
                         "sections": d.get("sections", []),
+                        **provenance_fields(d),
                     }
                     for s, d in matches
                 ],

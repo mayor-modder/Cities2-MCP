@@ -13,3 +13,7 @@ def package_root() -> Path:
 
 def bundled_data_dir() -> Path:
     return package_root() / "data"
+
+
+def bundled_research_data_dir() -> Path:
+    return package_root() / "research_data"

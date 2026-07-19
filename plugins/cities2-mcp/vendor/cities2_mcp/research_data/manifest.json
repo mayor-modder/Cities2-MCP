@@ -1,0 +1,15 @@
+{
+  "attribution": "ATTRIBUTION.md",
+  "chunk_count": 8,
+  "content_sha256": "354044f054b0e5044ab7cabde6393be99350cdfb1d060beb3d7d443e5b3dd26a",
+  "dataset": "cities2-research",
+  "license": "MIT",
+  "name": "cities2-research",
+  "page_count": 1,
+  "paths": {
+    "chunks_jsonl": "index/chunks.jsonl",
+    "pages_jsonl": "index/pages.jsonl"
+  },
+  "report_count": 1,
+  "source": "Curated Cities: Skylines II research reports"
+}

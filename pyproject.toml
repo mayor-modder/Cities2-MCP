@@ -59,6 +59,8 @@ include = [
   "tests/**",
   "scripts/**",
   "integrations/**",
+  "cities2-research/README.md",
+  "cities2-research/reports/**",
   "README.md",
   "INSTALL.md",
   "LICENSE",
