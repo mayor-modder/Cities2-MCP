@@ -331,7 +331,7 @@ class PluginPackagingTests(unittest.TestCase):
                 self.assertEqual(init["result"]["serverInfo"]["version"], PACKAGE_VERSION)
                 self.assertEqual(len(tools["result"]["tools"]), 13)
                 self.assertTrue(status["wiki"]["available"])
-                self.assertEqual(scaffold["game_version"], "1.5.*")
+                self.assertEqual(scaffold["game_version"], "1.6.*")
                 self.assertIn("game_version_source", scaffold)
             finally:
                 self._stop_proc(proc)
@@ -482,7 +482,7 @@ class PluginPackagingTests(unittest.TestCase):
                 self.assertEqual(init["result"]["serverInfo"]["version"], PACKAGE_VERSION)
                 self.assertEqual(len(tools["result"]["tools"]), 13)
                 self.assertTrue(status["wiki"]["available"])
-                self.assertEqual(scaffold["game_version"], "1.5.*")
+                self.assertEqual(scaffold["game_version"], "1.6.*")
                 self.assertIn("game_version_source", scaffold)
             finally:
                 self._stop_proc(proc)
