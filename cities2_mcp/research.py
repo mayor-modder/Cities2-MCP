@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import argparse
 import datetime as dt
+import hashlib
+import json
+import os
 import re
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 from urllib.parse import urlparse
 
 
@@ -154,3 +159,205 @@ def load_reports(reports_dir: Path) -> list[ResearchReport]:
     if errors:
         raise ResearchValidationError(errors)
     return reports
+
+
+MAX_CHUNK_CHARS = 4000
+CHUNK_OVERLAP_CHARS = 400
+PROVENANCE_FIELDS = (
+    "published_at",
+    "publication_date_basis",
+    "source_type",
+    "creators",
+    "organizations",
+    "report_created_at",
+    "report_updated_at",
+)
+
+
+def _json_line(value: object) -> bytes:
+    return (json.dumps(value, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+
+
+def _split_section(text: str, limit: int = MAX_CHUNK_CHARS, overlap: int = CHUNK_OVERLAP_CHARS) -> list[str]:
+    paragraphs = [paragraph.strip() for paragraph in text.split("\n\n") if paragraph.strip()]
+    chunks: list[str] = []
+    current = ""
+    for paragraph in paragraphs:
+        candidate = f"{current}\n\n{paragraph}".strip()
+        if current and len(candidate) > limit:
+            chunks.append(current)
+            tail = current[-overlap:].split("\n\n", 1)[-1] if overlap else ""
+            current = f"{tail}\n\n{paragraph}".strip()
+        else:
+            current = candidate
+    if current:
+        chunks.append(current)
+    return chunks
+
+
+def _provenance(metadata: dict[str, str]) -> dict[str, str]:
+    return {field: metadata[field] for field in PROVENANCE_FIELDS}
+
+
+def _report_digest(reports: list[ResearchReport]) -> str:
+    digest = hashlib.sha256()
+    for report in reports:
+        digest.update(report.path.name.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(report.path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def build_dataset(reports_dir: Path) -> dict[Path, bytes]:
+    reports = load_reports(reports_dir)
+    pages: list[dict[str, object]] = []
+    chunks: list[dict[str, object]] = []
+    for report in reports:
+        metadata = report.metadata
+        slug = metadata["slug"]
+        page = {
+            "page_id": slug,
+            "dataset": "cities2-research",
+            "title": metadata["title"],
+            "url": metadata["source_url"],
+            "sections": [name for name, _text in report.sections],
+            "links": [metadata["source_url"]],
+            "char_count": len(report.body),
+            "word_count": len(report.body.split()),
+            **_provenance(metadata),
+        }
+        pages.append(page)
+        chunk_number = 0
+        for section_name, section_text in report.sections:
+            for part in _split_section(section_text):
+                chunk_number += 1
+                preamble = (
+                    f"# {metadata['title']}\n\n"
+                    f"Source: {metadata['source_url']}\n\n"
+                    f"Published: {metadata['published_at']}\n\n"
+                    f"Temporal context: Research summary of a source published on {metadata['published_at']}; "
+                    "verify current API and patch details separately.\n\n"
+                    f"## {section_name}\n\n"
+                )
+                chunks.append(
+                    {
+                        "chunk_id": f"{slug}#{chunk_number}",
+                        "page_id": slug,
+                        "dataset": "cities2-research",
+                        "title": metadata["title"],
+                        "url": metadata["source_url"],
+                        "section": section_name,
+                        "text": preamble + part,
+                        **_provenance(metadata),
+                    }
+                )
+
+    attribution_lines = [
+        "# Cities2 research corpus attribution",
+        "",
+        "This dataset contains original research summaries and analysis. Complete source media and transcripts are not redistributed.",
+        "",
+        "## Sources",
+        "",
+    ]
+    attribution_lines.extend(
+        f"- {report.metadata['title']} ({report.metadata['published_at']}): {report.metadata['source_url']}"
+        for report in reports
+    )
+    attribution_lines.extend(
+        [
+            "",
+            "Original report prose follows the repository license. Linked source material remains subject to its original source terms.",
+            "",
+        ]
+    )
+    manifest = {
+        "name": "cities2-research",
+        "dataset": "cities2-research",
+        "source": "Curated Cities: Skylines II research reports",
+        "page_count": len(pages),
+        "chunk_count": len(chunks),
+        "report_count": len(reports),
+        "content_sha256": _report_digest(reports),
+        "license": "MIT",
+        "paths": {"pages_jsonl": "index/pages.jsonl", "chunks_jsonl": "index/chunks.jsonl"},
+        "attribution": "ATTRIBUTION.md",
+    }
+    return {
+        Path("manifest.json"): json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True).encode("utf-8") + b"\n",
+        Path("ATTRIBUTION.md"): "\n".join(attribution_lines).encode("utf-8"),
+        Path("index/pages.jsonl"): b"".join(_json_line(page) for page in pages),
+        Path("index/chunks.jsonl"): b"".join(_json_line(chunk) for chunk in chunks),
+    }
+
+
+def sync_dataset(reports_dir: Path, output_dir: Path) -> tuple[Path, ...]:
+    expected = build_dataset(reports_dir)
+    changed: list[Path] = []
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for relative, content in expected.items():
+        target = output_dir / relative
+        current = target.read_bytes() if target.is_file() else None
+        if current == content:
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(dir=target.parent, prefix=f".{target.name}.", delete=False) as handle:
+            handle.write(content)
+            temporary = Path(handle.name)
+        os.replace(temporary, target)
+        changed.append(target)
+    expected_paths = {output_dir / relative for relative in expected}
+    for existing in sorted(path for path in output_dir.rglob("*") if path.is_file()):
+        if existing not in expected_paths:
+            existing.unlink()
+            changed.append(existing)
+    return tuple(changed)
+
+
+def check_dataset(reports_dir: Path, output_dir: Path) -> tuple[Path, ...]:
+    expected = build_dataset(reports_dir)
+    stale: list[Path] = []
+    for relative, content in expected.items():
+        target = output_dir / relative
+        if not target.is_file() or target.read_bytes() != content:
+            stale.append(target)
+    expected_paths = {output_dir / relative for relative in expected}
+    stale.extend(
+        path for path in sorted(output_dir.rglob("*")) if path.is_file() and path not in expected_paths
+    )
+    return tuple(stale)
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description="Build the Cities2 research corpus")
+    parser.add_argument("command", choices=("sync", "check"))
+    parser.add_argument("--reports-dir", type=Path, default=_repo_root() / "cities2-research" / "reports")
+    parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parent / "research_data")
+    args = parser.parse_args(argv)
+    try:
+        if args.command == "sync":
+            changed = sync_dataset(args.reports_dir, args.output_dir)
+            for path in changed:
+                print(path)
+            return 0
+        stale = check_dataset(args.reports_dir, args.output_dir)
+    except ResearchValidationError as exc:
+        print(str(exc))
+        return 1
+    if stale:
+        print("Stale Cities2 research dataset:")
+        for path in stale:
+            print(path)
+        print("Run: python -m cities2_mcp.research sync")
+        return 1
+    print("Cities2 research dataset is in sync.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

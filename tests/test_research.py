@@ -120,6 +120,58 @@ class ResearchReportTests(unittest.TestCase):
             with self.assertRaisesRegex(ResearchValidationError, "duplicate slug: test-research-source"):
                 load_reports(root)
 
+    def test_build_dataset_is_deterministic_and_preserves_provenance(self) -> None:
+        from cities2_mcp.research import build_dataset
+
+        with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+            root = Path(tmp)
+            self.write_report(root)
+            first = build_dataset(root)
+            second = build_dataset(root)
+
+        self.assertEqual(first, second)
+        pages = first[Path("index/pages.jsonl")].decode("utf-8")
+        chunks = first[Path("index/chunks.jsonl")].decode("utf-8")
+        manifest = first[Path("manifest.json")].decode("utf-8")
+        self.assertIn('"published_at": "2024-10-09"', pages)
+        self.assertIn('"publication_date_basis": "source_metadata"', chunks)
+        self.assertIn('"name": "cities2-research"', manifest)
+
+    def test_sync_and_check_detect_stale_generated_output(self) -> None:
+        from cities2_mcp.research import check_dataset, sync_dataset
+
+        with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+            root = Path(tmp)
+            reports = root / "reports"
+            output = root / "output"
+            reports.mkdir()
+            self.write_report(reports)
+
+            changed = sync_dataset(reports, output)
+            self.assertIn(output / "manifest.json", changed)
+            self.assertEqual(check_dataset(reports, output), ())
+
+            (output / "manifest.json").write_text("{}\n", encoding="utf-8")
+            self.assertEqual(check_dataset(reports, output), (output / "manifest.json",))
+
+    def test_validation_failure_does_not_replace_existing_output(self) -> None:
+        from cities2_mcp.research import sync_dataset
+
+        with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+            root = Path(tmp)
+            reports = root / "reports"
+            output = root / "output"
+            reports.mkdir()
+            output.mkdir()
+            sentinel = output / "manifest.json"
+            sentinel.write_text("sentinel\n", encoding="utf-8")
+            self.write_report(reports, VALID_BODY.replace("published_at: 2024-10-09\n", ""))
+
+            with self.assertRaises(ResearchValidationError):
+                sync_dataset(reports, output)
+
+            self.assertEqual(sentinel.read_text(encoding="utf-8"), "sentinel\n")
+
 
 if __name__ == "__main__":
     unittest.main()
