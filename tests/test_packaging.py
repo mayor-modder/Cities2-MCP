@@ -34,6 +34,15 @@ SKILL_NAMES = (
 
 
 class PluginPackagingTests(unittest.TestCase):
+    def test_knowledge_and_modding_skills_require_research_provenance_handling(self) -> None:
+        for skill_name in ("cities2-knowledge", "cities2-modding"):
+            text = (ROOT / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
+            with self.subTest(skill=skill_name):
+                self.assertIn("cities2-research", text)
+                self.assertIn("`dataset`", text)
+                self.assertIn("`published_at`", text)
+                self.assertIn("histor", text.lower())
+
     @staticmethod
     def _stop_proc(proc: subprocess.Popen[bytes]) -> None:
         proc.terminate()
@@ -194,7 +203,7 @@ class PluginPackagingTests(unittest.TestCase):
                 search = call(proc, 3, "search", {"query": "modding toolchain", "limit": 1})
                 self.assertTrue(status["wiki"]["available"])
                 self.assertFalse(status["research"][0]["available"])
-                self.assertIn("Missing chunks index", status["research"][0]["error"])
+                self.assertIn("Missing dataset manifest", status["research"][0]["error"])
                 self.assertTrue(search["ok"])
             finally:
                 self._stop_proc(proc)
@@ -229,7 +238,7 @@ class PluginPackagingTests(unittest.TestCase):
             self.assertTrue(status["research"][0]["available"])
             self.assertEqual(status["research"][1]["dataset"], "data")
             self.assertFalse(status["research"][1]["available"])
-            self.assertIn("Missing chunks index", status["research"][1]["error"])
+            self.assertIn("Missing dataset manifest", status["research"][1]["error"])
         finally:
             self._stop_proc(proc)
 

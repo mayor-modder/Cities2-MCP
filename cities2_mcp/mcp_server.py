@@ -248,6 +248,7 @@ def load_corpus_sources(
 
     valid: list[Path] = []
     statuses: list[JSON] = []
+    seen_dataset_names = set(wiki_corpus.dataset_names)
     for path in research_dirs:
         configured_paths = {
             "chunks": str(path / "index" / "chunks.jsonl"),
@@ -268,11 +269,26 @@ def load_corpus_sources(
                 }
             )
             continue
+        dataset_name = probe.dataset_names[0]
+        if dataset_name in seen_dataset_names:
+            statuses.append(
+                {
+                    "source": "research",
+                    "dataset": dataset_name,
+                    "available": False,
+                    "error": f"duplicate dataset name: {dataset_name}",
+                    "configured_paths": configured_paths,
+                    "page_count": 0,
+                    "chunk_count": 0,
+                }
+            )
+            continue
+        seen_dataset_names.add(dataset_name)
         valid.append(path)
         statuses.append(
             {
                 "source": "research",
-                "dataset": probe.dataset_names[0],
+                "dataset": dataset_name,
                 "available": True,
                 "error": "",
                 "configured_paths": configured_paths,

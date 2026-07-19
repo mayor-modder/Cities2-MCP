@@ -3,14 +3,16 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+import ipaddress
 import json
 import os
 import re
+import shutil
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 
 REQUIRED_FIELDS = (
@@ -42,6 +44,19 @@ DATE_BASES = frozenset(("source_metadata", "user_confirmed"))
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 SECTION_RE = re.compile(r"^## ([^\n]+)\n", re.MULTILINE)
+DRIVE_PATH_RE = re.compile(r"(?i)(?:^|[^a-z0-9])(?:[a-z]:(?:/|[^/\s]))")
+POSIX_PRIVATE_PATH_RE = re.compile(r"(?i)/(?:users|home|root|mnt/[a-z]|var/folders|tmp)/")
+UNC_PATH_RE = re.compile(r"(?<!:)//[^/\s]+/[^/\s]+")
+ABSOLUTE_PATH_RE = re.compile(r"(?<![:/\w])/(?!/)[^/\s]+(?:/[^/\s]+)*")
+RELATIVE_PATH_RE = re.compile(r"(?:^|[^a-z0-9])(?:\.\.?/)+(?:[^/\s]+/)*[^/\s]+", re.IGNORECASE)
+HTTP_URL_RE = re.compile(r"(?i)\bhttps?://[^\s<>()\"']+")
+HOST_LABEL_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$", re.IGNORECASE)
+GENERATED_PATHS = (
+    Path("manifest.json"),
+    Path("ATTRIBUTION.md"),
+    Path("index/pages.jsonl"),
+    Path("index/chunks.jsonl"),
+)
 
 
 class ResearchValidationError(ValueError):
@@ -117,8 +132,8 @@ def _validate_metadata(path: Path, metadata: dict[str, str]) -> list[str]:
     if metadata.get("publication_date_basis") not in (None, *DATE_BASES):
         errors.append(f"{path}: publication_date_basis must be source_metadata or user_confirmed")
     source_url = metadata.get("source_url", "")
-    if source_url and urlparse(source_url).scheme not in {"http", "https"}:
-        errors.append(f"{path}: source_url must use http:// or https://")
+    if source_url and not _is_public_http_url(source_url):
+        errors.append(f"{path}: source_url must be an absolute http:// or https:// URL with a hostname")
     slug = metadata.get("slug", "")
     if slug and not SLUG_RE.fullmatch(slug):
         errors.append(f"{path}: slug must use lowercase letters, numbers, and hyphens")
@@ -129,10 +144,94 @@ def _validate_metadata(path: Path, metadata: dict[str, str]) -> list[str]:
     return errors
 
 
+def _decoded_path_text(value: str) -> str:
+    decoded = value
+    for _attempt in range(2):
+        unquoted = unquote(decoded)
+        if unquoted == decoded:
+            break
+        decoded = unquoted
+    return decoded.replace("\\", "/")
+
+
+def _contains_local_path(value: str) -> bool:
+    normalized = _decoded_path_text(value)
+    non_url_text = HTTP_URL_RE.sub("", normalized)
+    lowered = normalized.lower()
+    return any(
+        (
+            DRIVE_PATH_RE.search(normalized),
+            POSIX_PRIVATE_PATH_RE.search(normalized),
+            UNC_PATH_RE.search(normalized),
+            ABSOLUTE_PATH_RE.search(non_url_text),
+            RELATIVE_PATH_RE.search(normalized),
+            "file://" in lowered,
+            "file:/" in lowered,
+            "~/" in normalized,
+            "cities2-research/sources/" in lowered,
+            "onedrive/documents/" in lowered,
+        )
+    )
+
+
+def _is_public_http_url(value: str) -> bool:
+    decoded_value = _decoded_path_text(value)
+    if (
+        _contains_local_path(value)
+        or "\\" in value
+        or any(character.isspace() or ord(character) < 32 or ord(character) == 127 for character in decoded_value)
+    ):
+        return False
+    try:
+        parsed = urlparse(value)
+        hostname = parsed.hostname
+        _port = parsed.port
+    except ValueError:
+        return False
+    return (
+        parsed.scheme in {"http", "https"}
+        and value.lower().startswith(f"{parsed.scheme}://")
+        and bool(parsed.netloc)
+        and parsed.username is None
+        and parsed.password is None
+        and _is_public_hostname(hostname)
+    )
+
+
+def _is_public_hostname(hostname: Optional[str]) -> bool:
+    if not hostname:
+        return False
+    candidate = hostname.rstrip(".")
+    try:
+        address = ipaddress.ip_address(candidate)
+    except ValueError:
+        try:
+            ascii_hostname = candidate.encode("idna").decode("ascii")
+        except UnicodeError:
+            return False
+        if len(ascii_hostname) > 253 or "." not in ascii_hostname:
+            return False
+        labels = ascii_hostname.split(".")
+        return all(HOST_LABEL_RE.fullmatch(label) for label in labels) and not labels[-1].isdigit()
+    return address.is_global
+
+
+def _validate_emitted_content(path: Path, metadata: dict[str, str], body: str) -> list[str]:
+    errors = [
+        f"{path}: {field} contains local or private path material"
+        for field, value in metadata.items()
+        if _contains_local_path(value)
+    ]
+    if _contains_local_path(body):
+        errors.append(f"{path}: report body contains local or private path material")
+    return errors
+
+
 def parse_report(path: Path) -> ResearchReport:
     text = path.read_text(encoding="utf-8")
     metadata, body, errors = _parse_front_matter(path, text)
     errors.extend(_validate_metadata(path, metadata))
+    errors.extend(_validate_emitted_content(path, metadata, body))
     sections, section_errors = _parse_sections(path, body)
     errors.extend(section_errors)
     if errors:
@@ -144,7 +243,12 @@ def load_reports(reports_dir: Path) -> list[ResearchReport]:
     reports: list[ResearchReport] = []
     errors: list[str] = []
     seen_slugs: set[str] = set()
-    for path in sorted(reports_dir.glob("*.md"), key=lambda item: item.name):
+    paths = sorted(reports_dir.glob("*.md"), key=lambda item: item.name) if reports_dir.is_dir() else []
+    if not paths:
+        raise ResearchValidationError(
+            [f"{reports_dir}: reports directory must contain at least one Markdown report"]
+        )
+    for path in paths:
         try:
             report = parse_report(path)
         except ResearchValidationError as exc:
@@ -179,19 +283,55 @@ def _json_line(value: object) -> bytes:
 
 
 def _split_section(text: str, limit: int = MAX_CHUNK_CHARS, overlap: int = CHUNK_OVERLAP_CHARS) -> list[str]:
+    if limit < 1:
+        raise ValueError("chunk limit must be positive")
+    overlap = max(0, min(overlap, limit - 1))
     paragraphs = [paragraph.strip() for paragraph in text.split("\n\n") if paragraph.strip()]
     chunks: list[str] = []
     current = ""
     for paragraph in paragraphs:
+        if len(paragraph) > limit:
+            if current:
+                chunks.append(current)
+                current = ""
+            chunks.extend(_split_oversized_paragraph(paragraph, limit, overlap))
+            continue
         candidate = f"{current}\n\n{paragraph}".strip()
         if current and len(candidate) > limit:
             chunks.append(current)
-            tail = current[-overlap:].split("\n\n", 1)[-1] if overlap else ""
-            current = f"{tail}\n\n{paragraph}".strip()
+            available_overlap = max(0, limit - len(paragraph) - 2)
+            tail_size = min(overlap, available_overlap)
+            tail = current[-tail_size:].lstrip() if tail_size else ""
+            current = f"{tail}\n\n{paragraph}".strip() if tail else paragraph
         else:
             current = candidate
     if current:
         chunks.append(current)
+    return chunks
+
+
+def _split_oversized_paragraph(text: str, limit: int, overlap: int) -> list[str]:
+    chunks: list[str] = []
+    start = 0
+    while start < len(text):
+        hard_end = min(len(text), start + limit)
+        end = hard_end
+        if hard_end < len(text):
+            whitespace = max(
+                text.rfind(" ", start + max(1, limit // 2), hard_end),
+                text.rfind("\n", start, hard_end),
+            )
+            if whitespace > start:
+                end = whitespace
+        chunk = text[start:end].strip()
+        if chunk:
+            chunks.append(chunk)
+        if end >= len(text):
+            break
+        next_start = max(start + 1, end - overlap)
+        while next_start < end and text[next_start].isspace():
+            next_start += 1
+        start = next_start
     return chunks
 
 
@@ -230,16 +370,21 @@ def build_dataset(reports_dir: Path) -> dict[Path, bytes]:
         pages.append(page)
         chunk_number = 0
         for section_name, section_text in report.sections:
-            for part in _split_section(section_text):
-                chunk_number += 1
-                preamble = (
-                    f"# {metadata['title']}\n\n"
-                    f"Source: {metadata['source_url']}\n\n"
-                    f"Published: {metadata['published_at']}\n\n"
-                    f"Temporal context: Research summary of a source published on {metadata['published_at']}; "
-                    "verify current API and patch details separately.\n\n"
-                    f"## {section_name}\n\n"
+            preamble = (
+                f"# {metadata['title']}\n\n"
+                f"Source: {metadata['source_url']}\n\n"
+                f"Published: {metadata['published_at']}\n\n"
+                f"Temporal context: Research summary of a source published on {metadata['published_at']}; "
+                "verify current API and patch details separately.\n\n"
+                f"## {section_name}\n\n"
+            )
+            content_limit = MAX_CHUNK_CHARS - len(preamble)
+            if content_limit < 1:
+                raise ResearchValidationError(
+                    [f"{report.path}: generated chunk preamble exceeds the {MAX_CHUNK_CHARS}-character limit"]
                 )
+            for part in _split_section(section_text, limit=content_limit):
+                chunk_number += 1
                 chunks.append(
                     {
                         "chunk_id": f"{slug}#{chunk_number}",
@@ -292,26 +437,133 @@ def build_dataset(reports_dir: Path) -> dict[Path, bytes]:
     }
 
 
-def sync_dataset(reports_dir: Path, output_dir: Path) -> tuple[Path, ...]:
-    expected = build_dataset(reports_dir)
-    changed: list[Path] = []
-    output_dir.mkdir(parents=True, exist_ok=True)
+def _paths_overlap(first: Path, second: Path) -> bool:
+    first_resolved = first.resolve()
+    second_resolved = second.resolve()
+    return (
+        first_resolved == second_resolved
+        or first_resolved in second_resolved.parents
+        or second_resolved in first_resolved.parents
+    )
+
+
+def _owned_generated_file(relative: Path) -> bool:
+    return relative in GENERATED_PATHS or (
+        len(relative.parts) == 2
+        and relative.parts[0] == "index"
+        and relative.suffix in {".json", ".jsonl"}
+    )
+
+
+def _validate_existing_output(output_dir: Path) -> list[Path]:
+    if output_dir.is_symlink():
+        raise ResearchValidationError(
+            [f"{output_dir}: research output path must be a directory, not a file or symlink"]
+        )
+    if not output_dir.exists():
+        return []
+    if not output_dir.is_dir():
+        raise ResearchValidationError(
+            [f"{output_dir}: research output path must be a directory, not a file or symlink"]
+        )
+
+    entries = list(output_dir.rglob("*"))
+    if not entries:
+        return []
+    if any(entry.is_symlink() for entry in entries):
+        raise ResearchValidationError([f"{output_dir}: research output directory must not contain symlinks"])
+
+    files = sorted(entry for entry in entries if entry.is_file())
+    manifest_path = output_dir / "manifest.json"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ResearchValidationError(
+            [f"{output_dir}: nonempty output directory is not a recognized cities2-research dataset"]
+        ) from exc
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("name") != "cities2-research"
+        or manifest.get("dataset") != "cities2-research"
+    ):
+        raise ResearchValidationError(
+            [f"{output_dir}: nonempty output directory is not a recognized cities2-research dataset"]
+        )
+
+    for entry in entries:
+        relative = entry.relative_to(output_dir)
+        if entry.is_dir() and relative != Path("index"):
+            raise ResearchValidationError(
+                [f"{output_dir}: unrecognized directory in research output directory: {relative}"]
+            )
+        if entry.is_file() and not _owned_generated_file(relative):
+            raise ResearchValidationError(
+                [f"{output_dir}: unrecognized file in research output directory: {relative}"]
+            )
+    return files
+
+
+def _write_staged_dataset(stage_dir: Path, expected: dict[Path, bytes]) -> None:
     for relative, content in expected.items():
-        target = output_dir / relative
-        current = target.read_bytes() if target.is_file() else None
-        if current == content:
-            continue
+        target = stage_dir / relative
         target.parent.mkdir(parents=True, exist_ok=True)
-        with tempfile.NamedTemporaryFile(dir=target.parent, prefix=f".{target.name}.", delete=False) as handle:
-            handle.write(content)
-            temporary = Path(handle.name)
-        os.replace(temporary, target)
-        changed.append(target)
+        target.write_bytes(content)
+
+
+def sync_dataset(reports_dir: Path, output_dir: Path) -> tuple[Path, ...]:
+    if _paths_overlap(reports_dir, output_dir):
+        raise ResearchValidationError(
+            [f"{reports_dir}: reports and output directories must not overlap: {output_dir}"]
+        )
+    expected = build_dataset(reports_dir)
+    existing_files = _validate_existing_output(output_dir)
     expected_paths = {output_dir / relative for relative in expected}
-    for existing in sorted(path for path in output_dir.rglob("*") if path.is_file()):
-        if existing not in expected_paths:
-            existing.unlink()
-            changed.append(existing)
+    changed = [
+        output_dir / relative
+        for relative, content in expected.items()
+        if not (output_dir / relative).is_file() or (output_dir / relative).read_bytes() != content
+    ]
+    changed.extend(path for path in existing_files if path not in expected_paths)
+    if not changed:
+        return ()
+
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    stage_dir = Path(tempfile.mkdtemp(prefix=f".{output_dir.name}.stage-", dir=output_dir.parent))
+    backup_dir: Optional[Path] = None
+    existing_moved = False
+    installed = False
+    try:
+        _write_staged_dataset(stage_dir, expected)
+        if output_dir.exists():
+            backup_dir = Path(tempfile.mkdtemp(prefix=f".{output_dir.name}.backup-", dir=output_dir.parent))
+            backup_dir.rmdir()
+            os.replace(output_dir, backup_dir)
+            existing_moved = True
+        try:
+            os.replace(stage_dir, output_dir)
+            installed = True
+        except Exception as swap_error:
+            if existing_moved and backup_dir is not None and backup_dir.exists() and not output_dir.exists():
+                try:
+                    os.replace(backup_dir, output_dir)
+                    existing_moved = False
+                except Exception as rollback_error:
+                    raise RuntimeError(
+                        f"Research dataset swap failed and rollback also failed: {rollback_error}"
+                    ) from swap_error
+            raise
+        if backup_dir is not None and backup_dir.exists():
+            shutil.rmtree(backup_dir)
+            existing_moved = False
+    finally:
+        if stage_dir.exists():
+            shutil.rmtree(stage_dir)
+        if backup_dir is not None and backup_dir.exists():
+            backup_is_disposable = installed or (
+                not existing_moved and backup_dir.is_dir() and not any(backup_dir.iterdir())
+            )
+            if backup_is_disposable:
+                shutil.rmtree(backup_dir)
     return tuple(changed)
 
 

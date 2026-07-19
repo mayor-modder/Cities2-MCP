@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from cities2_mcp.research import ResearchValidationError, load_reports, parse_report
 
@@ -115,8 +116,53 @@ class ResearchReportTests(unittest.TestCase):
                 parse_report(self.write_report(Path(tmp), text))
 
         message = str(raised.exception)
-        self.assertIn("source_url must use http:// or https://", message)
+        self.assertIn("source_url must be an absolute http:// or https:// URL with a hostname", message)
         self.assertIn("missing required section: Findings", message)
+
+    def test_parse_report_rejects_malformed_http_urls_without_a_real_hostname(self) -> None:
+        source_urls = (
+            "http:C:\\Users\\Example\\private.txt",
+            "https:///C:/Users/Example/private.txt",
+            "https://example.com/C:%5CUsers%5CExample%5Cprivate.txt",
+            "https://example.com/?file=/Users/Example/private.txt",
+            "https://example.com/?file=../sources/private.txt",
+            "https://example.com/?file=~/private.txt",
+            "https://example.com/cities2-research/sources/private.txt",
+            "https://user:supersecret@example.com/talk",
+            "https://.",
+            "https://-",
+            "https://example.com private",
+            "https://localhost/private.txt",
+            "https://127.0.0.1/private.txt",
+        )
+        for source_url in source_urls:
+            with self.subTest(source_url=source_url), tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+                text = VALID_BODY.replace("https://example.com/talk", source_url)
+                with self.assertRaisesRegex(ResearchValidationError, "source_url must be an absolute http:// or https:// URL with a hostname"):
+                    parse_report(self.write_report(Path(tmp), text))
+
+    def test_build_dataset_rejects_private_paths_in_emitted_metadata_or_body(self) -> None:
+        from cities2_mcp.research import build_dataset
+
+        private_values = (
+            ("creators: Example Speaker", "creators: C:\\Users\\Example\\speaker.txt"),
+            ("creators: Example Speaker", "creators: C:private.txt"),
+            ("creators: Example Speaker", "creators: /secret"),
+            ("The source explains a system.", "The source was copied from \\\\server\\share\\private.txt."),
+            (
+                "The source explains a system.",
+                "The source was copied from cities2-research/sources/full-transcript.txt.",
+            ),
+            ("The source explains a system.", "The source was copied from /opt/private/full-transcript.txt."),
+            ("The source explains a system.", "The source was copied from ../sources/full-transcript.txt."),
+            ("creators: Example Speaker", "creators: file:///Users/Example/speaker.txt"),
+        )
+        for original, private_value in private_values:
+            with self.subTest(private_value=private_value), tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+                root = Path(tmp)
+                self.write_report(root, VALID_BODY.replace(original, private_value))
+                with self.assertRaisesRegex(ResearchValidationError, "local or private path material"):
+                    build_dataset(root)
 
     def test_load_reports_sorts_files_and_rejects_duplicate_slugs(self) -> None:
         with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
@@ -161,6 +207,203 @@ class ResearchReportTests(unittest.TestCase):
             (output / "manifest.json").write_text("{}\n", encoding="utf-8")
             self.assertEqual(check_dataset(reports, output), (output / "manifest.json",))
 
+    def test_sync_rejects_missing_or_empty_report_directories(self) -> None:
+        from cities2_mcp.research import sync_dataset
+
+        with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+            root = Path(tmp)
+            for reports in (root / "missing", root / "empty"):
+                if reports.name == "empty":
+                    reports.mkdir()
+                output = root / f"output-{reports.name}"
+                with self.subTest(reports=reports), self.assertRaisesRegex(
+                    ResearchValidationError, "reports directory must contain at least one Markdown report"
+                ):
+                    sync_dataset(reports, output)
+                self.assertFalse(output.exists())
+
+    def test_sync_rejects_overlapping_input_and_output_paths(self) -> None:
+        from cities2_mcp.research import sync_dataset
+
+        with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+            root = Path(tmp)
+            reports = root / "reports"
+            reports.mkdir()
+            report = self.write_report(reports)
+            for output in (reports, root):
+                with self.subTest(output=output), self.assertRaisesRegex(
+                    ResearchValidationError, "reports and output directories must not overlap"
+                ):
+                    sync_dataset(reports, output)
+                self.assertTrue(report.is_file())
+
+    def test_sync_prunes_only_owned_stale_generated_paths(self) -> None:
+        from cities2_mcp.research import sync_dataset
+
+        with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+            root = Path(tmp)
+            reports = root / "reports"
+            output = root / "output"
+            reports.mkdir()
+            self.write_report(reports)
+            sync_dataset(reports, output)
+
+            stale_generated = output / "index" / "stale.jsonl"
+            stale_generated.write_text("stale\n", encoding="utf-8")
+            changed = sync_dataset(reports, output)
+            self.assertIn(stale_generated, changed)
+            self.assertFalse(stale_generated.exists())
+
+            unrelated = output / "personal-notes.txt"
+            unrelated.write_text("keep me\n", encoding="utf-8")
+            with self.assertRaisesRegex(ResearchValidationError, "unrecognized file in research output directory"):
+                sync_dataset(reports, output)
+            self.assertEqual(unrelated.read_text(encoding="utf-8"), "keep me\n")
+
+    def test_sync_refuses_nonempty_unrecognized_output_directories(self) -> None:
+        from cities2_mcp.research import sync_dataset
+
+        with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+            root = Path(tmp)
+            reports = root / "reports"
+            reports.mkdir()
+            self.write_report(reports)
+
+            for label, include_foreign_manifest in (("missing-manifest", False), ("foreign-manifest", True)):
+                output = root / label
+                output.mkdir()
+                sentinel = output / "keep-me.txt"
+                sentinel.write_text("do not replace\n", encoding="utf-8")
+                if include_foreign_manifest:
+                    (output / "manifest.json").write_text(
+                        json.dumps({"name": "someone-else", "dataset": "someone-else"}),
+                        encoding="utf-8",
+                    )
+                before = {path.name: path.read_bytes() for path in output.iterdir()}
+
+                with self.subTest(label=label), self.assertRaisesRegex(
+                    ResearchValidationError, "nonempty output directory is not a recognized cities2-research dataset"
+                ):
+                    sync_dataset(reports, output)
+
+                after = {path.name: path.read_bytes() for path in output.iterdir()}
+                self.assertEqual(after, before)
+                self.assertEqual(list(root.glob(f".{output.name}.*")), [])
+
+    def test_sync_rejects_a_dangling_output_symlink_without_touching_it(self) -> None:
+        from cities2_mcp.research import sync_dataset
+
+        with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+            root = Path(tmp)
+            reports = root / "reports"
+            reports.mkdir()
+            self.write_report(reports)
+            missing_target = root / "missing-target"
+            output = root / "output-link"
+            try:
+                output.symlink_to(missing_target, target_is_directory=True)
+            except OSError as exc:
+                self.skipTest(f"directory symlinks are unavailable: {exc}")
+
+            with self.assertRaisesRegex(ResearchValidationError, "directory, not a file or symlink"):
+                sync_dataset(reports, output)
+
+            self.assertTrue(output.is_symlink())
+            self.assertFalse(missing_target.exists())
+
+    def test_sync_rolls_back_the_complete_dataset_after_swap_failure(self) -> None:
+        from cities2_mcp import research
+
+        with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+            root = Path(tmp)
+            reports = root / "reports"
+            output = root / "output"
+            reports.mkdir()
+            report = self.write_report(reports)
+            research.sync_dataset(reports, output)
+            before = {path.relative_to(output): path.read_bytes() for path in output.rglob("*") if path.is_file()}
+            report.write_text(VALID_BODY.replace("The source explains a system.", "The source explains a changed system."), encoding="utf-8")
+
+            real_replace = research.os.replace
+
+            def fail_staged_swap(source: object, target: object) -> None:
+                source_path = Path(source)
+                target_path = Path(target)
+                if source_path.name.startswith(f".{output.name}.stage-") and target_path == output:
+                    raise OSError("injected staged swap failure")
+                real_replace(source, target)
+
+            with mock.patch.object(research.os, "replace", side_effect=fail_staged_swap):
+                with self.assertRaisesRegex(OSError, "injected staged swap failure"):
+                    research.sync_dataset(reports, output)
+
+            after = {path.relative_to(output): path.read_bytes() for path in output.rglob("*") if path.is_file()}
+            self.assertEqual(after, before)
+            self.assertEqual(list(root.glob(f".{output.name}.*")), [])
+
+    def test_sync_cleans_empty_backup_after_backup_preparation_failure(self) -> None:
+        from cities2_mcp import research
+
+        with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+            root = Path(tmp)
+            reports = root / "reports"
+            output = root / "output"
+            reports.mkdir()
+            report = self.write_report(reports)
+            research.sync_dataset(reports, output)
+            before = {path.relative_to(output): path.read_bytes() for path in output.rglob("*") if path.is_file()}
+            report.write_text(
+                VALID_BODY.replace("The source explains a system.", "The source explains a changed system."),
+                encoding="utf-8",
+            )
+
+            real_rmdir = research.Path.rmdir
+
+            def fail_backup_rmdir(path: Path) -> None:
+                if path.name.startswith(f".{output.name}.backup-"):
+                    raise OSError("injected backup preparation failure")
+                real_rmdir(path)
+
+            with mock.patch.object(research.Path, "rmdir", autospec=True, side_effect=fail_backup_rmdir):
+                with self.assertRaisesRegex(OSError, "injected backup preparation failure"):
+                    research.sync_dataset(reports, output)
+
+            after = {path.relative_to(output): path.read_bytes() for path in output.rglob("*") if path.is_file()}
+            self.assertEqual(after, before)
+            self.assertEqual(list(root.glob(f".{output.name}.*")), [])
+
+    def test_chunk_splitting_bounds_overlap_and_oversized_paragraphs(self) -> None:
+        from cities2_mcp.research import _split_section
+
+        first = ("alpha " * 13).strip()
+        second = ("beta " * 10).strip()
+        boundary_chunks = _split_section(f"{first}\n\n{second}", limit=100, overlap=30)
+        expected_tail = first[-30:].lstrip()
+        self.assertEqual(boundary_chunks, [first, f"{expected_tail}\n\n{second}"])
+        self.assertTrue(all(len(chunk) <= 100 for chunk in boundary_chunks))
+
+        text = ("alpha " * 40).strip() + "\n\n" + ("B" * 240) + "\n\n" + ("charlie " * 30).strip()
+        chunks = _split_section(text, limit=100, overlap=30)
+
+        self.assertGreater(len(chunks), 3)
+        self.assertTrue(all(0 < len(chunk) <= 100 for chunk in chunks))
+        self.assertTrue(any("B" * 80 in chunk for chunk in chunks))
+
+    def test_generated_chunk_text_never_exceeds_the_documented_limit(self) -> None:
+        from cities2_mcp.research import MAX_CHUNK_CHARS, build_dataset
+
+        oversized = ("A" * 4500) + "\n\n" + ("B" * 4500)
+        text = VALID_BODY.replace("The system uses data-oriented processing.", oversized)
+        with tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+            root = Path(tmp)
+            self.write_report(root, text)
+            built = build_dataset(root)
+
+        chunks = [json.loads(line) for line in built[Path("index/chunks.jsonl")].decode("utf-8").splitlines()]
+        findings = [chunk for chunk in chunks if chunk["section"] == "Findings"]
+        self.assertGreater(len(findings), 2)
+        self.assertTrue(all(len(chunk["text"]) <= MAX_CHUNK_CHARS for chunk in chunks))
+
     def test_validation_failure_does_not_replace_existing_output(self) -> None:
         from cities2_mcp.research import sync_dataset
 
@@ -181,6 +424,24 @@ class ResearchReportTests(unittest.TestCase):
 
 
 class BundledResearchTests(unittest.TestCase):
+    def test_generated_research_json_paths_are_forced_to_lf(self) -> None:
+        paths = (
+            "cities2_mcp/research_data/manifest.json",
+            "cities2_mcp/research_data/index/pages.jsonl",
+            "cities2_mcp/research_data/index/chunks.jsonl",
+            "plugins/cities2-mcp/vendor/cities2_mcp/research_data/manifest.json",
+            "plugins/cities2-mcp/vendor/cities2_mcp/research_data/index/pages.jsonl",
+            "plugins/cities2-mcp/vendor/cities2_mcp/research_data/index/chunks.jsonl",
+        )
+        result = subprocess.run(
+            ["git", "check-attr", "eol", "--", *paths],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        self.assertEqual(result.stdout.count("eol: lf"), len(paths), result.stdout)
+
     def test_private_source_directory_ignores_nested_material(self) -> None:
         result = subprocess.run(
             ["git", "check-ignore", "cities2-research/sources/nested/full-transcript.txt"],

@@ -15,6 +15,24 @@ SOURCE_PREFIX = "Source: https://cs2.paradoxwikis.com/"
 OLD_SOURCE_HOST = "https://cities2.paradoxwikis.com/"
 
 
+def write_manifest(data_dir: Path, name: str = "agent-corpus") -> None:
+    (data_dir / "manifest.json").write_text(
+        json.dumps(
+            {
+                "name": name,
+                "dataset": name,
+                "page_count": 1,
+                "chunk_count": 1,
+                "paths": {
+                    "pages_jsonl": "index/pages.jsonl",
+                    "chunks_jsonl": "index/chunks.jsonl",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 class CorpusSourceLinkTests(unittest.TestCase):
     def test_corpus_uses_current_wiki_host(self) -> None:
         matches: list[str] = []
@@ -98,10 +116,7 @@ class CorpusSourceLinkTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="cities2-mcp-agent-corpus-") as tmp:
             data_dir = Path(tmp)
             (data_dir / "index").mkdir()
-            (data_dir / "manifest.json").write_text(
-                json.dumps({"name": "agent-corpus"}),
-                encoding="utf-8",
-            )
+            write_manifest(data_dir)
             (data_dir / "index" / "pages.jsonl").write_text(
                 json.dumps(
                     {
@@ -145,7 +160,7 @@ class CorpusSourceLinkTests(unittest.TestCase):
             external = root / "outside.md"
             external.write_text("external sentinel", encoding="utf-8")
             (data_dir / "index").mkdir(parents=True)
-            (data_dir / "manifest.json").write_text(json.dumps({"name": "agent-corpus"}), encoding="utf-8")
+            write_manifest(data_dir)
             (data_dir / "index" / "pages.jsonl").write_text(
                 json.dumps(
                     {
@@ -183,7 +198,7 @@ class CorpusSourceLinkTests(unittest.TestCase):
             external = root / "outside.md"
             external.write_text("external sentinel", encoding="utf-8")
             (data_dir / "index").mkdir(parents=True)
-            (data_dir / "manifest.json").write_text(json.dumps({"name": "agent-corpus"}), encoding="utf-8")
+            write_manifest(data_dir)
             (data_dir / "index" / "pages.jsonl").write_text(
                 json.dumps(
                     {
