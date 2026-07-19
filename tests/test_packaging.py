@@ -154,6 +154,8 @@ class PluginPackagingTests(unittest.TestCase):
             tool_descriptions = {tool["name"]: tool["description"] for tool in tools["result"]["tools"]}
             for tool_name in ("search", "query_reference", "get_page"):
                 self.assertIn("research", tool_descriptions[tool_name])
+                self.assertIn("time-bounded", tool_descriptions[tool_name])
+                self.assertIn("publication date", tool_descriptions[tool_name])
             self.assertTrue(search["ok"])
             self.assertFalse(scaffold["ok"])
             self.assertIn("--workspace", scaffold["error"])
@@ -190,6 +192,40 @@ class PluginPackagingTests(unittest.TestCase):
                 self.assertTrue(search["ok"])
             finally:
                 self._stop_proc(proc)
+
+    def test_explicit_research_data_dirs_replace_default_and_keep_missing_paths_unavailable(self) -> None:
+        from tests.smoke_mcp import call, rpc_ndjson
+
+        missing_checkout_data = ROOT / "data"
+        self.assertFalse(missing_checkout_data.exists())
+        proc = subprocess.Popen(
+            [
+                sys.executable,
+                "-m",
+                "cities2_mcp.mcp_server",
+                "--research-data-dir",
+                str(cities2_mcp.bundled_research_data_dir()),
+                "--research-data-dir",
+                str(missing_checkout_data),
+            ],
+            cwd=ROOT,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        assert proc.stdin and proc.stdout and proc.stderr
+        try:
+            rpc_ndjson(proc, 1, "initialize", {"protocolVersion": "2025-06-18"})
+            status = call(proc, 2, "source_status", {})
+
+            self.assertEqual(len(status["research"]), 2)
+            self.assertEqual(status["research"][0]["dataset"], "cities2-research")
+            self.assertTrue(status["research"][0]["available"])
+            self.assertEqual(status["research"][1]["dataset"], "data")
+            self.assertFalse(status["research"][1]["available"])
+            self.assertIn("Missing chunks index", status["research"][1]["error"])
+        finally:
+            self._stop_proc(proc)
 
     def test_default_start_with_workspace_enables_workflow_tools(self) -> None:
         from tests.smoke_mcp import call, rpc_ndjson

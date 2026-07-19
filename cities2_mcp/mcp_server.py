@@ -207,6 +207,10 @@ def resolve_data_dir(value: str) -> Path:
     return configured
 
 
+def resolve_research_data_dir(value: str) -> Path:
+    return Path(value).expanduser()
+
+
 def load_corpus_sources(
     wiki_dir: Path,
     research_dirs: list[Path],
@@ -1103,9 +1107,9 @@ def handle_request(
             server_instructions=SERVER_INSTRUCTIONS,
         )
         descriptions = {
-            "search": "Search the bundled Cities: Skylines II Wiki corpus and research datasets for gameplay, systems, and modding information. Results include dataset labels.",
-            "get_page": "Return a full page from the bundled Cities: Skylines II Wiki corpus or research datasets by page_id. Results include dataset labels.",
-            "query_reference": "Search page-level Cities: Skylines II Wiki corpus and research dataset references: titles, sections, URLs, and links. Results include dataset labels.",
+            "search": "Search the bundled Cities: Skylines II Wiki corpus and research datasets for gameplay, systems, and modding information. Results include dataset labels. Research evidence is time-bounded; check publication dates for current details.",
+            "get_page": "Return a full page from the bundled Cities: Skylines II Wiki corpus or research datasets by page_id. Results include dataset labels. Research evidence is time-bounded; check publication dates for current details.",
+            "query_reference": "Search page-level Cities: Skylines II Wiki corpus and research dataset references: titles, sections, URLs, and links. Results include dataset labels. Research evidence is time-bounded; check publication dates for current details.",
         }
         if result is not None:
             tools = result.get("result", {}).get("tools", [])
@@ -1167,7 +1171,7 @@ def main() -> None:
     workflow_error: Optional[str] = None
     data_dir = resolve_data_dir(str(args.data_dir))
     research_values = args.research_data_dirs or [str(bundled_research_data_dir())]
-    research_dirs = [resolve_data_dir(value) for value in research_values]
+    research_dirs = [resolve_research_data_dir(value) for value in research_values]
     docs_paths = {
         "chunks": str(data_dir / "index" / "chunks.jsonl"),
         "pages": str(data_dir / "index" / "pages.jsonl"),
