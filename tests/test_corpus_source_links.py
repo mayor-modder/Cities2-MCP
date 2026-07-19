@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -26,6 +27,22 @@ class CorpusSourceLinkTests(unittest.TestCase):
 
     def test_public_corpus_does_not_include_page_sidecar_dirs(self) -> None:
         self.assertFalse((CORPUS / "pages").exists())
+
+    def test_manifest_game_version_matches_latest_bundled_patch(self) -> None:
+        manifest = json.loads((CORPUS / "manifest.json").read_text(encoding="utf-8"))
+        versions: list[tuple[tuple[int, int, int, int], str]] = []
+        pattern = re.compile(r"^(\d+)\.(\d+)\.(\d+)f(\d+)$")
+        for line in (CORPUS / "index" / "pages.jsonl").read_text(encoding="utf-8").splitlines():
+            payload = json.loads(line)
+            if not str(payload.get("page_id", "")).startswith("patch-"):
+                continue
+            for section in payload.get("sections") or []:
+                match = pattern.fullmatch(str(section))
+                if match:
+                    versions.append((tuple(int(part) for part in match.groups()), str(section)))
+
+        self.assertTrue(versions, "bundled patch index did not contain any game versions")
+        self.assertEqual(manifest.get("current_game_version"), max(versions)[1])
 
     def test_page_index_urls_use_current_wiki_host(self) -> None:
         broken: list[str] = []

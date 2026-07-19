@@ -66,11 +66,11 @@ class ScaffoldTests(unittest.TestCase):
         project_dir = Path(result["project_dir"])
         csproj = (project_dir / "version-default.csproj").read_text(encoding="utf-8")
 
-        self.assertEqual(result["game_version"], "1.5.*")
+        self.assertEqual(result["game_version"], "1.6.*")
         self.assertEqual(result["game_version_source"], "bundled_corpus_manifest")
-        self.assertEqual(result["bundled_game_version"], "1.5.10f1")
-        self.assertEqual(result["metadata"]["game_version"], "1.5.*")
-        self.assertIn("<GameVersion>1.5.*</GameVersion>", csproj)
+        self.assertEqual(result["bundled_game_version"], "1.6.0f1")
+        self.assertEqual(result["metadata"]["game_version"], "1.6.*")
+        self.assertIn("<GameVersion>1.6.*</GameVersion>", csproj)
 
     def test_default_game_version_can_fall_back_to_patch_index(self) -> None:
         data_dir = self.tmp / "data-with-patch-index"
