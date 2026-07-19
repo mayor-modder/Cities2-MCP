@@ -225,7 +225,7 @@ def read_markdown_sidecar(row: JSON) -> str:
 
 
 class Corpus:
-    def __init__(self, data_dirs: List[Path]) -> None:
+    def __init__(self, data_dirs: List[Path], *, allow_legacy_primary_manifest: bool = False) -> None:
         self.chunks: List[JSON] = []
         self.pages: Dict[str, JSON] = {}
         self.chunks_by_id: Dict[str, JSON] = {}
@@ -241,12 +241,20 @@ class Corpus:
         self._snippet_indexes: List[HybridIndex] = []
 
         seen_dataset_names: set[str] = set()
-        for data_dir in data_dirs:
-            manifest = self._load_manifest(data_dir)
+        for index, data_dir in enumerate(data_dirs):
+            manifest, legacy_manifest = self._load_manifest(
+                data_dir,
+                allow_legacy=allow_legacy_primary_manifest and index == 0,
+            )
             dataset_name = str(manifest["name"])
             if dataset_name in seen_dataset_names:
                 raise ValueError(f"duplicate dataset name: {dataset_name}")
-            self._load_dataset(data_dir, dataset_name, manifest)
+            self._load_dataset(
+                data_dir,
+                dataset_name,
+                manifest,
+                validate_declared_counts=not legacy_manifest,
+            )
             seen_dataset_names.add(dataset_name)
             self.dataset_names.append(dataset_name)
 
@@ -257,9 +265,11 @@ class Corpus:
         )
 
     @staticmethod
-    def _load_manifest(data_dir: Path) -> JSON:
+    def _load_manifest(data_dir: Path, *, allow_legacy: bool = False) -> Tuple[JSON, bool]:
         manifest_path = data_dir / "manifest.json"
         if not manifest_path.is_file():
+            if allow_legacy:
+                return {"name": data_dir.name, "dataset": data_dir.name}, True
             raise ValueError(f"Missing dataset manifest: {manifest_path}")
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -267,6 +277,11 @@ class Corpus:
             raise ValueError(f"Invalid dataset manifest: {manifest_path}: {exc}") from exc
         if not isinstance(manifest, dict):
             raise ValueError(f"Invalid dataset manifest: {manifest_path}: top level must be an object")
+
+        if allow_legacy and set(manifest) == {"name"}:
+            legacy_name = manifest.get("name")
+            if isinstance(legacy_name, str) and legacy_name.strip():
+                return {"name": legacy_name.strip(), "dataset": legacy_name.strip()}, True
 
         name = manifest.get("name")
         dataset = manifest.get("dataset")
@@ -303,9 +318,16 @@ class Corpus:
         expected_paths = {"pages_jsonl": "index/pages.jsonl", "chunks_jsonl": "index/chunks.jsonl"}
         if not isinstance(paths, dict) or any(paths.get(key) != value for key, value in expected_paths.items()):
             raise ValueError(f"Invalid dataset manifest: {manifest_path}: paths must identify the canonical JSONL indexes")
-        return manifest
+        return manifest, False
 
-    def _load_dataset(self, data_dir: Path, dataset_name: str, manifest: JSON) -> None:
+    def _load_dataset(
+        self,
+        data_dir: Path,
+        dataset_name: str,
+        manifest: JSON,
+        *,
+        validate_declared_counts: bool,
+    ) -> None:
         chunks_path = data_dir / "index" / "chunks.jsonl"
         pages_path = data_dir / "index" / "pages.jsonl"
 
@@ -407,11 +429,11 @@ class Corpus:
                 self.pages[prefixed_id] = row
                 dataset_pages[prefixed_id] = row
 
-        if len(dataset_pages) != manifest["page_count"]:
+        if validate_declared_counts and len(dataset_pages) != manifest["page_count"]:
             raise ValueError(
                 f"Invalid dataset manifest: {data_dir / 'manifest.json'}: page_count declares {manifest['page_count']} but loaded {len(dataset_pages)}"
             )
-        if len(dataset_chunks) != manifest["chunk_count"]:
+        if validate_declared_counts and len(dataset_chunks) != manifest["chunk_count"]:
             raise ValueError(
                 f"Invalid dataset manifest: {data_dir / 'manifest.json'}: chunk_count declares {manifest['chunk_count']} but loaded {len(dataset_chunks)}"
             )

@@ -216,6 +216,11 @@ class MultiDatasetRetrievalTests(unittest.TestCase):
                     {"report_count": 0, "page_count": 0, "chunk_count": 0},
                     "report_count must be a positive integer",
                 ),
+                (
+                    "spoofed-legacy-marker",
+                    {"_legacy_manifest": True, "page_count": 2, "report_count": 2},
+                    "page_count declares 2 but loaded 1",
+                ),
             )
             for label, updates, expected_error in cases:
                 data_dir = write_dataset(

@@ -51,6 +51,20 @@ ABSOLUTE_PATH_RE = re.compile(r"(?<![:/\w])/(?!/)[^/\s]+(?:/[^/\s]+)*")
 RELATIVE_PATH_RE = re.compile(r"(?:^|[^a-z0-9])(?:\.\.?/)+(?:[^/\s]+/)*[^/\s]+", re.IGNORECASE)
 HTTP_URL_RE = re.compile(r"(?i)\bhttps?://[^\s<>()\"']+")
 HOST_LABEL_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$", re.IGNORECASE)
+MAX_PATH_DECODE_PASSES = 8
+MAX_PATH_DECODE_CHARS = 1_000_000
+SPECIAL_USE_DNS_SUFFIXES = (
+    "local",
+    "localhost",
+    "localdomain",
+    "internal",
+    "home.arpa",
+    "test",
+    "invalid",
+    "example",
+    "onion",
+    "alt",
+)
 GENERATED_PATHS = (
     Path("manifest.json"),
     Path("ATTRIBUTION.md"),
@@ -144,22 +158,34 @@ def _validate_metadata(path: Path, metadata: dict[str, str]) -> list[str]:
     return errors
 
 
-def _decoded_path_text(value: str) -> str:
+def _decode_path_text(value: str) -> tuple[str, bool]:
     decoded = value
-    for _attempt in range(2):
+    if "%" not in decoded:
+        return decoded.replace("\\", "/"), False
+    if len(decoded) > MAX_PATH_DECODE_CHARS:
+        return decoded.replace("\\", "/"), True
+    for _attempt in range(MAX_PATH_DECODE_PASSES):
         unquoted = unquote(decoded)
+        if len(unquoted) > MAX_PATH_DECODE_CHARS:
+            return decoded.replace("\\", "/"), True
         if unquoted == decoded:
-            break
+            return decoded.replace("\\", "/"), False
         decoded = unquoted
-    return decoded.replace("\\", "/")
+    has_residual_encoding = unquote(decoded) != decoded
+    return decoded.replace("\\", "/"), has_residual_encoding
+
+
+def _decoded_path_text(value: str) -> str:
+    return _decode_path_text(value)[0]
 
 
 def _contains_local_path(value: str) -> bool:
-    normalized = _decoded_path_text(value)
+    normalized, has_residual_encoding = _decode_path_text(value)
     non_url_text = HTTP_URL_RE.sub("", normalized)
     lowered = normalized.lower()
     return any(
         (
+            has_residual_encoding,
             DRIVE_PATH_RE.search(normalized),
             POSIX_PRIVATE_PATH_RE.search(normalized),
             UNC_PATH_RE.search(normalized),
@@ -210,6 +236,12 @@ def _is_public_hostname(hostname: Optional[str]) -> bool:
         except UnicodeError:
             return False
         if len(ascii_hostname) > 253 or "." not in ascii_hostname:
+            return False
+        lowered_hostname = ascii_hostname.lower()
+        if any(
+            lowered_hostname == suffix or lowered_hostname.endswith(f".{suffix}")
+            for suffix in SPECIAL_USE_DNS_SUFFIXES
+        ):
             return False
         labels = ascii_hostname.split(".")
         return all(HOST_LABEL_RE.fullmatch(label) for label in labels) and not labels[-1].isdigit()

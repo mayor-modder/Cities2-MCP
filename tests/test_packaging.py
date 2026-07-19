@@ -208,6 +208,78 @@ class PluginPackagingTests(unittest.TestCase):
             finally:
                 self._stop_proc(proc)
 
+    def test_legacy_custom_wiki_data_dir_accepts_missing_or_name_only_manifest_but_research_stays_strict(self) -> None:
+        from tests.smoke_mcp import call, rpc_ndjson
+
+        for manifest_kind in ("missing", "name-only"):
+            with self.subTest(manifest=manifest_kind), tempfile.TemporaryDirectory(
+                prefix="cities2-legacy-wiki-"
+            ) as tmp:
+                root = Path(tmp)
+                wiki = root / f"custom-wiki-{manifest_kind}"
+                (wiki / "index").mkdir(parents=True)
+                page = {
+                    "page_id": "legacy-page",
+                    "title": "Legacy page",
+                    "url": "https://example.com/legacy-page",
+                    "sections": ["Overview"],
+                }
+                chunk = {
+                    "chunk_id": "legacy-page#1",
+                    "page_id": "legacy-page",
+                    "title": "Legacy page",
+                    "url": page["url"],
+                    "section": "Overview",
+                    "text": "legacy override sentinel",
+                }
+                (wiki / "index" / "pages.jsonl").write_text(json.dumps(page) + "\n", encoding="utf-8")
+                (wiki / "index" / "chunks.jsonl").write_text(json.dumps(chunk) + "\n", encoding="utf-8")
+                expected_dataset = wiki.name
+                if manifest_kind == "name-only":
+                    expected_dataset = "legacy-wiki"
+                    (wiki / "manifest.json").write_text(
+                        json.dumps({"name": expected_dataset}),
+                        encoding="utf-8",
+                    )
+
+                research = root / "name-only-research"
+                research.mkdir()
+                (research / "manifest.json").write_text(
+                    json.dumps({"name": "legacy-research"}),
+                    encoding="utf-8",
+                )
+                proc = subprocess.Popen(
+                    [
+                        sys.executable,
+                        "-m",
+                        "cities2_mcp.mcp_server",
+                        "--data-dir",
+                        str(wiki),
+                        "--research-data-dir",
+                        str(research),
+                    ],
+                    cwd=ROOT,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                assert proc.stdin and proc.stdout and proc.stderr
+                try:
+                    rpc_ndjson(proc, 1, "initialize", {"protocolVersion": "2025-06-18"})
+                    status = call(proc, 2, "source_status", {})
+                    search = call(proc, 3, "search", {"query": "legacy override sentinel", "limit": 1})
+
+                    self.assertTrue(status["wiki"]["available"])
+                    self.assertEqual(status["wiki"]["dataset"], expected_dataset)
+                    self.assertEqual(status["wiki"]["page_count"], 1)
+                    self.assertEqual(status["wiki"]["chunk_count"], 1)
+                    self.assertFalse(status["research"][0]["available"])
+                    self.assertIn("manifest name and dataset must match exactly", status["research"][0]["error"])
+                    self.assertTrue(search["ok"])
+                    self.assertEqual(search["results"][0]["dataset"], expected_dataset)
+                finally:
+                    self._stop_proc(proc)
+
     def test_explicit_research_data_dirs_replace_default_and_keep_missing_paths_unavailable(self) -> None:
         from tests.smoke_mcp import call, rpc_ndjson
 

@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
+from urllib.parse import quote
 
 from cities2_mcp.research import ResearchValidationError, load_reports, parse_report
 
@@ -134,12 +135,34 @@ class ResearchReportTests(unittest.TestCase):
             "https://example.com private",
             "https://localhost/private.txt",
             "https://127.0.0.1/private.txt",
+            "https://printer.local/talk",
+            "https://service.localhost/talk",
+            "https://host.localdomain/talk",
+            "https://build.internal/talk",
+            "https://router.home.arpa/talk",
+            "https://service.test/talk",
+            "https://service.invalid/talk",
+            "https://service.example/talk",
+            "https://service.onion/talk",
+            "https://service.alt/talk",
         )
         for source_url in source_urls:
             with self.subTest(source_url=source_url), tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
                 text = VALID_BODY.replace("https://example.com/talk", source_url)
                 with self.assertRaisesRegex(ResearchValidationError, "source_url must be an absolute http:// or https:// URL with a hostname"):
                     parse_report(self.write_report(Path(tmp), text))
+
+    def test_parse_report_accepts_public_hosts_with_special_use_labels(self) -> None:
+        source_urls = (
+            "https://local.example.com/talk",
+            "https://internal.example.com/talk",
+            "https://home.arpa.example.com/talk",
+        )
+        for source_url in source_urls:
+            with self.subTest(source_url=source_url), tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
+                text = VALID_BODY.replace("https://example.com/talk", source_url)
+                report = parse_report(self.write_report(Path(tmp), text))
+                self.assertEqual(report.metadata["source_url"], source_url)
 
     def test_build_dataset_rejects_private_paths_in_emitted_metadata_or_body(self) -> None:
         from cities2_mcp.research import build_dataset
@@ -161,6 +184,26 @@ class ResearchReportTests(unittest.TestCase):
             with self.subTest(private_value=private_value), tempfile.TemporaryDirectory(prefix="cities2-research-") as tmp:
                 root = Path(tmp)
                 self.write_report(root, VALID_BODY.replace(original, private_value))
+                with self.assertRaisesRegex(ResearchValidationError, "local or private path material"):
+                    build_dataset(root)
+
+    def test_build_dataset_rejects_deeply_percent_encoded_private_paths(self) -> None:
+        from cities2_mcp.research import build_dataset
+
+        cases = (
+            (r"C:\Users\Example\speaker.txt", 3),
+            ("../sources/full-transcript.txt", 4),
+            ("/Users/Example/private.txt", 12),
+        )
+        for private_path, passes in cases:
+            encoded = private_path
+            for _pass in range(passes):
+                encoded = quote(encoded, safe="")
+            with self.subTest(private_path=private_path, passes=passes), tempfile.TemporaryDirectory(
+                prefix="cities2-research-"
+            ) as tmp:
+                root = Path(tmp)
+                self.write_report(root, VALID_BODY.replace("creators: Example Speaker", f"creators: {encoded}"))
                 with self.assertRaisesRegex(ResearchValidationError, "local or private path material"):
                     build_dataset(root)
 

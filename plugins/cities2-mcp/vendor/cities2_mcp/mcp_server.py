@@ -216,7 +216,7 @@ def load_corpus_sources(
     research_dirs: list[Path],
 ) -> tuple[Optional[Corpus], Optional[str], list[JSON]]:
     try:
-        wiki_corpus = Corpus([wiki_dir])
+        wiki_corpus = Corpus([wiki_dir], allow_legacy_primary_manifest=True)
     except Exception as exc:
         return None, str(exc), [
             {
@@ -298,7 +298,7 @@ def load_corpus_sources(
         )
     if not valid:
         return wiki_corpus, None, statuses
-    return Corpus([wiki_dir, *valid]), None, statuses
+    return Corpus([wiki_dir, *valid], allow_legacy_primary_manifest=True), None, statuses
 
 
 def installed_game_context(encyclopedia: Optional[GameEncyclopediaSource]) -> JSON:
