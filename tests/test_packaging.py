@@ -114,6 +114,10 @@ class PluginPackagingTests(unittest.TestCase):
         data_dir = package.bundled_data_dir()
         self.assertTrue((data_dir / "index" / "chunks.jsonl").exists())
         self.assertTrue((data_dir / "index" / "pages.jsonl").exists())
+        research_data_dir = package.bundled_research_data_dir()
+        self.assertTrue((research_data_dir / "manifest.json").exists())
+        self.assertTrue((research_data_dir / "index" / "chunks.jsonl").exists())
+        self.assertTrue((research_data_dir / "index" / "pages.jsonl").exists())
 
     def test_server_version_flag_prints_public_version(self) -> None:
         result = subprocess.run(
@@ -143,14 +147,49 @@ class PluginPackagingTests(unittest.TestCase):
             tools = rpc(proc, 2, "tools/list", {})
             search = call(proc, 3, "search", {"query": "modding toolchain requirements", "limit": 1})
             scaffold = call(proc, 4, "scaffold_project", {"name": "No Workspace", "template": "cities2-csharp"})
+            status = call(proc, 5, "source_status", {})
 
             self.assertEqual(init["result"]["serverInfo"]["version"], PACKAGE_VERSION)
             self.assertEqual(len(tools["result"]["tools"]), 13)
+            tool_descriptions = {tool["name"]: tool["description"] for tool in tools["result"]["tools"]}
+            for tool_name in ("search", "query_reference", "get_page"):
+                self.assertIn("research", tool_descriptions[tool_name])
             self.assertTrue(search["ok"])
             self.assertFalse(scaffold["ok"])
             self.assertIn("--workspace", scaffold["error"])
+            self.assertTrue(status["research"][0]["available"])
+            self.assertEqual(status["research"][0]["dataset"], "cities2-research")
+            self.assertGreater(status["research"][0]["page_count"], 0)
+            self.assertGreater(status["research"][0]["chunk_count"], 0)
+            self.assertIn("chunks", status["research"][0]["configured_paths"])
+            self.assertIn("pages", status["research"][0]["configured_paths"])
         finally:
             self._stop_proc(proc)
+
+    def test_bad_research_dataset_keeps_wiki_available(self) -> None:
+        from tests.smoke_mcp import call, rpc_ndjson
+
+        with tempfile.TemporaryDirectory(prefix="cities2-bad-research-") as tmp:
+            bad = Path(tmp) / "bad"
+            bad.mkdir()
+            proc = subprocess.Popen(
+                [sys.executable, "-m", "cities2_mcp.mcp_server", "--research-data-dir", str(bad)],
+                cwd=ROOT,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            assert proc.stdin and proc.stdout and proc.stderr
+            try:
+                rpc_ndjson(proc, 1, "initialize", {"protocolVersion": "2025-06-18"})
+                status = call(proc, 2, "source_status", {})
+                search = call(proc, 3, "search", {"query": "modding toolchain", "limit": 1})
+                self.assertTrue(status["wiki"]["available"])
+                self.assertFalse(status["research"][0]["available"])
+                self.assertIn("Missing chunks index", status["research"][0]["error"])
+                self.assertTrue(search["ok"])
+            finally:
+                self._stop_proc(proc)
 
     def test_default_start_with_workspace_enables_workflow_tools(self) -> None:
         from tests.smoke_mcp import call, rpc_ndjson

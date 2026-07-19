@@ -178,6 +178,8 @@ def main() -> None:
         z1 = call(proc, 14, "package_project", {"project_dir": proj, "exclude_globs": ["obj/*", "bin/*"]})
         status = call(proc, 19, "source_status", {})
         assert "game_encyclopedia" in status
+        assert status["research"][0]["available"]
+        assert status["research"][0]["dataset"] == "cities2-research"
 
         print("initialize protocol:", init["result"]["protocolVersion"])
         print("tools count:", len(tools["result"]["tools"]))
@@ -198,6 +200,7 @@ def main() -> None:
         print("build ok:", b1["ok"])
         print("analyze score:", a1["score"])
         print("package path exists:", Path(z1["package_path"]).exists())
+        print("research dataset available:", status["research"][0]["available"])
         print("game encyclopedia available:", status["game_encyclopedia"]["available"])
     finally:
         proc.terminate()
