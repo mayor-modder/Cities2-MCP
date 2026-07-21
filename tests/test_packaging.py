@@ -499,7 +499,7 @@ class PluginPackagingTests(unittest.TestCase):
                 self.assertTrue(status["wiki"]["available"])
                 self.assertTrue(status["research"][0]["available"])
                 self.assertEqual(status["research"][0]["dataset"], "cities2-research")
-                self.assertEqual(scaffold["game_version"], "1.5.*")
+                self.assertEqual(scaffold["game_version"], "1.6.*")
                 self.assertIn("game_version_source", scaffold)
             finally:
                 self._stop_proc(proc)
@@ -656,7 +656,7 @@ class PluginPackagingTests(unittest.TestCase):
                 self.assertTrue(status["wiki"]["available"])
                 self.assertTrue(status["research"][0]["available"])
                 self.assertEqual(status["research"][0]["dataset"], "cities2-research")
-                self.assertEqual(scaffold["game_version"], "1.5.*")
+                self.assertEqual(scaffold["game_version"], "1.6.*")
                 self.assertIn("game_version_source", scaffold)
             finally:
                 self._stop_proc(proc)
