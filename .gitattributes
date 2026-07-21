@@ -2,3 +2,9 @@
 *.md text eol=lf
 .gitattributes text eol=lf
 evals/scenarios/**/*.sh text eol=lf
+cities2_mcp/research_data/*.json text eol=lf
+cities2_mcp/research_data/**/*.json text eol=lf
+cities2_mcp/research_data/**/*.jsonl text eol=lf
+plugins/cities2-mcp/vendor/cities2_mcp/research_data/*.json text eol=lf
+plugins/cities2-mcp/vendor/cities2_mcp/research_data/**/*.json text eol=lf
+plugins/cities2-mcp/vendor/cities2_mcp/research_data/**/*.jsonl text eol=lf

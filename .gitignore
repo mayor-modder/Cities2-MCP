@@ -15,6 +15,10 @@ node_modules/
 .codex/
 mcp.config.json
 
+# Private research source material; only curated reports are committed.
+cities2-research/sources/**
+!cities2-research/sources/.gitignore
+
 # Local game Encyclopedia cache/previews; generated from a user's installed game files.
 game-encyclopedia-cache/
 data-game-encyclopedia/

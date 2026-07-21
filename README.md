@@ -4,7 +4,7 @@
 
 Cities2 MCP and Modding Toolkit is a local MCP server and agent skill bundle for Cities: Skylines II gameplay questions, patch notes, and mod project workflows.
 
-It gives AI agents access to a bundled, searchable Cities: Skylines II Wiki corpus and, when the game is installed locally, the in-game encyclopedia. Agents can use those sources to answer gameplay questions, summarize patch/update information, and explain city systems with source notes. The package also includes five agent skills for game knowledge, modding, review, debugging, and release readiness, plus local MCP workflow tools for scaffolding, inspecting, building, and packaging CS2 mod projects inside trusted workspaces.
+It gives AI agents access to a bundled, searchable Cities: Skylines II Wiki corpus, separately attributed curated research reports, and, when the game is installed locally, the in-game encyclopedia. Agents can use those sources to answer gameplay questions, summarize patch/update information, and explain city systems with source notes. The package also includes five agent skills for game knowledge, modding, review, debugging, and release readiness, plus local MCP workflow tools for scaffolding, inspecting, building, and packaging CS2 mod projects inside trusted workspaces.
 
 **The plugin is in active development.** Package checks, direct MCP smoke tests, and selected client workflows are covered in the repository test suite and eval reports, but client plugin behavior can vary by host and version. See the [known issues](https://github.com/mayor-modder/Cities2-MCP/issues) and [eval reports](https://github.com/mayor-modder/Cities2-MCP/tree/main/evals/reports) for the latest verification notes.
 
@@ -23,6 +23,10 @@ The MCP server includes a prepared text corpus from the Cities: Skylines II Wiki
 - search the wiki
 - retrieve full pages, page-level references, and code-oriented snippets for game systems, patch notes, and modding topics
 - answer questions about game mechanics, recent updates, and how city systems affect your save
+
+### Search curated research
+
+The MCP server also bundles curated Cities: Skylines II research reports. These reports are historically situated, separately attributed, and generated from committed research notes rather than raw transcripts. Results retain publication and source context so an assistant can distinguish time-bounded findings from current game behavior and APIs.
 
 ### Search the local game encyclopedia
 
@@ -58,6 +62,6 @@ The MCP server runs locally and does not collect telemetry. See [PRIVACY.md](htt
 
 ## Licensing
 
-The MCP server code is licensed under the MIT License. The included `cities2_mcp/data` corpus is licensed under Creative Commons Attribution-ShareAlike 3.0; source attribution and transformation notes are in `cities2_mcp/data/ATTRIBUTION.md`.
+The MCP server code is licensed under the MIT License. The included wiki corpus is licensed under Creative Commons Attribution-ShareAlike 3.0; its source attribution and transformation notes are in the [wiki corpus attribution](https://github.com/mayor-modder/Cities2-MCP/blob/main/cities2_mcp/data/ATTRIBUTION.md). The curated research corpus is separately attributed, and its original report prose follows the repository license; see the [research corpus attribution](https://github.com/mayor-modder/Cities2-MCP/blob/main/cities2_mcp/research_data/ATTRIBUTION.md).
 
 This project is not developed by, endorsed by, reviewed by, or approved by Paradox Interactive, Iceflake Studios, Colossal Order, Paradox Wikis, or any related company. Cities: Skylines II and related names are used referentially.

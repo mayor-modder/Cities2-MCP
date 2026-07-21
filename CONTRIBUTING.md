@@ -25,6 +25,17 @@ py -3 -m cities2_mcp.plugin_packages check
 
 If the package check reports stale generated plugin payloads, run the sync command it recommends, review the resulting diff, and run the check again.
 
+## Research reports
+
+Canonical research reports live under `cities2-research/reports/`. If a source publication date is unclear, get maintainer confirmation before syncing; do not infer it from local file metadata, event names, or repository history. Keep raw transcripts, media, and other source material under the ignored `cities2-research/sources/` directory and never force-add them.
+
+After editing a committed research report, regenerate and verify the bundled dataset with these exact commands:
+
+```powershell
+python -m cities2_mcp.research sync
+python -m cities2_mcp.research check
+```
+
 ## What to keep out of commits
 
 Do not commit:
@@ -32,6 +43,7 @@ Do not commit:
 - local MCP client config with machine-specific paths
 - extracted game encyclopedia cache files
 - `Locale.cok` or other local game files
+- raw research source material from `cities2-research/sources/`
 - built packages, virtual environments, dependency folders, or temporary smoke test workspaces
 - personal paths, tokens, or private tool output
 

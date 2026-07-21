@@ -11,9 +11,10 @@ Use this skill for Cities: Skylines II modding and local mod-project work throug
 
 Trigger this skill for asset/mod workflows, toolchain questions, project analysis, file edits, scaffolding, build/package/install work, or local playtesting handoffs, even when the user does not mention this plugin.
 
-## Source And Tool Roles
+## Source and tool roles
 
-- Use wiki retrieval tools for concepts, APIs, toolchain setup, project structure, localization, UI mods, and reference lookup.
+- Use bundled retrieval for concepts, APIs, toolchain setup, project structure, localization, UI mods, and reference lookup. Results with `dataset: cities2-docs` are wiki evidence; results with `dataset: cities2-research` are curated research evidence.
+- Research reports provide historical design rationale and internal architecture context. Inspect and cite each report's `published_at` date. A research report does not establish a current public modding API unless current documentation or installed-assembly evidence confirms it.
 - Use project workflow tools only for explicit local actions inside configured workspaces.
 - Do not use the game encyclopedia as the primary source for modding APIs; it is gameplay-facing. It can still help explain in-game concepts a mod interacts with.
 
@@ -32,15 +33,15 @@ is playtesting. Treat them as playtesting handoff moments, not distribution. For
 public package, publish, upload, distribute, or release requests, require the
 release-readiness workflow.
 
-## Documentation Workflow
+## Documentation workflow
 
 1. Turn the modding question into compact keyword terms.
-2. Search with `search(query, limit=5)` and `query_reference(query, limit=5)`.
+2. Search with `search(query, limit=5)` and `query_reference(query, limit=5)`, then inspect `dataset` on every candidate before deciding whether it is wiki or research evidence.
 3. For implementation, review, debugging, or release decisions, search for task-specific documented best practices and negative constraints. Useful terms include `best practice`, `recommended`, `should`, `do not`, `should not`, `must not`, `cannot`, `can't`, and `won't`.
-4. Fetch the strongest wiki page with `get_page(page_id)` when snippets are not enough.
-5. Use `get_snippets(query, limit=3)` for code-oriented wiki snippets.
-6. Keep track of source page titles, URLs, and snippet topics.
-7. Answer with the relevant docs context and note uncertainty when the corpus does not cover the exact API or version.
+4. Fetch the strongest page or research report with `get_page(page_id)` when snippets are not enough.
+5. Use `get_snippets(query, limit=3)` for code-oriented snippets.
+6. Keep the source title, URL, and `dataset` for every source used. For `cities2-research`, also keep `published_at` and treat the claim as historically situated.
+7. Answer with the relevant source context and note uncertainty when the corpus does not cover the exact API or version. Base compile-ready API guidance on current documentation or inspected assemblies; use research for rationale until current evidence confirms the surface.
 
 Example queries:
 
@@ -156,10 +157,11 @@ distribution release. If the user has not tested locally before public release,
 route to `cities2-mod-release` and provide a tailored playtest checklist. If the
 user explicitly overrides the gate, label the result as not gameplay-verified.
 
-## Answer Style
+## Answer style
 
 - For conceptual questions, answer from docs and avoid unnecessary local actions.
 - For implementation requests, inspect the project first and keep edits scoped.
 - Do not imply the optional .NET 6/modding toolchain is needed for wiki search or scaffolding; it is only needed for build, post-process, and package workflows.
 - Keep user-visible output practical: what to do, why, and what tool/source supports it.
-- When docs were used, include a compact source note at the end. Prefer one short sentence or a `Sources:` line naming the wiki page or snippet topic, with Markdown links for wiki URLs when available.
+- When docs were used, include a compact source note at the end. Prefer one short sentence or a `Sources:` line naming the source and URL.
+- When research evidence is used, the source note has these required fields in order: `cities2-research`, report title, `published_at`, URL, and whether current documentation or installed-assembly evidence confirms the API. Use this shape: `Historical source: cities2-research — <title>, published <published_at>: <url>. Current API status: <confirmed by current evidence or not established>.`

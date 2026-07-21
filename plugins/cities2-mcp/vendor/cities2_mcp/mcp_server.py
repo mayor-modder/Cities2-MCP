@@ -38,8 +38,9 @@ from .retrieval import mcp_server as retrieval_impl
 JSON = Dict[str, Any]
 SERVER_NAME = "Cities2-MCP — game knowledge and modding tools for Cities: Skylines II"
 SERVER_INSTRUCTIONS = (
-    "Cities2-MCP gives AI assistants local access to the bundled Cities: Skylines II Wiki corpus "
-    "for gameplay, systems, and modding questions. It also includes local workflow tools for CS2 "
+    "Cities2-MCP gives AI assistants local access to the bundled Cities: Skylines II Wiki corpus and research datasets "
+    "for gameplay, systems, and modding questions. Search, query_reference, and get_page return dataset labels; "
+    "treat research as time-bounded evidence and check publication dates for current claims. It also includes local workflow tools for CS2 "
     "mod projects: scaffolding, reading and writing project files, static analysis, building, "
     "and packaging. Use the wiki retrieval tools for game knowledge "
     "and reference lookups; use the workflow tools only inside configured local workspaces."
@@ -53,6 +54,10 @@ retrieval_handle_resources_read = retrieval_impl.handle_resources_read
 
 def bundled_data_dir() -> Path:
     return Path(__file__).resolve().parent / "data"
+
+
+def bundled_research_data_dir() -> Path:
+    return Path(__file__).resolve().parent / "research_data"
 
 
 def docs_guard_payload(corpus_error: Optional[str], docs_paths: Optional[Dict[str, str]]) -> JSON:
@@ -200,6 +205,100 @@ def resolve_data_dir(value: str) -> Path:
     if configured.resolve() == checkout_data.resolve():
         return bundled_data_dir()
     return configured
+
+
+def resolve_research_data_dir(value: str) -> Path:
+    return Path(value).expanduser()
+
+
+def load_corpus_sources(
+    wiki_dir: Path,
+    research_dirs: list[Path],
+) -> tuple[Optional[Corpus], Optional[str], list[JSON]]:
+    try:
+        wiki_corpus = Corpus([wiki_dir], allow_legacy_primary_manifest=True)
+    except Exception as exc:
+        return None, str(exc), [
+            {
+                "source": "research",
+                "dataset": path.name,
+                "available": False,
+                "error": "Wiki corpus must load before research datasets can be combined.",
+                "configured_paths": {
+                    "chunks": str(path / "index" / "chunks.jsonl"),
+                    "pages": str(path / "index" / "pages.jsonl"),
+                },
+            }
+            for path in research_dirs
+        ]
+    if wiki_corpus is None:
+        return None, "Wiki corpus loader returned no corpus.", [
+            {
+                "source": "research",
+                "dataset": path.name,
+                "available": False,
+                "error": "Wiki corpus must load before research datasets can be combined.",
+                "configured_paths": {
+                    "chunks": str(path / "index" / "chunks.jsonl"),
+                    "pages": str(path / "index" / "pages.jsonl"),
+                },
+            }
+            for path in research_dirs
+        ]
+
+    valid: list[Path] = []
+    statuses: list[JSON] = []
+    seen_dataset_names = set(wiki_corpus.dataset_names)
+    for path in research_dirs:
+        configured_paths = {
+            "chunks": str(path / "index" / "chunks.jsonl"),
+            "pages": str(path / "index" / "pages.jsonl"),
+        }
+        try:
+            probe = Corpus([path])
+        except Exception as exc:
+            statuses.append(
+                {
+                    "source": "research",
+                    "dataset": path.name,
+                    "available": False,
+                    "error": str(exc),
+                    "configured_paths": configured_paths,
+                    "page_count": 0,
+                    "chunk_count": 0,
+                }
+            )
+            continue
+        dataset_name = probe.dataset_names[0]
+        if dataset_name in seen_dataset_names:
+            statuses.append(
+                {
+                    "source": "research",
+                    "dataset": dataset_name,
+                    "available": False,
+                    "error": f"duplicate dataset name: {dataset_name}",
+                    "configured_paths": configured_paths,
+                    "page_count": 0,
+                    "chunk_count": 0,
+                }
+            )
+            continue
+        seen_dataset_names.add(dataset_name)
+        valid.append(path)
+        statuses.append(
+            {
+                "source": "research",
+                "dataset": dataset_name,
+                "available": True,
+                "error": "",
+                "configured_paths": configured_paths,
+                "page_count": len(probe.pages),
+                "chunk_count": len(probe.chunks),
+            }
+        )
+    if not valid:
+        return wiki_corpus, None, statuses
+    return Corpus([wiki_dir, *valid], allow_legacy_primary_manifest=True), None, statuses
 
 
 def installed_game_context(encyclopedia: Optional[GameEncyclopediaSource]) -> JSON:
@@ -489,7 +588,7 @@ def encyclopedia_tools_catalog() -> List[JSON]:
         },
         {
             "name": "source_status",
-            "description": "Report Cities2-MCP source availability for the wiki corpus and local game encyclopedia.",
+            "description": "Report Cities2-MCP source availability for the wiki corpus, bundled research datasets, and local game encyclopedia.",
             "annotations": {
                 "title": "Check Source Status",
                 "readOnlyHint": True,
@@ -517,21 +616,22 @@ PROMPT_ARGUMENTS = [
 
 PROMPT_DEFINITIONS: Dict[str, JSON] = {
     "cities2": {
-            "description": "Answer Cities: Skylines II questions using both the bundled wiki corpus and the local game encyclopedia when available.",
+            "description": "Answer Cities: Skylines II questions using bundled wiki and research datasets plus the local game encyclopedia when available.",
         "tool_guidance": (
-            "Use source_status() first. Search both sources when they are available: use search/query_reference/get_page "
-            "for the bundled Cities: Skylines II Wiki corpus, and search_encyclopedia/get_encyclopedia_entry for the "
+            "Use source_status() first. Search all available sources: search/query_reference/get_page search the bundled "
+            "Cities: Skylines II Wiki and research datasets and return dataset labels; search_encyclopedia/get_encyclopedia_entry search the "
             "local in-game encyclopedia. Prefer the local game encyclopedia for current in-game terminology and exact "
-            "mechanics, and use the wiki for broader explanations, guide context, tables, and modding background. "
+            "mechanics, and use the wiki and research datasets for broader explanations, guide context, tables, and modding background. "
+            "Treat research as time-bounded evidence and check its publication dates before making current claims. "
             "If the sources disagree, say so plainly and identify which source says what."
         ),
     },
     "cities2-wiki": {
-        "description": "Answer using only the bundled Cities: Skylines II Wiki corpus.",
+        "description": "Answer using the bundled Cities: Skylines II Wiki and research datasets.",
         "tool_guidance": (
-            "Use only the bundled wiki corpus tools: search, query_reference, get_page, and get_snippets when relevant. "
+            "Use only the bundled wiki and research dataset tools: search, query_reference, get_page, and get_snippets when relevant. "
             "Do not use search_encyclopedia or get_encyclopedia_entry. Search first, fetch the most relevant full page "
-            "with get_page when a snippet is not enough, then answer from the wiki material with page/source labels."
+            "with get_page when a snippet is not enough, then answer with dataset and page/source labels. Treat research as time-bounded evidence."
         ),
     },
     "cities2-encyclopedia": {
@@ -544,13 +644,13 @@ PROMPT_DEFINITIONS: Dict[str, JSON] = {
         ),
     },
     "cities2-modding": {
-        "description": "Answer Cities: Skylines II modding questions using docs and local mod project workflow tools.",
+        "description": "Answer Cities: Skylines II modding questions using bundled wiki and research datasets plus local mod project workflow tools.",
         "tool_guidance": (
-            "Use wiki retrieval tools for modding concepts, APIs, localization, UI, project structure, and toolchain "
+            "Use wiki and research retrieval tools for modding concepts, APIs, localization, UI, project structure, and toolchain "
             "references. Use workflow tools only for explicit local project actions inside configured workspaces: "
             "scaffold_project, write_project_file, list_project_tree, build_project, analyze_project, package_project, "
             "and manual playtesting handoff steps. build_project executes trusted workspace code; do not run it for "
-            "arbitrary untrusted repositories. Before writing files or running builds, make the intended local action clear."
+            "arbitrary untrusted repositories. Read result dataset labels and treat research as time-bounded evidence. Before writing files or running builds, make the intended local action clear."
         ),
     },
 }
@@ -722,6 +822,7 @@ def handle_encyclopedia_tools(
     encyclopedia: Optional[GameEncyclopediaSource],
     corpus_error: Optional[str],
     docs_paths: Optional[Dict[str, str]],
+    research_status: Optional[list[JSON]] = None,
 ) -> Optional[JSON]:
     try:
         name = str(params.get("name", ""))
@@ -730,11 +831,15 @@ def handle_encyclopedia_tools(
             args = {}
 
         if name == "source_status":
+            wiki_dataset = corpus.dataset_names[0] if corpus is not None and corpus.dataset_names else "cities2-docs"
             wiki_status = {
                 "source": "wiki",
+                "dataset": wiki_dataset,
                 "available": corpus is not None,
                 "error": corpus_error or "",
                 "configured_paths": docs_paths or {},
+                "page_count": sum(1 for row in corpus.pages.values() if row.get("dataset") == wiki_dataset) if corpus else 0,
+                "chunk_count": sum(1 for row in corpus.chunks if row.get("dataset") == wiki_dataset) if corpus else 0,
             }
             game_status = (
                 encyclopedia.status()
@@ -750,7 +855,7 @@ def handle_encyclopedia_tools(
             return {
                 "jsonrpc": "2.0",
                 "id": req_id,
-                "result": text_result({"wiki": wiki_status, "game_encyclopedia": game_status}),
+                "result": text_result({"wiki": wiki_status, "research": research_status or [], "game_encyclopedia": game_status}),
             }
 
         if name == "search_encyclopedia":
@@ -896,6 +1001,7 @@ def handle_tools_call(
     corpus_error: Optional[str] = None,
     workflow_error: Optional[str] = None,
     docs_paths: Optional[Dict[str, str]] = None,
+    research_status: Optional[list[JSON]] = None,
 ) -> JSON:
     name = str(params.get("name", ""))
     if name in DOCS_TOOL_NAMES and corpus is None:
@@ -912,6 +1018,7 @@ def handle_tools_call(
         encyclopedia=encyclopedia,
         corpus_error=corpus_error,
         docs_paths=docs_paths,
+        research_status=research_status,
     )
     if encyclopedia_result is not None:
         return encyclopedia_result
@@ -953,6 +1060,7 @@ def handle_request(
     corpus_error: Optional[str] = None,
     workflow_error: Optional[str] = None,
     docs_paths: Optional[Dict[str, str]] = None,
+    research_status: Optional[list[JSON]] = None,
 ) -> Optional[JSON]:
     if not isinstance(message, dict):
         return None
@@ -995,7 +1103,36 @@ def handle_request(
             corpus_error=corpus_error,
             workflow_error=workflow_error,
             docs_paths=docs_paths,
+            research_status=research_status,
         )
+
+    if method == "tools/list":
+        result = retrieval_handle_request(
+            message,
+            corpus,
+            corpus_error=corpus_error,
+            extra_tools_catalog=extra_tools_catalog(),
+            extra_tools_handler=lambda inner_req_id, inner_params: handle_domain_tools(
+                inner_req_id,
+                inner_params,
+                wm=wm,
+                workflow_error=workflow_error,
+            ),
+            server_name=SERVER_NAME,
+            server_version=__version__,
+            server_instructions=SERVER_INSTRUCTIONS,
+        )
+        descriptions = {
+            "search": "Search the bundled Cities: Skylines II Wiki corpus and research datasets for gameplay, systems, and modding information. Results include dataset labels. Research evidence is time-bounded; check publication dates for current details.",
+            "get_page": "Return a full page from the bundled Cities: Skylines II Wiki corpus or research datasets by page_id. Results include dataset labels. Research evidence is time-bounded; check publication dates for current details.",
+            "query_reference": "Search page-level Cities: Skylines II Wiki corpus and research dataset references: titles, sections, URLs, and links. Results include dataset labels. Research evidence is time-bounded; check publication dates for current details.",
+        }
+        if result is not None:
+            tools = result.get("result", {}).get("tools", [])
+            for tool in tools:
+                if isinstance(tool, dict) and tool.get("name") in descriptions:
+                    tool["description"] = descriptions[str(tool["name"])]
+        return result
 
     return retrieval_handle_request(
         message,
@@ -1027,6 +1164,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description=SERVER_NAME)
     parser.add_argument("--data-dir", default=str(bundled_data_dir()))
+    parser.add_argument("--research-data-dir", action="append", dest="research_data_dirs")
     parser.add_argument("--workspace", action="append", dest="workspaces")
     parser.add_argument("--mods-dir", default=str(default_mods_dir()))
     parser.add_argument("--game-dir")
@@ -1048,6 +1186,8 @@ def main() -> None:
     corpus_error: Optional[str] = None
     workflow_error: Optional[str] = None
     data_dir = resolve_data_dir(str(args.data_dir))
+    research_values = args.research_data_dirs or [str(bundled_research_data_dir())]
+    research_dirs = [resolve_research_data_dir(value) for value in research_values]
     docs_paths = {
         "chunks": str(data_dir / "index" / "chunks.jsonl"),
         "pages": str(data_dir / "index" / "pages.jsonl"),
@@ -1058,10 +1198,8 @@ def main() -> None:
         workspace_values.append(env_workspace)
     workspace_paths = [Path(value) for value in workspace_values if value]
 
-    try:
-        corpus = Corpus([data_dir])
-    except Exception as exc:
-        corpus_error = str(exc)
+    corpus, corpus_error, research_status = load_corpus_sources(data_dir, research_dirs)
+    if corpus_error:
         debug_log(f"Corpus init failed: {corpus_error}")
 
     try:
@@ -1087,9 +1225,11 @@ def main() -> None:
 
     if debug_enabled():
         if corpus is not None:
-            debug_log(f"Corpus loaded from {data_dir}")
+            debug_log(f"Wiki corpus loaded from {data_dir}")
         else:
             debug_log(f"Corpus unavailable: {corpus_error}")
+        for status in research_status:
+            debug_log("Research corpus status: " + json.dumps(status, ensure_ascii=False, sort_keys=True))
         if wm is not None:
             debug_log(f"Workspace={wm.workspace}")
             debug_log(f"Allowed workspaces={wm.workspaces}")
@@ -1127,6 +1267,7 @@ def main() -> None:
                         corpus_error=corpus_error,
                         workflow_error=workflow_error,
                         docs_paths=docs_paths,
+                        research_status=research_status,
                     )
                     if resp is not None:
                         responses.append(resp)
@@ -1146,6 +1287,7 @@ def main() -> None:
                 corpus_error=corpus_error,
                 workflow_error=workflow_error,
                 docs_paths=docs_paths,
+                research_status=research_status,
             )
             if resp is not None:
                 if method == "initialize":

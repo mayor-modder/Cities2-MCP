@@ -11,29 +11,31 @@ Use this skill when answering Cities: Skylines II gameplay questions with Cities
 
 Trigger this skill for plain questions like "How do I grow office demand?", "What changed in the latest patch?", "Did traffic change?", "What makes citizens healthier?", "Why is housing demand low?", or "How does zoning/pollution/education/transit work?", even when the user does not mention this plugin, wiki, encyclopedia, patch notes, or sources.
 
-## Source Roles
+## Source roles
 
 - **Game encyclopedia**: More authoritative for current in-game wording, broad current mechanics, and terminology because it is read from the user's installed game files.
 - **Wiki corpus**: Usually better for player advice, tables, examples, patch history, guide context, and fuller explanations.
+- **Research corpus**: `cities2-research` contains curated summaries of talks, interviews, and similar sources. It adds design rationale and historical context, but it is time-bounded evidence rather than confirmation of current gameplay or APIs. Inspect and retain each research result's `published_at` date.
 - **Conflict handling**: If sources disagree, say so plainly. Prefer the game encyclopedia for current in-game terminology/mechanics, unless the wiki result is clearly a newer patch-specific note.
 
 ## Workflow
 
 1. Call `source_status()` first.
 2. Extract 4-10 keyword terms from the user's question. Do not send the whole natural-language question as the primary query.
-3. Search the wiki with `search(query, limit=5)`. Use `query_reference(query, limit=5)` if page-level routing would help.
+3. Search the bundled wiki and research corpora with `search(query, limit=5)`. Use `query_reference(query, limit=5)` if page-level routing would help. Inspect `dataset` on every result before deciding its source role.
 4. Search the game encyclopedia with `search_encyclopedia(query, limit=5)` when `source_status()` reports it is available.
 5. Fetch fuller evidence:
-   - Use `get_page(page_id)` for the best wiki page when snippets are not enough.
+   - Use `get_page(page_id)` for the best bundled page or research report when snippets are not enough.
    - Use `get_encyclopedia_entry(entry_id)` for the best encyclopedia entries.
-6. Keep track of source titles and URLs:
-   - Wiki page title and `url` from `get_page` or search results.
+6. Keep track of source identity and timing:
+   - For `cities2-docs`, keep the wiki page title and `url` from `get_page` or search results.
+   - For `cities2-research`, keep the report title, `url`, `dataset`, and `published_at`. State the publication date when using the result and do not present its claim as current unless a current source independently confirms it.
    - Game encyclopedia entry titles from `get_encyclopedia_entry`.
-7. Answer from the retrieved material. Explain what to do and why, with short source labels such as `wiki` and `game encyclopedia` when useful.
+7. Answer from the retrieved material. Explain what to do and why, with short source labels such as `wiki`, `research published YYYY-MM-DD`, and `game encyclopedia` when useful.
 
-## Patch And Update Questions
+## Patch and update questions
 
-For questions about what is new, changed, fixed, currently broken, patched, or recently released, treat the wiki corpus as the primary patch-note source and the game encyclopedia as supporting terminology.
+For questions about what is new, changed, fixed, currently broken, patched, or recently released, treat the wiki corpus as the primary patch-note source and the game encyclopedia as supporting terminology. Research may explain historical intent, but it cannot establish the latest patch state without newer evidence.
 
 1. Call `source_status()` first.
 2. Search compact update terms such as `latest patch game history patch notes`, `Main Page/news`, `Patches`, a version number, or a codename from the question.
@@ -68,13 +70,16 @@ If the first search misses, rewrite the query with related in-game labels from t
 - If evidence is thin, say what the sources covered and what they did not cover.
 - Do not browse the live web unless the user explicitly asks for current external information.
 
-## Source Citation Style
+## Source citation style
 
 When sources were used, include a compact source note at the end of the answer. Prefer one short sentence or a `Sources:` line, not a bibliography.
+
+When research evidence is used, the source note has these required fields in order: `cities2-research`, report title, `published_at`, URL, and whether a current source confirms the claim. Use this shape: `Historical source: cities2-research — <title>, published <published_at>: <url>. Current status: <confirmed by current source or not established>.`
 
 Good patterns:
 
 - `Sources used: game encyclopedia entries for Demand and Office Zones, plus the CS2 Wiki Zoning page: https://cs2.paradoxwikis.com/Zoning.`
 - `Source note: the game encyclopedia explains the in-game Demand and Office Zones entries; the wiki adds player-facing context from Zoning.`
+- `Historical source: cities2-research report Tapping the Entity Component System for Cities: Skylines II, published 2024-10-09: https://www.youtube.com/watch?v=nEkIyWhvq3o. Current behavior was not established by that report.`
 
 Use Markdown links for wiki pages when the client supports them. Name the game encyclopedia entries, but do not invent links for them unless the MCP resource URI is directly useful to the user. If the wiki and encyclopedia disagree or emphasize different things, say that briefly in the answer.

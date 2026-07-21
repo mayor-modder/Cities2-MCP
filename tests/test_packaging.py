@@ -34,6 +34,15 @@ SKILL_NAMES = (
 
 
 class PluginPackagingTests(unittest.TestCase):
+    def test_knowledge_and_modding_skills_require_research_provenance_handling(self) -> None:
+        for skill_name in ("cities2-knowledge", "cities2-modding"):
+            text = (ROOT / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
+            with self.subTest(skill=skill_name):
+                self.assertIn("cities2-research", text)
+                self.assertIn("`dataset`", text)
+                self.assertIn("`published_at`", text)
+                self.assertIn("histor", text.lower())
+
     @staticmethod
     def _stop_proc(proc: subprocess.Popen[bytes]) -> None:
         proc.terminate()
@@ -73,6 +82,12 @@ class PluginPackagingTests(unittest.TestCase):
         self.assertIn("wiki knowledge", project["description"])
         self.assertIn("game encyclopedia", project["description"])
         self.assertIn("agent skills", project["description"])
+
+        sdist_include = pyproject["tool"]["hatch"]["build"]["targets"]["sdist"]["include"]
+        self.assertIn("cities2-research/README.md", sdist_include)
+        self.assertIn("cities2-research/reports/**", sdist_include)
+        self.assertNotIn("cities2-research/**", sdist_include)
+        self.assertNotIn("cities2-research/sources/**", sdist_include)
 
     def test_pypi_readme_links_are_absolute(self) -> None:
         pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
@@ -114,6 +129,10 @@ class PluginPackagingTests(unittest.TestCase):
         data_dir = package.bundled_data_dir()
         self.assertTrue((data_dir / "index" / "chunks.jsonl").exists())
         self.assertTrue((data_dir / "index" / "pages.jsonl").exists())
+        research_data_dir = package.bundled_research_data_dir()
+        self.assertTrue((research_data_dir / "manifest.json").exists())
+        self.assertTrue((research_data_dir / "index" / "chunks.jsonl").exists())
+        self.assertTrue((research_data_dir / "index" / "pages.jsonl").exists())
 
     def test_server_version_flag_prints_public_version(self) -> None:
         result = subprocess.run(
@@ -143,12 +162,155 @@ class PluginPackagingTests(unittest.TestCase):
             tools = rpc(proc, 2, "tools/list", {})
             search = call(proc, 3, "search", {"query": "modding toolchain requirements", "limit": 1})
             scaffold = call(proc, 4, "scaffold_project", {"name": "No Workspace", "template": "cities2-csharp"})
+            status = call(proc, 5, "source_status", {})
 
             self.assertEqual(init["result"]["serverInfo"]["version"], PACKAGE_VERSION)
             self.assertEqual(len(tools["result"]["tools"]), 13)
+            tool_descriptions = {tool["name"]: tool["description"] for tool in tools["result"]["tools"]}
+            for tool_name in ("search", "query_reference", "get_page"):
+                self.assertIn("research", tool_descriptions[tool_name])
+                self.assertIn("time-bounded", tool_descriptions[tool_name])
+                self.assertIn("publication date", tool_descriptions[tool_name])
             self.assertTrue(search["ok"])
             self.assertFalse(scaffold["ok"])
             self.assertIn("--workspace", scaffold["error"])
+            self.assertTrue(status["research"][0]["available"])
+            self.assertEqual(status["research"][0]["dataset"], "cities2-research")
+            self.assertGreater(status["research"][0]["page_count"], 0)
+            self.assertGreater(status["research"][0]["chunk_count"], 0)
+            self.assertIn("chunks", status["research"][0]["configured_paths"])
+            self.assertIn("pages", status["research"][0]["configured_paths"])
+        finally:
+            self._stop_proc(proc)
+
+    def test_bad_research_dataset_keeps_wiki_available(self) -> None:
+        from tests.smoke_mcp import call, rpc_ndjson
+
+        with tempfile.TemporaryDirectory(prefix="cities2-bad-research-") as tmp:
+            bad = Path(tmp) / "bad"
+            bad.mkdir()
+            proc = subprocess.Popen(
+                [sys.executable, "-m", "cities2_mcp.mcp_server", "--research-data-dir", str(bad)],
+                cwd=ROOT,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            assert proc.stdin and proc.stdout and proc.stderr
+            try:
+                rpc_ndjson(proc, 1, "initialize", {"protocolVersion": "2025-06-18"})
+                status = call(proc, 2, "source_status", {})
+                search = call(proc, 3, "search", {"query": "modding toolchain", "limit": 1})
+                self.assertTrue(status["wiki"]["available"])
+                self.assertFalse(status["research"][0]["available"])
+                self.assertIn("Missing dataset manifest", status["research"][0]["error"])
+                self.assertTrue(search["ok"])
+            finally:
+                self._stop_proc(proc)
+
+    def test_legacy_custom_wiki_data_dir_accepts_missing_or_name_only_manifest_but_research_stays_strict(self) -> None:
+        from tests.smoke_mcp import call, rpc_ndjson
+
+        for manifest_kind in ("missing", "name-only"):
+            with self.subTest(manifest=manifest_kind), tempfile.TemporaryDirectory(
+                prefix="cities2-legacy-wiki-"
+            ) as tmp:
+                root = Path(tmp)
+                wiki = root / f"custom-wiki-{manifest_kind}"
+                (wiki / "index").mkdir(parents=True)
+                page = {
+                    "page_id": "legacy-page",
+                    "title": "Legacy page",
+                    "url": "https://example.com/legacy-page",
+                    "sections": ["Overview"],
+                }
+                chunk = {
+                    "chunk_id": "legacy-page#1",
+                    "page_id": "legacy-page",
+                    "title": "Legacy page",
+                    "url": page["url"],
+                    "section": "Overview",
+                    "text": "legacy override sentinel",
+                }
+                (wiki / "index" / "pages.jsonl").write_text(json.dumps(page) + "\n", encoding="utf-8")
+                (wiki / "index" / "chunks.jsonl").write_text(json.dumps(chunk) + "\n", encoding="utf-8")
+                expected_dataset = wiki.name
+                if manifest_kind == "name-only":
+                    expected_dataset = "legacy-wiki"
+                    (wiki / "manifest.json").write_text(
+                        json.dumps({"name": expected_dataset}),
+                        encoding="utf-8",
+                    )
+
+                research = root / "name-only-research"
+                research.mkdir()
+                (research / "manifest.json").write_text(
+                    json.dumps({"name": "legacy-research"}),
+                    encoding="utf-8",
+                )
+                proc = subprocess.Popen(
+                    [
+                        sys.executable,
+                        "-m",
+                        "cities2_mcp.mcp_server",
+                        "--data-dir",
+                        str(wiki),
+                        "--research-data-dir",
+                        str(research),
+                    ],
+                    cwd=ROOT,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                assert proc.stdin and proc.stdout and proc.stderr
+                try:
+                    rpc_ndjson(proc, 1, "initialize", {"protocolVersion": "2025-06-18"})
+                    status = call(proc, 2, "source_status", {})
+                    search = call(proc, 3, "search", {"query": "legacy override sentinel", "limit": 1})
+
+                    self.assertTrue(status["wiki"]["available"])
+                    self.assertEqual(status["wiki"]["dataset"], expected_dataset)
+                    self.assertEqual(status["wiki"]["page_count"], 1)
+                    self.assertEqual(status["wiki"]["chunk_count"], 1)
+                    self.assertFalse(status["research"][0]["available"])
+                    self.assertIn("manifest name and dataset must match exactly", status["research"][0]["error"])
+                    self.assertTrue(search["ok"])
+                    self.assertEqual(search["results"][0]["dataset"], expected_dataset)
+                finally:
+                    self._stop_proc(proc)
+
+    def test_explicit_research_data_dirs_replace_default_and_keep_missing_paths_unavailable(self) -> None:
+        from tests.smoke_mcp import call, rpc_ndjson
+
+        missing_checkout_data = ROOT / "data"
+        self.assertFalse(missing_checkout_data.exists())
+        proc = subprocess.Popen(
+            [
+                sys.executable,
+                "-m",
+                "cities2_mcp.mcp_server",
+                "--research-data-dir",
+                str(cities2_mcp.bundled_research_data_dir()),
+                "--research-data-dir",
+                str(missing_checkout_data),
+            ],
+            cwd=ROOT,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        assert proc.stdin and proc.stdout and proc.stderr
+        try:
+            rpc_ndjson(proc, 1, "initialize", {"protocolVersion": "2025-06-18"})
+            status = call(proc, 2, "source_status", {})
+
+            self.assertEqual(len(status["research"]), 2)
+            self.assertEqual(status["research"][0]["dataset"], "cities2-research")
+            self.assertTrue(status["research"][0]["available"])
+            self.assertEqual(status["research"][1]["dataset"], "data")
+            self.assertFalse(status["research"][1]["available"])
+            self.assertIn("Missing dataset manifest", status["research"][1]["error"])
         finally:
             self._stop_proc(proc)
 
@@ -304,6 +466,10 @@ class PluginPackagingTests(unittest.TestCase):
         from cities2_mcp import plugin_packages
 
         plugin_root = self._generated_package_root(plugin_packages.CLAUDE_PACKAGE_ROOT)
+        self.assertTrue((plugin_root / "vendor" / "cities2_mcp" / "research_data" / "manifest.json").exists())
+        self.assertTrue(
+            (plugin_root / "vendor" / "cities2_mcp" / "research_data" / "index" / "chunks.jsonl").exists()
+        )
         with tempfile.TemporaryDirectory(prefix="cities2-mcp-plugin-") as tmp:
             proc = subprocess.Popen(
                 [
@@ -331,6 +497,8 @@ class PluginPackagingTests(unittest.TestCase):
                 self.assertEqual(init["result"]["serverInfo"]["version"], PACKAGE_VERSION)
                 self.assertEqual(len(tools["result"]["tools"]), 13)
                 self.assertTrue(status["wiki"]["available"])
+                self.assertTrue(status["research"][0]["available"])
+                self.assertEqual(status["research"][0]["dataset"], "cities2-research")
                 self.assertEqual(scaffold["game_version"], "1.6.*")
                 self.assertIn("game_version_source", scaffold)
             finally:
@@ -455,6 +623,10 @@ class PluginPackagingTests(unittest.TestCase):
         from cities2_mcp import plugin_packages
 
         plugin_root = self._generated_package_root(plugin_packages.CODEX_PACKAGE_ROOT)
+        self.assertTrue((plugin_root / "vendor" / "cities2_mcp" / "research_data" / "manifest.json").exists())
+        self.assertTrue(
+            (plugin_root / "vendor" / "cities2_mcp" / "research_data" / "index" / "chunks.jsonl").exists()
+        )
         with tempfile.TemporaryDirectory(prefix="cities2-mcp-codex-plugin-") as tmp:
             proc = subprocess.Popen(
                 [
@@ -482,6 +654,8 @@ class PluginPackagingTests(unittest.TestCase):
                 self.assertEqual(init["result"]["serverInfo"]["version"], PACKAGE_VERSION)
                 self.assertEqual(len(tools["result"]["tools"]), 13)
                 self.assertTrue(status["wiki"]["available"])
+                self.assertTrue(status["research"][0]["available"])
+                self.assertEqual(status["research"][0]["dataset"], "cities2-research")
                 self.assertEqual(scaffold["game_version"], "1.6.*")
                 self.assertIn("game_version_source", scaffold)
             finally:
@@ -862,6 +1036,10 @@ class PluginPackagingTests(unittest.TestCase):
         self.assertEqual(parsed["codex_plugin_json"]["repository"], meta.REPO_URL)
         self.assertEqual(parsed["antigravity_plugin_json"]["description"], meta.PUBLIC_DESCRIPTION)
         self.assertEqual(parsed["codex_plugin_json"]["interface"]["shortDescription"], "CS2 wiki, encyclopedia, and mod workflows")
+        self.assertIn(
+            "curated research reports",
+            parsed["codex_plugin_json"]["interface"]["longDescription"],
+        )
         self.assertEqual(
             parsed["codex_plugin_json"]["interface"]["privacyPolicyURL"], meta.PRIVACY_URL
         )
@@ -869,6 +1047,7 @@ class PluginPackagingTests(unittest.TestCase):
         for readme in (meta.claude_readme_md(), meta.codex_readme_md()):
             self.assertIn("Generated by cities2_mcp.plugin_packages", readme)
             self.assertIn("Cities: Skylines II Wiki corpus", readme)
+            self.assertIn("curated research reports", readme)
             self.assertIn("local game encyclopedia", readme)
             self.assertIn("project workflow templates", readme)
             for name in meta.SKILL_NAMES:

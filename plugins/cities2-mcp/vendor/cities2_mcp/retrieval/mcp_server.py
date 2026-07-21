@@ -28,6 +28,7 @@ from urllib.parse import quote, unquote
 JSON = Dict[str, Any]
 TOKEN_RE = re.compile(r"[a-z0-9_]{2,}")
 CODE_FENCE_RE = re.compile(r"```([\w+-]*)\n(.*?)\n```", re.S)
+REFERENCE_CONTENT_CHARS = 16000
 SUPPORTED_PROTOCOL_VERSIONS = ("2025-11-25", "2025-06-18", "2024-11-05")
 DEFAULT_PROTOCOL_VERSION = SUPPORTED_PROTOCOL_VERSIONS[0]
 LAST_INPUT_TRANSPORT = "framed"
@@ -67,6 +68,36 @@ def text_result(payload: object, *, is_error: bool = False) -> JSON:
     if is_error:
         result["isError"] = True
     return result
+
+
+def bounded_unique_chunk_text(chunks: List[JSON], limit: int = REFERENCE_CONTENT_CHARS) -> str:
+    token_groups: List[List[str]] = []
+    for chunk in chunks:
+        value = chunk.get("text")
+        text = value if isinstance(value, str) else ""
+        tokens = list(dict.fromkeys(tokenize(text)))
+        if tokens:
+            token_groups.append(tokens)
+
+    positions = [0] * len(token_groups)
+    terms: List[str] = []
+    seen_terms: set[str] = set()
+    length = 0
+    while any(position < len(group) for position, group in zip(positions, token_groups)):
+        for index, group in enumerate(token_groups):
+            if positions[index] >= len(group):
+                continue
+            term = group[positions[index]]
+            positions[index] += 1
+            if term in seen_terms:
+                continue
+            additional = len(term) + (1 if terms else 0)
+            if length + additional > limit:
+                continue
+            terms.append(term)
+            seen_terms.add(term)
+            length += additional
+    return " ".join(terms)
 
 
 class HybridIndex:
@@ -194,7 +225,7 @@ def read_markdown_sidecar(row: JSON) -> str:
 
 
 class Corpus:
-    def __init__(self, data_dirs: List[Path]) -> None:
+    def __init__(self, data_dirs: List[Path], *, allow_legacy_primary_manifest: bool = False) -> None:
         self.chunks: List[JSON] = []
         self.pages: Dict[str, JSON] = {}
         self.chunks_by_id: Dict[str, JSON] = {}
@@ -204,30 +235,99 @@ class Corpus:
         self.dataset_names: List[str] = []
         self.single_dataset = len(data_dirs) == 1
 
-        # Per-dataset indexes for fan-out search
+        # All loaded records share one index so BM25 scores are comparable.
         self._chunk_indexes: List[HybridIndex] = []
         self._ref_indexes: List[HybridIndex] = []
         self._snippet_indexes: List[HybridIndex] = []
 
-        for data_dir in data_dirs:
-            dataset_name = self._load_dataset_name(data_dir)
+        seen_dataset_names: set[str] = set()
+        for index, data_dir in enumerate(data_dirs):
+            manifest, legacy_manifest = self._load_manifest(
+                data_dir,
+                allow_legacy=allow_legacy_primary_manifest and index == 0,
+            )
+            dataset_name = str(manifest["name"])
+            if dataset_name in seen_dataset_names:
+                raise ValueError(f"duplicate dataset name: {dataset_name}")
+            self._load_dataset(
+                data_dir,
+                dataset_name,
+                manifest,
+                validate_declared_counts=not legacy_manifest,
+            )
+            seen_dataset_names.add(dataset_name)
             self.dataset_names.append(dataset_name)
-            self._load_dataset(data_dir, dataset_name)
+
+        self._chunk_indexes.append(HybridIndex(self.chunks, text_key="text"))
+        self._ref_indexes.append(HybridIndex(self.reference_docs, text_key="text"))
+        self._snippet_indexes.append(
+            HybridIndex(self.snippets, text_key="text") if self.snippets else None  # type: ignore[arg-type]
+        )
 
     @staticmethod
-    def _load_dataset_name(data_dir: Path) -> str:
+    def _load_manifest(data_dir: Path, *, allow_legacy: bool = False) -> Tuple[JSON, bool]:
         manifest_path = data_dir / "manifest.json"
-        if manifest_path.exists():
-            try:
-                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-                name = str(manifest.get("name", "")).strip()
-                if name:
-                    return name
-            except Exception:
-                pass
-        return data_dir.name
+        if not manifest_path.is_file():
+            if allow_legacy:
+                return {"name": data_dir.name, "dataset": data_dir.name}, True
+            raise ValueError(f"Missing dataset manifest: {manifest_path}")
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise ValueError(f"Invalid dataset manifest: {manifest_path}: {exc}") from exc
+        if not isinstance(manifest, dict):
+            raise ValueError(f"Invalid dataset manifest: {manifest_path}: top level must be an object")
 
-    def _load_dataset(self, data_dir: Path, dataset_name: str) -> None:
+        if allow_legacy and set(manifest) == {"name"}:
+            legacy_name = manifest.get("name")
+            if isinstance(legacy_name, str) and legacy_name.strip():
+                return {"name": legacy_name.strip(), "dataset": legacy_name.strip()}, True
+
+        name = manifest.get("name")
+        dataset = manifest.get("dataset")
+        if (
+            not isinstance(name, str)
+            or not name.strip()
+            or not isinstance(dataset, str)
+            or name != dataset
+        ):
+            raise ValueError(
+                f"Invalid dataset manifest: {manifest_path}: manifest name and dataset must match exactly"
+            )
+        if ":" in name or any(character.isspace() for character in name):
+            raise ValueError(f"Invalid dataset manifest: {manifest_path}: dataset name cannot contain spaces or ':'")
+        for count_key in ("page_count", "chunk_count"):
+            count = manifest.get(count_key)
+            if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+                raise ValueError(f"Invalid dataset manifest: {manifest_path}: {count_key} must be a non-negative integer")
+        if name == "cities2-research":
+            report_count = manifest.get("report_count")
+            if isinstance(report_count, bool) or not isinstance(report_count, int) or report_count < 1:
+                raise ValueError(
+                    f"Invalid dataset manifest: {manifest_path}: report_count must be a positive integer"
+                )
+            if report_count != manifest["page_count"]:
+                raise ValueError(
+                    f"Invalid dataset manifest: {manifest_path}: report_count must equal page_count"
+                )
+            if manifest["chunk_count"] < 1:
+                raise ValueError(
+                    f"Invalid dataset manifest: {manifest_path}: cities2-research chunk_count must be positive"
+                )
+        paths = manifest.get("paths")
+        expected_paths = {"pages_jsonl": "index/pages.jsonl", "chunks_jsonl": "index/chunks.jsonl"}
+        if not isinstance(paths, dict) or any(paths.get(key) != value for key, value in expected_paths.items()):
+            raise ValueError(f"Invalid dataset manifest: {manifest_path}: paths must identify the canonical JSONL indexes")
+        return manifest, False
+
+    def _load_dataset(
+        self,
+        data_dir: Path,
+        dataset_name: str,
+        manifest: JSON,
+        *,
+        validate_declared_counts: bool,
+    ) -> None:
         chunks_path = data_dir / "index" / "chunks.jsonl"
         pages_path = data_dir / "index" / "pages.jsonl"
 
@@ -237,48 +337,126 @@ class Corpus:
             raise FileNotFoundError(f"Missing pages index: {pages_path}")
 
         dataset_chunks: List[JSON] = []
-        dataset_ref_docs: List[JSON] = []
-        dataset_snippets: List[JSON] = []
         dataset_pages: Dict[str, JSON] = {}
+        dataset_chunk_ids: set[str] = set()
+        dataset_page_ids: set[str] = set()
 
         with chunks_path.open("r", encoding="utf-8") as f:
-            for line in f:
+            for line_number, line in enumerate(f, start=1):
                 line = line.strip()
                 if line:
                     row = json.loads(line)
+                    if not isinstance(row, dict):
+                        raise ValueError(f"Invalid chunk record at {chunks_path}:{line_number}: expected an object")
                     # Prefix chunk_id and page_id with dataset name
-                    orig_chunk_id = str(row.get("chunk_id", ""))
-                    orig_page_id = str(row.get("page_id", ""))
-                    row["chunk_id"] = f"{dataset_name}:{orig_chunk_id}" if orig_chunk_id else ""
-                    row["page_id"] = f"{dataset_name}:{orig_page_id}" if orig_page_id else ""
+                    raw_chunk_id = row.get("chunk_id")
+                    raw_page_id = row.get("page_id")
+                    if (
+                        not isinstance(raw_chunk_id, str)
+                        or not raw_chunk_id
+                        or raw_chunk_id != raw_chunk_id.strip()
+                        or ":" in raw_chunk_id
+                    ):
+                        raise ValueError(
+                            f"Invalid chunk record at {chunks_path}:{line_number}: "
+                            "chunk_id is required and must be a canonical nonempty string without ':'"
+                        )
+                    if (
+                        not isinstance(raw_page_id, str)
+                        or not raw_page_id
+                        or raw_page_id != raw_page_id.strip()
+                        or ":" in raw_page_id
+                    ):
+                        raise ValueError(
+                            f"Invalid chunk record at {chunks_path}:{line_number}: "
+                            "page_id is required and must be a canonical nonempty string without ':'"
+                        )
+                    orig_chunk_id = raw_chunk_id
+                    orig_page_id = raw_page_id
+                    declared_dataset = row.get("dataset")
+                    if declared_dataset not in (None, "", dataset_name):
+                        raise ValueError(
+                            f"Invalid chunk record at {chunks_path}:{line_number}: "
+                            "dataset does not match manifest"
+                        )
+                    qualified_chunk_id = f"{dataset_name}:{orig_chunk_id}"
+                    qualified_page_id = f"{dataset_name}:{orig_page_id}"
+                    if qualified_chunk_id in dataset_chunk_ids or qualified_chunk_id in self.chunks_by_id:
+                        raise ValueError(f"duplicate qualified chunk_id: {qualified_chunk_id}")
+                    dataset_chunk_ids.add(qualified_chunk_id)
+                    row["chunk_id"] = qualified_chunk_id
+                    row["page_id"] = qualified_page_id
                     row["dataset"] = dataset_name
                     self.chunks.append(row)
                     dataset_chunks.append(row)
-                    if row["chunk_id"]:
-                        self.chunks_by_id[row["chunk_id"]] = row
-                    if row["page_id"]:
-                        self.chunks_by_page_id.setdefault(row["page_id"], []).append(row)
+                    self.chunks_by_id[row["chunk_id"]] = row
+                    self.chunks_by_page_id.setdefault(row["page_id"], []).append(row)
 
         with pages_path.open("r", encoding="utf-8") as f:
-            for line in f:
+            for line_number, line in enumerate(f, start=1):
                 line = line.strip()
                 if not line:
                     continue
                 row = json.loads(line)
-                orig_page_id = str(row.get("page_id", ""))
-                prefixed_id = f"{dataset_name}:{orig_page_id}" if orig_page_id else ""
+                if not isinstance(row, dict):
+                    raise ValueError(f"Invalid page record at {pages_path}:{line_number}: expected an object")
+                raw_page_id = row.get("page_id")
+                if (
+                    not isinstance(raw_page_id, str)
+                    or not raw_page_id
+                    or raw_page_id != raw_page_id.strip()
+                    or ":" in raw_page_id
+                ):
+                    raise ValueError(
+                        f"Invalid page record at {pages_path}:{line_number}: "
+                        "page_id is required and must be a canonical nonempty string without ':'"
+                    )
+                orig_page_id = raw_page_id
+                declared_dataset = row.get("dataset")
+                if declared_dataset not in (None, "", dataset_name):
+                    raise ValueError(
+                        f"Invalid page record at {pages_path}:{line_number}: dataset does not match manifest"
+                    )
+                prefixed_id = f"{dataset_name}:{orig_page_id}"
+                if prefixed_id in dataset_page_ids or prefixed_id in self.pages:
+                    raise ValueError(f"duplicate qualified page_id: {prefixed_id}")
+                dataset_page_ids.add(prefixed_id)
                 row["page_id"] = prefixed_id
                 row["dataset"] = dataset_name
                 row["_data_dir"] = str(data_dir.resolve())
                 if orig_page_id and not row.get("markdown_path"):
                     row["_markdown_path"] = str(Path("pages") / "markdown" / f"{orig_page_id}.md")
-                if prefixed_id:
-                    self.pages[prefixed_id] = row
-                    dataset_pages[prefixed_id] = row
+                self.pages[prefixed_id] = row
+                dataset_pages[prefixed_id] = row
+
+        if validate_declared_counts and len(dataset_pages) != manifest["page_count"]:
+            raise ValueError(
+                f"Invalid dataset manifest: {data_dir / 'manifest.json'}: page_count declares {manifest['page_count']} but loaded {len(dataset_pages)}"
+            )
+        if validate_declared_counts and len(dataset_chunks) != manifest["chunk_count"]:
+            raise ValueError(
+                f"Invalid dataset manifest: {data_dir / 'manifest.json'}: chunk_count declares {manifest['chunk_count']} but loaded {len(dataset_chunks)}"
+            )
+        missing_pages = sorted(
+            str(chunk["page_id"]) for chunk in dataset_chunks if str(chunk["page_id"]) not in dataset_pages
+        )
+        if missing_pages:
+            raise ValueError(f"Chunk records reference missing pages: {', '.join(missing_pages[:3])}")
 
         for p in dataset_pages.values():
             sections = p.get("sections", []) or []
-            text = "\n".join([str(p.get("title", "")), str(p.get("url", "")), *[str(x) for x in sections]])
+            page_content = bounded_unique_chunk_text(
+                self.chunks_by_page_id.get(str(p.get("page_id", "")), [])
+            )
+            text = "\n".join(
+                [
+                    str(p.get("title", "")),
+                    str(p.get("url", "")),
+                    *[str(x) for x in sections],
+                    *[str(value) for value in provenance_fields(p).values()],
+                    page_content,
+                ]
+            )
             ref_doc = {
                 "page_id": p.get("page_id"),
                 "title": p.get("title"),
@@ -287,9 +465,9 @@ class Corpus:
                 "text": text,
                 "sections": sections,
                 "dataset": dataset_name,
+                **provenance_fields(p),
             }
             self.reference_docs.append(ref_doc)
-            dataset_ref_docs.append(ref_doc)
 
             md = self.page_markdown(str(p.get("page_id", "")))
             for idx, m in enumerate(CODE_FENCE_RE.finditer(md), start=1):
@@ -307,18 +485,11 @@ class Corpus:
                     "dataset": dataset_name,
                 }
                 self.snippets.append(snippet)
-                dataset_snippets.append(snippet)
-
-        self._chunk_indexes.append(HybridIndex(dataset_chunks, text_key="text"))
-        self._ref_indexes.append(HybridIndex(dataset_ref_docs, text_key="text"))
-        self._snippet_indexes.append(
-            HybridIndex(dataset_snippets, text_key="text") if dataset_snippets else None  # type: ignore[arg-type]
-        )
 
     def _fan_out_search(
         self, indexes: List[Optional[HybridIndex]], query: str, limit: int, title_key: Optional[str] = "title"
     ) -> List[Tuple[float, JSON]]:
-        """Search all indexes and merge results by score."""
+        """Search the shared corpus index and return globally comparable scores."""
         all_results: List[Tuple[float, JSON]] = []
         for index in indexes:
             if index is not None:
@@ -340,21 +511,18 @@ class Corpus:
         return any(idx is not None for idx in self._snippet_indexes)
 
     def resolve_page_id(self, page_id: str) -> Optional[str]:
-        """Resolve a page_id, handling single-dataset backward compatibility.
+        """Resolve a page_id, accepting bare IDs only when they are unique across datasets.
 
-        When only one dataset is loaded, accepts both bare 'page-id' and 'dataset:page-id'.
-        When multiple datasets are loaded, requires the 'dataset:page-id' format.
+        Qualified 'dataset:page-id' values always work. Bare 'page-id' values are accepted when exactly one loaded dataset owns them and require qualification on collision.
         """
-        # Direct lookup first (works for prefixed IDs)
+        # Direct lookup first (works for qualified IDs)
         if page_id in self.pages:
             return page_id
 
-        # Single-dataset backward compat: try prefixing with the only dataset name
-        if self.single_dataset and self.dataset_names:
-            prefixed = f"{self.dataset_names[0]}:{page_id}"
-            if prefixed in self.pages:
-                return prefixed
-
+        suffix = f":{page_id}"
+        matches = [candidate for candidate in self.pages if candidate.endswith(suffix)]
+        if len(matches) == 1:
+            return matches[0]
         return None
 
     def page_markdown(self, page_id: str) -> str:
@@ -457,6 +625,7 @@ def handle_resources_read(req_id: object, params: JSON, corpus: Corpus) -> JSON:
             "links": row.get("links", []),
             "images": row.get("images", []),
             "markdown": md,
+            **provenance_fields(row),
         }
     elif uri.startswith(chunk_prefix):
         chunk_id = unquote(uri[len(chunk_prefix):])
@@ -596,6 +765,21 @@ def tools_catalog() -> List[JSON]:
     ]
 
 
+PROVENANCE_KEYS = (
+    "published_at",
+    "publication_date_basis",
+    "source_type",
+    "creators",
+    "organizations",
+    "report_created_at",
+    "report_updated_at",
+)
+
+
+def provenance_fields(row: JSON) -> JSON:
+    return {key: row[key] for key in PROVENANCE_KEYS if row.get(key) not in (None, "")}
+
+
 def format_doc_result(score: float, doc: JSON) -> JSON:
     text = str(doc.get("text", "")).strip()
     return {
@@ -607,6 +791,7 @@ def format_doc_result(score: float, doc: JSON) -> JSON:
         "url": doc.get("url"),
         "dataset": doc.get("dataset"),
         "snippet": text[:900] + ("..." if len(text) > 900 else ""),
+        **provenance_fields(doc),
     }
 
 
@@ -684,6 +869,7 @@ def handle_tools_call(
                 "links": row.get("links", []),
                 "images": row.get("images", []),
                 "markdown": md,
+                **provenance_fields(row),
             }
             return {"jsonrpc": "2.0", "id": req_id, "result": text_result(payload)}
 
@@ -716,6 +902,7 @@ def handle_tools_call(
                         "oldid": d.get("oldid"),
                         "dataset": d.get("dataset"),
                         "sections": d.get("sections", []),
+                        **provenance_fields(d),
                     }
                     for s, d in matches
                 ],
