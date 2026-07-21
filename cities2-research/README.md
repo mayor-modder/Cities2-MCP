@@ -6,6 +6,8 @@ This directory holds canonical research reports used to generate the separately 
 
 Put full transcripts, downloaded media, slide decks, and other private working material under `sources/`. Everything below that directory is ignored except its `.gitignore`; never force-add source material.
 
+Follow references from submitted material to first-party published sources such as developer diaries, AMAs, documentation, and official videos. Preserve those sources under `sources/` when they can be captured, record their publication metadata separately from event dates, and prefer the direct published source over a later paraphrase when writing a report.
+
 ## Canonical reports
 
 Commit original research summaries under `reports/`. Name each report `<published_at>-<slug>.md` and follow the metadata and section structure demonstrated by the existing reports.

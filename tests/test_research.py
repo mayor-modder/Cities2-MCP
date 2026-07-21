@@ -518,7 +518,8 @@ class BundledResearchTests(unittest.TestCase):
     def test_bundled_research_manifest_identifies_separate_dataset(self) -> None:
         manifest = json.loads((RESEARCH_DATA / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["name"], "cities2-research")
-        self.assertEqual(manifest["report_count"], 1)
+        self.assertEqual(manifest["report_count"], len(list(REPORTS.glob("*.md"))))
+        self.assertEqual(manifest["page_count"], manifest["report_count"])
         self.assertGreater(manifest["chunk_count"], 1)
 
 
