@@ -180,4 +180,14 @@ jobs:
               > "$RUNNER_TEMP/catalog-pr.md"
             pr=$(gh pr create --base main --head "$branch" --title "Update Cities2-MCP to $version" --body-file "$RUNNER_TEMP/catalog-pr.md")
           fi
-          gh pr merge --auto --squash "$pr"
+          merge_state=$(gh pr view "$pr" --json mergeStateStatus --jq '.mergeStateStatus')
+          if [[ "$merge_state" == "CLEAN" ]]; then
+            gh pr merge --squash "$pr"
+          elif ! gh pr merge --auto --squash "$pr"; then
+            merge_state=$(gh pr view "$pr" --json mergeStateStatus --jq '.mergeStateStatus')
+            if [[ "$merge_state" == "CLEAN" ]]; then
+              gh pr merge --squash "$pr"
+            else
+              exit 1
+            fi
+          fi
