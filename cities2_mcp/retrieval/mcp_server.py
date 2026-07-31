@@ -1040,12 +1040,31 @@ def read_message() -> Optional[object]:
     Supports both MCP Content-Length framing and newline-delimited JSON.
     """
 
+    class MalformedFrame(Exception):
+        pass
+
+    pending_line: Optional[bytes] = None
+
+    def send_parse_error() -> None:
+        send_message(
+            {
+                "jsonrpc": "2.0",
+                "id": None,
+                "error": {"code": -32700, "message": "Parse error"},
+            }
+        )
+
     def read_content_length_payload(first_line: bytes) -> Optional[object]:
+        nonlocal pending_line
         content_length: Optional[int] = None
         line = first_line
         while True:
             if line in (b"\r\n", b"\n"):
                 break
+
+            if not looks_like_header_line(line):
+                pending_line = line
+                raise MalformedFrame
 
             header = line.decode("utf-8", errors="replace").strip()
             if header.lower().startswith("content-length:"):
@@ -1053,6 +1072,8 @@ def read_message() -> Optional[object]:
                     content_length = int(header.split(":", 1)[1].strip())
                 except ValueError:
                     return None
+                if content_length < 0:
+                    raise MalformedFrame
 
             line = sys.stdin.buffer.readline()
             if not line:
@@ -1064,27 +1085,28 @@ def read_message() -> Optional[object]:
         payload = sys.stdin.buffer.read(content_length)
         if not payload:
             return None
+        if len(payload) != content_length:
+            return None
         return json.loads(payload.decode("utf-8"))
 
-    def read_json_lines(first_line: bytes) -> Optional[object]:
-        payload = bytearray(first_line)
-        while True:
-            text = payload.decode("utf-8", errors="replace").strip()
-            if text:
-                try:
-                    return json.loads(text)
-                except json.JSONDecodeError:
-                    pass
-            line = sys.stdin.buffer.readline()
-            if not line:
-                return None
-            payload.extend(line)
+    def read_json_line(first_line: bytes) -> object:
+        return json.loads(first_line.decode("utf-8"))
 
     def looks_like_header_line(line: bytes) -> bool:
         return re.match(rb"^[A-Za-z][A-Za-z0-9-]*\s*:", line) is not None
 
+    def looks_like_framed_start(line: bytes) -> bool:
+        if not looks_like_header_line(line):
+            return False
+        header_name = line.split(b":", 1)[0].lower()
+        return header_name in {b"content-length", b"content-type"}
+
     while True:
-        first_line = sys.stdin.buffer.readline()
+        if pending_line is None:
+            first_line = sys.stdin.buffer.readline()
+        else:
+            first_line = pending_line
+            pending_line = None
         if not first_line:
             return None
         if first_line in (b"\r\n", b"\n"):
@@ -1095,16 +1117,28 @@ def read_message() -> Optional[object]:
             global LAST_INPUT_TRANSPORT
             LAST_INPUT_TRANSPORT = "ndjson"
             debug_log("Detected ndjson input transport")
-            return read_json_lines(stripped)
+            try:
+                return read_json_line(stripped)
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                send_parse_error()
+                continue
 
-        if looks_like_header_line(first_line):
+        if looks_like_framed_start(first_line):
             LAST_INPUT_TRANSPORT = "framed"
             debug_log("Detected framed input transport")
-            return read_content_length_payload(first_line)
+            try:
+                return read_content_length_payload(first_line)
+            except (MalformedFrame, UnicodeDecodeError, json.JSONDecodeError):
+                send_parse_error()
+                continue
 
         LAST_INPUT_TRANSPORT = "ndjson"
         debug_log("Detected ndjson-ish input transport")
-        return read_json_lines(first_line)
+        try:
+            return read_json_line(first_line)
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            send_parse_error()
+            continue
 
 
 def send_message(message: object) -> None:
