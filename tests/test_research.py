@@ -505,6 +505,27 @@ class BundledResearchTests(unittest.TestCase):
         self.assertEqual(report.metadata["publication_date_basis"], "source_metadata")
         self.assertEqual(report.metadata["creators"], "Damien Morello")
 
+    def test_city_corner_9_11_report_has_substantive_source_coverage(self) -> None:
+        report = parse_report(REPORTS / "2026-07-23-city-corner-series-9-11.md")
+
+        self.assertEqual(report.metadata["slug"], "city-corner-series-9-11")
+        self.assertEqual(report.metadata["source_type"], "developer_diary_series")
+        self.assertGreater(len(report.body), 7_500)
+        for number, thread_id in ((9, "1934993"), (10, "1937714"), (11, "1938630")):
+            self.assertIn(f"City Corner #{number}", report.body)
+            self.assertIn(thread_id, report.body)
+        for detail in (
+            "200+ bugs",
+            "-startEditor",
+            "Parent Mesh",
+            "off-disk",
+            "reserve enough capacity",
+            "income rather than wealth",
+            "Waterway Pass",
+            "frosted and opaque glass",
+        ):
+            self.assertIn(detail, report.body)
+
     def test_bundled_research_data_is_current_and_private_path_free(self) -> None:
         from cities2_mcp.research import check_dataset
 

@@ -28,5 +28,6 @@ This dataset contains original research summaries and analysis. Complete source 
 - Cities: Skylines II - Designing a Five-Way Interchange (2026-05-13): https://www.youtube.com/watch?v=liuqwdHj720
 - Cities: Skylines II - Let's Talk Transit & Traffic (2026-05-27): https://www.youtube.com/watch?v=jBH86KmzME4
 - Cities: Skylines II - Map Making in Summer Solstice (2026-06-10): https://www.youtube.com/watch?v=LG-_wMosklA
+- City Corner Series 9-11 (2026-07-23): https://forum.paradoxplaza.com/forum/developer-diary/city-corner-9-happy-six-months.1934993/
 
 Original report prose follows the repository license. Linked source material remains subject to its original source terms.
