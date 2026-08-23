@@ -48,7 +48,7 @@ class ReleaseVersionTests(unittest.TestCase):
             version_file.write_text('__version__ = "0.3.1"\n', encoding="utf-8")
 
             with mock.patch("cities2_mcp.release_version._sync_and_check") as sync:
-                target = prepare_release(root, SemVer.parse("0.3.1"), ["release:none"])
+                target = prepare_release(root, SemVer.parse("0.3.2"), ["release:none"])
 
             self.assertEqual(target, SemVer.parse("0.3.1"))
             self.assertEqual(version_file.read_text(encoding="utf-8"), '__version__ = "0.3.1"\n')

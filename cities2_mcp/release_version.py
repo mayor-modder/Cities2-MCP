@@ -111,9 +111,13 @@ def _sync_and_check(repo_root: Path) -> None:
 
 
 def prepare_release(repo_root: Path, base_version: SemVer, labels: Iterable[str]) -> SemVer:
-    target = base_version.bump(select_release_level(labels))
     version_file = repo_root / "cities2_mcp" / "_version.py"
-    version_file.write_text(f'__version__ = "{target}"\n', encoding="utf-8", newline="\n")
+    level = select_release_level(labels)
+    if level == "none":
+        target = _version_from_text(version_file.read_text(encoding="utf-8"))
+    else:
+        target = base_version.bump(level)
+        version_file.write_text(f'__version__ = "{target}"\n', encoding="utf-8", newline="\n")
     _sync_and_check(repo_root)
     return target
 
