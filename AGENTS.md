@@ -18,6 +18,11 @@
 - After a pushed branch has an open PR, offer to update the PR description or metadata to reflect pushed changes unless the user has asked otherwise.
 - When writing, editing, or commenting on a PR, append a co-author line naming the acting agent at the bottom on its own line, such as `*Co-authored by Codex.*` or `*Co-authored by Claude.*`.
 
+## Public-facing writing
+
+- Public documentation, pull request text, release notes, changelogs, issue text, and user-facing messages must contain only information useful to their intended audience: product behavior, relevant context, decisions, instructions, limitations, and verification evidence.
+- Do not publish agent inner monologue, reasoning traces, workflow narration, self-justification, conversational asides, or explanations of why the agent chose particular wording, labels, version numbers, or routine process steps unless that rationale is itself necessary for the audience to act correctly.
+
 ## Merge and release gates
 
 - Do not merge PRs, tag releases, publish packages, or perform irreversible release actions while a user-stated validation gate is pending.
