@@ -57,7 +57,7 @@ jobs:
         shell: bash
         run: |
           git fetch origin "$GITHUB_BASE_REF"
-          # Supported release labels: release:minor, release:major.
+          # Supported release labels: release:none, release:minor, release:major.
           mapfile -t labels < <(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH")
           args=()
           for label in "${labels[@]}"; do

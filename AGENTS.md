@@ -29,6 +29,7 @@
 - If the user has said they want to test, review, or verify something first, stop after preparatory work and report that the gate is still pending.
 - Never merge to `main` unless a human explicitly directs that exact action.
 - Never bump MCP server or plugin version numbers unless a human explicitly directs that exact action.
+- Apply `release:none` to pull requests limited to repository policy, contributor guidance, or other changes that do not alter published package, plugin, server, corpus, or distribution artifacts. Do not use it for changes that affect shipped artifacts.
 - Squash merging is the default for ordinary PRs.
 - Merge commits are allowed for explicitly stacked PRs. A stacked PR must name its parent PR or branch in the PR description, using a line such as `Stacked on: #123` or `Stacked on: branch-name`.
 - Use a merge commit for a stacked PR when landing it with squash would force dependent branches to be restacked. For GitHub CLI merges, use `gh pr merge <number> --merge`.
