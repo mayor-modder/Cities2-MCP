@@ -18,6 +18,7 @@ class ReleaseVersionTests(unittest.TestCase):
 
     def test_bump_levels_reset_lower_components(self) -> None:
         version = SemVer.parse("1.7.9")
+        self.assertEqual(version.bump("none"), version)
         self.assertEqual(str(version.bump("patch")), "1.7.10")
         self.assertEqual(str(version.bump("minor")), "1.8.0")
         self.assertEqual(str(version.bump("major")), "2.0.0")
@@ -25,6 +26,7 @@ class ReleaseVersionTests(unittest.TestCase):
     def test_labels_default_to_patch(self) -> None:
         self.assertEqual(select_release_level([]), "patch")
         self.assertEqual(select_release_level(["documentation"]), "patch")
+        self.assertEqual(select_release_level(["release:none"]), "none")
         self.assertEqual(select_release_level(["release:minor"]), "minor")
         self.assertEqual(select_release_level(["release:major"]), "major")
 
@@ -35,6 +37,22 @@ class ReleaseVersionTests(unittest.TestCase):
     def test_conflicting_release_labels_are_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "mutually exclusive"):
             select_release_level(["release:minor", "release:major"])
+        with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+            select_release_level(["release:none", "release:minor"])
+
+    def test_release_none_preserves_base_version_and_syncs_metadata(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="cities2-release-version-") as tmp:
+            root = Path(tmp)
+            version_file = root / "cities2_mcp" / "_version.py"
+            version_file.parent.mkdir(parents=True)
+            version_file.write_text('__version__ = "0.3.1"\n', encoding="utf-8")
+
+            with mock.patch("cities2_mcp.release_version._sync_and_check") as sync:
+                target = prepare_release(root, SemVer.parse("0.3.2"), ["release:none"])
+
+            self.assertEqual(target, SemVer.parse("0.3.1"))
+            self.assertEqual(version_file.read_text(encoding="utf-8"), '__version__ = "0.3.1"\n')
+            sync.assert_called_once_with(root)
 
     def test_tag_action_is_idempotent_at_the_same_commit(self) -> None:
         from cities2_mcp.release_version import tag_action

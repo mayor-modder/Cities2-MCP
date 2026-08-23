@@ -10,6 +10,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
     def test_pr_workflow_uses_labels_base_ref_and_app_token(self) -> None:
         text = (ROOT / ".github" / "workflows" / "prepare-release-version.yml").read_text(encoding="utf-8")
         self.assertIn("pull_request:", text)
+        self.assertIn("release:none", text)
         self.assertIn("release:minor", text)
         self.assertIn("release:major", text)
         self.assertIn("GITHUB_BASE_REF", text)
@@ -49,6 +50,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
     def test_maintainer_docs_cover_one_time_release_setup(self) -> None:
         text = (ROOT / "docs" / "maintainers" / "release-automation.md").read_text(encoding="utf-8")
         for required in (
+            "release:none",
             "release:minor",
             "release:major",
             "RELEASE_APP_CLIENT_ID",

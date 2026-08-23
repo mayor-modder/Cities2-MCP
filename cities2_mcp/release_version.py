@@ -8,11 +8,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Literal, Sequence
 
-ReleaseLevel = Literal["patch", "minor", "major"]
+ReleaseLevel = Literal["none", "patch", "minor", "major"]
 TagAction = Literal["create", "exists"]
 VERSION_RE = re.compile(r'\A__version__ = "(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"\n?\Z')
 LEGACY_VERSION_RE = re.compile(r'(?m)^__version__ = "(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"$')
 RELEASE_LABELS: dict[str, ReleaseLevel] = {
+    "release:none": "none",
     "release:minor": "minor",
     "release:major": "major",
 }
@@ -35,6 +36,8 @@ class SemVer:
         return f"{self.major}.{self.minor}.{self.patch}"
 
     def bump(self, level: ReleaseLevel) -> "SemVer":
+        if level == "none":
+            return self
         if level == "patch":
             return SemVer(self.major, self.minor, self.patch + 1)
         if level == "minor":
@@ -47,7 +50,7 @@ class SemVer:
 def select_release_level(labels: Iterable[str]) -> ReleaseLevel:
     selected = {RELEASE_LABELS[label] for label in labels if label in RELEASE_LABELS}
     if len(selected) > 1:
-        raise ValueError("release:minor and release:major are mutually exclusive")
+        raise ValueError("release:none, release:minor, and release:major are mutually exclusive")
     return next(iter(selected), "patch")
 
 
@@ -108,9 +111,13 @@ def _sync_and_check(repo_root: Path) -> None:
 
 
 def prepare_release(repo_root: Path, base_version: SemVer, labels: Iterable[str]) -> SemVer:
-    target = base_version.bump(select_release_level(labels))
     version_file = repo_root / "cities2_mcp" / "_version.py"
-    version_file.write_text(f'__version__ = "{target}"\n', encoding="utf-8", newline="\n")
+    level = select_release_level(labels)
+    if level == "none":
+        target = _version_from_text(version_file.read_text(encoding="utf-8"))
+    else:
+        target = base_version.bump(level)
+        version_file.write_text(f'__version__ = "{target}"\n', encoding="utf-8", newline="\n")
     _sync_and_check(repo_root)
     return target
 
