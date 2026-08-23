@@ -1,12 +1,12 @@
 {
   "dataset": "cities2-docs",
   "source": "Cities: Skylines II Wiki text corpus transformed for Cities2-MCP retrieval",
-  "generated_at": "2026-07-11T17:39:43.458673+00:00",
+  "generated_at": "2026-08-23T16:33:06.551230+00:00",
   "current_game_version": "1.6.0f1",
   "steam_app_id": "949230",
   "steam_build_id": "23287471",
   "page_count": 140,
-  "chunk_count": 1219,
+  "chunk_count": 1220,
   "paths": {
     "pages_jsonl": "index/pages.jsonl",
     "chunks_jsonl": "index/chunks.jsonl"

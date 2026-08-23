@@ -2,6 +2,8 @@
 
 Cities2-MCP defaults every same-repository pull request to a patch release. Apply `release:minor` or `release:major` before merge only when that larger semantic bump is intentional; the labels are mutually exclusive.
 
+Bundled wiki corpus refreshes are minor releases. Apply `release:minor` to every pull request that updates the shipped wiki corpus so the generated release version reflects the material knowledge-base update.
+
 ## GitHub App
 
 Install one private GitHub App on `mayor-modder/Cities2-MCP` and `mayor-modder/Mayor-Modder-Cities2-Plugins`. Grant repository `contents: write`, `pull requests: write`, and metadata read access. Do not grant organization administration or unrelated repository access.

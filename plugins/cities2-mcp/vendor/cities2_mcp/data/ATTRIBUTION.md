@@ -7,7 +7,7 @@ Cities: Skylines II Wiki, part of Paradox Wikis.
 - Source copyright policy: https://central.paradoxwikis.com/Copyrights
 - Corpus license: Creative Commons Attribution-ShareAlike 3.0 Unported
 - License link: https://creativecommons.org/licenses/by-sa/3.0/
-- Corpus build date: 2026-07-11
+- Corpus build date: 2026-08-23
 
 Per-page source URLs, page titles, and revision identifiers where available are
 preserved in `index/pages.jsonl`.
